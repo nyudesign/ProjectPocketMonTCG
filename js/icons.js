@@ -1,0 +1,1 @@
+const ICONS={"type": {"D": "assets/icons/type-D.png", "P": "assets/icons/type-P.png", "R": "assets/icons/type-R.png", "C": "assets/icons/type-C.png"}, "orb": {"D": "assets/icons/orb-D.png", "prism": "assets/icons/orb-prism.png"}};

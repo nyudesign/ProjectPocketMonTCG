@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Pokémon TCG Simulator • Aturan Asli</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="stylesheet" href="css/style.css">
+</head><body>
+<canvas id="cv"></canvas>
+<div id="menu" class="scr on"><div class="mbox"><h1>Pokémon TCG<br><small>Simulator • aturan fisik asli</small></h1>
+<button class="b atk" id="m-battle">⚔️ Battle</button><button class="b go" id="m-deck">🃏 Deck Build</button><button class="b ghost" id="m-rules">📖 Aturan &amp; catatan</button>
+<p class="note">Kartu: 25 kartu dari deck "wishlist deck 2" (gambar dari ZIP kamu) sudah termasuk di file ini.</p></div></div>
+<div id="pre" class="scr"><div class="mbox"><h2>Siapkan pertandingan</h2>
+<div class="lbl">Format</div><div class="seg" id="pre-fmt"></div>
+<div class="lbl">Deck-mu</div><div id="pre-decks" class="list"></div>
+<div class="row"><button class="b ghost" id="pre-back">← Kembali</button></div></div></div>
+<div id="db" class="scr"><div class="dbtop"><button class="b ghost" id="db-back">←</button><input id="db-name" placeholder="Nama deck" maxlength="30"><select id="db-load"></select>
+<div class="seg" id="db-fmt"></div></div>
+<div class="dbmain"><div id="db-grid"></div><div id="db-side"><div id="db-sum"></div><div id="db-chk"></div>
+<div class="row"><button class="b go" id="db-rec">✨ Rekomendasi</button><button class="b atk" id="db-save">💾 Simpan</button></div>
+<div class="row"><button class="b ghost" id="db-clear">Kosongkan</button><button class="b ghost" id="db-del">Hapus tersimpan</button></div></div></div></div>
+<div id="hudt" class="hud"><div class="pl"><div class="nm"><b>🤖 Bot</b><div class="pips" id="op"></div></div><span id="oi"></span></div></div>
+<div id="msg"></div><div id="pickbar"><span id="pk-t"></span><span id="pk-st"><button class="b ghost" id="pk-m" aria-label="Kurangi">−</button><b id="pk-k"></b><button class="b ghost" id="pk-p" aria-label="Tambah">+</button></span><button class="b atk" id="pk-ok">Selesai</button><button class="b ghost" id="pk-x">Batal</button></div><div id="hv"><img id="hv-i" alt="pratinjau kartu"></div><div id="tip"></div>
+<div id="hudb" class="hud"><div class="pl"><div class="nm"><b>🧑 Kamu</b><div class="pips" id="pp"></div></div><span id="pi"></span></div></div>
+<div class="btns" id="bbar"><button class="b ghost" id="b-log">📜 Log</button><button class="b ghost" id="b-menu" aria-label="Menu">☰<span class="lg"> Menu</span></button><button class="b atk" id="b-atk" aria-label="Serang">⚔️<span class="lg"> Serang</span></button><button class="b go" id="b-end">Akhiri</button></div>
+<div id="log"><div class="lh"><b>Battle log</b><button class="x" id="log-x">✕</button></div><div id="log-b"></div></div>
+<div id="turn"></div><div id="flash"></div><div id="cfx"></div><div id="ann"></div><div id="ann2"></div>
+<div id="zoom" class="ov"><div class="zbox"><button class="x" id="zx">✕</button><div id="zleft"><img id="zimg" alt="kartu"><div id="zstack"></div></div><div id="zside"><div id="zinfo"></div><div id="zbtn"></div></div></div></div>
+<div id="panel" class="ov"><div class="pbox"><div class="ptop"><img id="pimg" alt=""><div class="pmain"><div class="pbanner" id="ptitle"></div><div id="pcar"></div><div class="prow"><button class="b ghost" id="p-look">👁 Lihat arena</button><button class="b ghost" id="p-cancel">Batal</button><button class="b atk" id="p-done">Selesai</button></div></div></div></div></div>
+<button class="b go" id="pback">↩ Kembali ke kartu</button>
+<div id="disc" class="ov"><div class="dbox"><div class="dh"><b>Discard</b><div class="seg" id="disc-tabs"></div><button class="x" id="disc-x">✕</button></div><div id="disc-b"></div></div></div>
+<div id="dlg" class="ov"><div class="box" id="dlg-b"></div></div>
+<div id="end" class="ov"><div class="box" id="end-b"></div></div>
+<script src="js/icons.js"></script>
+<script src="js/cards.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/scene3d.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/menu.js"></script>
+</body></html>

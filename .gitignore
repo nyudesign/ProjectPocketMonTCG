@@ -1,0 +1,3 @@
+# ZIP aset asli (456 MB) melebihi batas 100 MB per file di GitHub; salin kartu yang dipakai ke assets/cards/
+assets/*.zip
+.DS_Store
