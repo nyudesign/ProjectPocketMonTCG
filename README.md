@@ -21,3 +21,20 @@ python3 -m http.server 8000   # lalu buka http://localhost:8000
 1. Salin `lesser_webp_3/idXXXXXXXX.webp` dari ZIP ke `assets/cards/`.
 2. Tambah entri di `CARDS` (`js/cards.js`) dengan `img: XXXXX`.
 3. Efek baru: tulis di `EFF` (Trainer), `AB` (Ability), atau `switch(at.fx)` di `actAttack` (`js/engine.js`), plus logika bot di `botTurn` bila perlu.
+
+## Tes
+`node tests/engine.test.js` — 75 pertandingan bot lawan bot + cek aturan kartu (Tera, Crown Opal, Bench 8, Briar, dll).
+
+## Indeks kartu (OCR)
+`tools/card-ocr.tsv` berisi teks hasil OCR semua kartu di ZIP (tidak di-commit). Buat ulang dari ZIP yang sudah diekstrak:
+```sh
+for i in 0 1 2 3 4 5 6 7; do osascript -l JavaScript tools/ocr.js <folder lesser_webp_3> 0 $i 8 part$i.tsv & done; wait
+cat part*.tsv | sort -n > tools/card-ocr.tsv
+```
+Cari kartu: `grep -i "noctowl" tools/card-ocr.tsv`.
+
+Teks resmi (lebih akurat dari OCR) dari asia.pokemon-card.com/id — id sama dengan nama file gambar. Bisa dilanjutkan kalau terputus:
+```sh
+cut -f1 tools/card-ocr.tsv > ids.txt
+python3 -I tools/fetch-official.py ids.txt tools/card-official.jsonl 1
+```

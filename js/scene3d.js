@@ -121,10 +121,17 @@ function drawHp(o){const x=o.cx,w=256,h=84,f=Math.max(0,Math.min(1,o.hpC)),dead=
  const col=dead?'#9ca3af':f>.55?'#22c55e':f>.28?'#facc15':'#ef4444';rr(x,12,62,w-24,12,6);x.fillStyle='#ffffff2e';x.fill();if(f>.015){rr(x,12,62,Math.max(14,(w-24)*f),12,6);x.fillStyle=col;x.fill()}
  o.tex.needsUpdate=true}
 function updHp(){for(const o of OV.values()){if(o.hpC===undefined)continue;const d=o.hpT-o.hpC;if(Math.abs(d)>.002){o.hpC+=d*.07;drawHp(o)}else if(o.hpC!==o.hpT){o.hpC=o.hpT;drawHp(o)}}}
-const ORBC={D:0x2b2340,P:0xa855f7,R:0xef4444,C:0xe5e7eb,G:0x22c55e,F:0xb45309,W:0x0ea5e9,L:0xfacc15,M:0x9ca3af,prism:0xf8fafc},SG=new THREE.SphereGeometry(.075,14,10),DG=new THREE.PlaneGeometry(.13,.13),OT={},NT={};
+const ORBC={D:0x1f4f57,P:0xa855f7,R:0xef4444,C:0xe5e7eb,G:0x22c55e,F:0xb45309,W:0x0ea5e9,L:0xfacc15,M:0x9ca3af,prism:0xf8fafc},SG=new THREE.SphereGeometry(.13,20,14),DG=new THREE.PlaneGeometry(.24,.24),OT={},NT={};
+/* aura & kilap Energi: tekstur dibuat sekali, warna per tipe lewat material (Kegelapan/Logam dicerahkan agar auranya terlihat) */
+const AURAC={...ORBC,D:0x2fa3a8,M:0xe2e8f0,C:0xffffff},
+ AURA_T=ctex(128,128,(x,w)=>{const g=x.createRadialGradient(64,64,8,64,64,64);g.addColorStop(0,'#fff');g.addColorStop(.5,'#ffffffdd');g.addColorStop(1,'#fff0');x.fillStyle=g;x.fillRect(0,0,w,w)}),
+ SHINE_T=ctex(64,64,(x,w)=>{const g=x.createRadialGradient(24,22,0,24,22,24);g.addColorStop(0,'#ffffff');g.addColorStop(.45,'#ffffffaa');g.addColorStop(1,'#fff0');x.fillStyle=g;x.fillRect(0,0,w,w)}),
+ AURA_M={},auraM=k=>AURA_M[k]||(AURA_M[k]=new THREE.MeshBasicMaterial({map:AURA_T,color:AURAC[k]||0x94a3b8,transparent:true,depthWrite:false})),
+ ORB_M={},orbM=k=>ORB_M[k]||(ORB_M[k]=new THREE.MeshPhongMaterial({color:ORBC[k]||0x94a3b8,emissive:AURAC[k]||0x94a3b8,emissiveIntensity:.35,specular:0xffffff,shininess:110})),
+ SHINE_M=new THREE.MeshBasicMaterial({map:SHINE_T,transparent:true,depthWrite:false}),AG=new THREE.PlaneGeometry(.58,.58),HG=new THREE.PlaneGeometry(.17,.17);
 const orbTex=k=>ICONS.orb[k]?(OT[k]||(OT[k]=TL.load(ICONS.orb[k]))):null;
 const numTex=n=>NT[n]||(NT[n]=ctex(64,64,(x)=>{x.font='900 46px '+FONT;x.textAlign='center';x.textBaseline='middle';x.lineWidth=8;x.strokeStyle='#0b2236';x.strokeText(String(n),32,34);x.fillStyle='#fff';x.fillText(String(n),32,34)}));
-function orbList(mon){if(mon.en.length<=5)return mon.en.map(e=>[e.key==='prism'?'prism':e.t,0]);const c=new Map();for(const e of mon.en){const k=e.key==='prism'?'prism':e.t;c.set(k,(c.get(k)||0)+1)}return[...c]}
+function orbList(mon){if(mon.en.length<=4)return mon.en.map(e=>[e.key==='prism'?'prism':e.t,0]);const c=new Map();for(const e of mon.en){const k=e.key==='prism'?'prism':e.t;c.set(k,(c.get(k)||0)+1)}return[...c]}
 function ovBuild(o,mon){
  if(!o.pill){const c=document.createElement('canvas');c.width=256;c.height=84;o.cx=c.getContext('2d');o.tex=new THREE.CanvasTexture(c);o.pill=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:o.tex,transparent:true,depthWrite:false}));o.pill.scale.set(.6,.197,1);o.pill.position.set(.19,.595,.02);o.g.add(o.pill);o.sub=new THREE.Group();o.g.add(o.sub);o.hpC=undefined}
  o.ty=mon.card.type;o.mx=mon.card.hp;o.hpT=Math.max(0,hp(mon))/mon.card.hp;if(o.hpC===undefined)o.hpC=o.hpT;drawHp(o);
@@ -132,9 +139,11 @@ function ovBuild(o,mon){
  coinsFor(mon.dmg).forEach((v,i)=>{const c=new THREE.Mesh(CG,new THREE.MeshBasicMaterial({map:coinT(v),transparent:true,depthWrite:false}));const r=i>>2,cc=i%4;c.scale.setScalar(v>=50?1.2:1);c.position.set(-.3+cc*.27+(r?.1:0),.08-r*.28,.03+i*.001);o.sub.add(c)});
  const bd=[];if(mon.sp==='asleep')bd.push('💤');if(mon.sp==='confused')bd.push('😵');if(mon.sp==='paralyzed')bd.push('⚡');if(mon.poison)bd.push('☠️');if(mon.burn)bd.push('🔥');
  bd.forEach((e,i)=>{const b=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:ctex(96,96,(x,w,h)=>{x.fillStyle='#fff';x.beginPath();x.arc(48,48,44,0,7);x.fill();x.lineWidth=4;x.strokeStyle='#0f2a43';x.stroke();x.font='54px '+FONT;x.textAlign='center';x.textBaseline='middle';x.fillText(e,48,52)}),transparent:true,depthWrite:false}));b.scale.setScalar(.26);b.position.set(-.34+i*.28,.3,.03);o.sub.add(b)});
- orbList(mon).forEach(([k,n],i)=>{const px=-.36+i*.2,s=new THREE.Mesh(SG,LM(ORBC[k]||0x94a3b8));s.position.set(px,-.56,.08);o.sub.add(s);
-  const t=orbTex(k);if(t){const d=new THREE.Mesh(DG,new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false}));d.position.set(px,-.56,.158);o.sub.add(d)}
-  if(n){const q=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:numTex(n),transparent:true,depthWrite:false}));q.scale.setScalar(.17);q.position.set(px+.1,-.5,.17);o.sub.add(q)}})}
+ orbList(mon).forEach(([k,n],i)=>{const px=-.375+i*.25,au=new THREE.Mesh(AG,auraM(k));au.position.set(px,-.55,.06);o.sub.add(au);
+   const s=new THREE.Mesh(SG,orbM(k));s.position.set(px,-.55,.08);o.sub.add(s);
+   const hl=new THREE.Mesh(HG,SHINE_M);hl.position.set(px-.04,-.51,.222);o.sub.add(hl);
+  const t=orbTex(k);if(t){const d=new THREE.Mesh(DG,new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false}));d.position.set(px,-.55,.215);o.sub.add(d)}
+  if(n>1){const q=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:numTex(n),transparent:true,depthWrite:false}));q.scale.setScalar(.2);q.position.set(px+.13,-.46,.23);o.sub.add(q)}})}
 function sync(){
  if(!G||!G.p)return;{const bn=Math.max(bmax('p'),bmax('o'));if(bn!==BENCHN){BENCHN=bn;redrawMat()}}
  const L=lay(),seen=new Set();LI=new Map();
@@ -164,7 +173,7 @@ function lay(){
    add(mon.id,mon.card,{sd,zone,mon,x,z,s,y,tilt,up:!hid,rz:stg?0:spin(mon)});
    if(stg)continue;
    const n=mon.en.length,st=Math.min(.2,.5/Math.max(n,1))*s;
-   mon.en.forEach((e,i)=>add(e.id,e,{sd,zone:'att',par:mon,x,z:z-m*(i+1)*st,s,y:.09-i*.011,up:!hid,lab:cname(e).replace('Energi Dasar ','Energi ').replace('Energi ','⚡ '),labc:ETC[e.t]||'#7c3aed',laby:m*.63}));
+   mon.en.forEach((e,i)=>add(e.id,e,{sd,zone:'att',par:mon,x,z:z-m*(i+1)*st,s,y:.09-i*.011,up:!hid}));
    if(mon.tool)add(mon.tool.id,mon.tool,{sd,zone:'att',par:mon,x:x+.14*s,z:z+m*.22*s,s,y:.08,up:!hid,lab:'🔧 '+cname(mon.tool),labc:'#0f766e',laby:-m*.63})}
   S.prizes.forEach((c,i)=>add(c.id,c,{sd,zone:'pz',x:Z.pri(i,m)[0],z:Z.pri(i,m)[1],s:Z.pri(i,m)[2],up:(UI.reveal&&UI.reveal.has(c.id))?1:0}));
   for(let i=0;i<Math.min(4,Math.ceil(S.deck.length/12));i++){const[x,z,s]=Z.dk(m);add('dk'+sd+i,null,{sd,zone:'dk',x,z,s,up:0,y:.06+i*.05})}

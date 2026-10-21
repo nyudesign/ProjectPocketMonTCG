@@ -40,11 +40,29 @@ lillie:{n:"Lillie's Determination",ni:'Ketetapan Hati Lillie',k:'supporter',img:
 balloon:{n:'Air Balloon',ni:'Balon',k:'tool',img:19064,tx:'Retreat cost Pokémon pemegang berkurang 2.'},
 helmet:{n:'Punk Helmet',ni:'Helm Punk',k:'tool',img:19040,tx:'Jika Pokémon Kegelapan pemegang di Active terkena damage serangan lawan, taruh 4 damage counter pada penyerang.'},
 prism:{n:'Prism Energy',ni:'Energi Prisma',k:'senergy',img:16311,mark:'I',tx:'Dihitung 1 Energi ✱. Di Pokémon Basic, berlaku sebagai Energi semua tipe.'},
-denergy:{n:'Basic Darkness Energy',ni:'Energi Dasar Kegelapan',k:'energy',t:'D',img:19046,tx:'Energi Dasar tipe Kegelapan.'}
+denergy:{n:'Basic Darkness Energy',ni:'Energi Dasar Kegelapan',k:'energy',t:'D',img:19046,tx:'Energi Dasar tipe Kegelapan.'},
+/* ----- archetype Tera: Terapagos ex (sv7s Stellar Miracle, mark H) ----- */
+terapagos:{n:'Terapagos ex',ni:'Terapagos ex',k:'pokemon',type:'C',hp:230,stage:0,weak:'F',retreat:2,prize:2,tera:1,img:14349,mark:'H',
+ atk:[{n:'Union Beat',cost:'CC',dmg:30,times:1,fx:'union',tx:'Tidak dapat dipakai di giliran pertama Pemain Kedua. 30 damage untuk tiap Pokémon Bench-mu.'},{n:'Crown Opal',cost:'GWL',dmg:180,fx:'opal',tx:'Di giliran lawan berikutnya, Pokémon ini tidak menerima damage serangan dari Pokémon Basic (selain tipe Normal).'}]},
+hoothoot:{n:'Hoothoot',ni:'Hoothoot',k:'pokemon',type:'C',hp:70,stage:0,weak:'L',res:'F',retreat:1,img:14334,mark:'H',
+ atk:[{n:'Menusuk Tiga Kali',cost:'C',dmg:10,times:1,fx:'flip3',tx:'Lempar koin 3 kali. 10 damage untuk tiap Kepala.'}]},
+noctowl:{n:'Noctowl',ni:'Noctowl',k:'pokemon',type:'C',hp:100,stage:1,from:'Hoothoot',weak:'L',res:'F',retreat:1,img:14335,mark:'H',
+ ab:{key:'jewel',n:'Mencari Permata',tx:'Saat kartu ini dimainkan dari tangan untuk berevolusi, jika ada Pokémon Terastal di Arena-mu: cari s/d 2 Trainer dari Deck ke tangan, kocok Deck.',passive:1},
+ atk:[{n:'Speed Wing',cost:'CC',dmg:60,fx:'plain',tx:''}]},
+fanrotom:{n:'Fan Rotom',ni:'Rotom Kipas',k:'pokemon',type:'C',hp:70,stage:0,weak:'L',res:'F',retreat:1,img:14338,mark:'H',
+ ab:{key:'fan',n:'Fan Call',tx:'Hanya di giliran pertamamu, 1x: cari s/d 3 Pokémon Normal HP ≤100 dari Deck ke tangan, kocok Deck. Tidak bisa jika Fan Call lain sudah dipakai giliran ini.'},
+ atk:[{n:'Pendaratan Menyerang',cost:'C',dmg:70,fx:'landing',tx:'Jika tidak ada Stadium di Arena, serangan ini gagal.'}]},
+briar:{n:'Briar',ni:'Briar',k:'supporter',img:14370,tx:'Hanya jika Prize lawan tersisa 2. Giliran ini, jika Active lawan KO karena damage serangan Pokémon Terastal-mu, ambil 1 Prize tambahan.'},
+pokegear:{n:'Pokégear 3.0',ni:'Pokégear 3.0',k:'item',img:16301,tx:'Lihat 7 kartu teratas Deck, ambil 1 Supporter di antaranya ke tangan, kocok sisanya ke Deck.'},
+zero:{n:'Area Zero Underdepths',ni:'Gua Besar Zero',k:'stadium',bench8:1,img:14372,mark:'H',tx:'Pemain yang punya Pokémon Terastal di Arena boleh punya 8 Pokémon di Bench. Jika Stadium ini hilang atau Terastal-nya tidak ada lagi, buang Bench hingga 5 (pemilik Stadium lebih dulu).'},
+genergy:{n:'Basic Grass Energy',ni:'Energi Dasar Rumput',k:'energy',t:'G',img:14507,tx:'Energi Dasar tipe Rumput.'},
+wenergy:{n:'Basic Water Energy',ni:'Energi Dasar Air',k:'energy',t:'W',img:14668,tx:'Energi Dasar tipe Air.'},
+lenergy:{n:'Basic Lightning Energy',ni:'Energi Dasar Listrik',k:'energy',t:'L',img:14522,tx:'Energi Dasar tipe Listrik.'}
 };
-const TYPES={D:['Kegelapan','#3b2f5c'],P:['Psikis','#a855f7'],R:['Api','#ef4444'],C:['Normal','#94a3b8'],G:['Rumput','#22c55e'],F:['Bertarung','#b45309'],W:['Air','#0ea5e9']};
-const CLUSTERS=[['Pokémon',c=>c.k==='pokemon'],['Trainer — Supporter',c=>c.k==='supporter'],['Trainer — Item',c=>c.k==='item'&&!c.ace],['ACE SPEC',c=>!!c.ace],['Pokémon Tool',c=>c.k==='tool'],['Energy',c=>c.k==='energy'||c.k==='senergy']];
+const TYPES={D:['Kegelapan','#3b2f5c'],P:['Psikis','#a855f7'],R:['Api','#ef4444'],C:['Normal','#94a3b8'],G:['Rumput','#22c55e'],F:['Bertarung','#b45309'],W:['Air','#0ea5e9'],L:['Listrik','#eab308']};
+const CLUSTERS=[['Pokémon',c=>c.k==='pokemon'],['Trainer — Supporter',c=>c.k==='supporter'],['Trainer — Item',c=>c.k==='item'&&!c.ace],['ACE SPEC',c=>!!c.ace],['Pokémon Tool',c=>c.k==='tool'],['Stadium',c=>c.k==='stadium'],['Energy',c=>c.k==='energy'||c.k==='senergy']];
 const USER_DECK={cinderace:2,munkidori:2,carvanha:4,sharpedo:3,fezan:1,pecharunt:1,toxel:3,toxtricity:3,minccino:1,cinccino:1,poffin:4,eretrieval:1,stretcher:2,pad:2,prime:1,redcard:1,ultra:4,boss:2,hilda:2,iris:2,lillie:4,balloon:2,helmet:2,prism:1,denergy:9};
+const TERA_DECK={terapagos:4,hoothoot:4,noctowl:4,fanrotom:2,fezan:1,poffin:4,ultra:4,pokegear:2,pad:2,stretcher:2,prime:1,boss:2,briar:2,lillie:4,hilda:2,iris:2,zero:3,balloon:2,genergy:4,wenergy:4,lenergy:4,prism:1};
 const FORMATS={std:{n:'Standard 2026-27 (H, I, J)',ok:c=>c.k==='energy'||!!c.std},exp:{n:'Expanded',ok:()=>true}};
 Object.values(CARDS).forEach(c=>{c.std=1});/* seluruh kartu pool sah di Standard 2026-27 (mark H/I/J atau reprint H+) dan Expanded */
 

@@ -90,13 +90,13 @@ function panelOpen(card,title){UI.panel=1;$('pimg').src=card?imgOf(card):'';$('p
 function panelClose(){UI.panel=null;$('panel').classList.remove('on','look');$('pback').style.display='none';hud()}
 $('p-look').onclick=()=>{$('panel').classList.add('look');$('pback').style.display='block'};$('pback').onclick=()=>{$('panel').classList.remove('look');$('pback').style.display='none'};
 function panelPick(o){return new Promise(res=>{
- const{cards,min=0,max,card,title,cost}=o,sel=new Set();panelOpen(card,title+(max>1?` (maks ${max})`:''));
+ const{cards,min=0,max,card,title,cost}=o,can=o.pick||(()=>true),nPick=cards.filter(can).length,sel=new Set();panelOpen(card,title+(max>1?` (maks ${max})`:''));
  const car=$('pcar');if(!cards.length)car.innerHTML='<div class="empty">Tidak ada kartu yang cocok.</div>';
  const done=$('p-done'),cancel=$('p-cancel');done.style.display='';const upd=()=>{const ok=sel.size>=min&&sel.size<=max;done.disabled=!ok;done.textContent=cost?`Buang ${sel.size}/${min}`:(sel.size?`Ambil ${sel.size} kartu`:(min?'Pilih kartu':'Selesai (tanpa memilih)'))};
- cards.forEach(c=>{const d=document.createElement('div');d.className='cc';d.innerHTML=`<img src="${imgOf(c)}" alt="${cname(c)}">`;d.onclick=()=>{if(sel.has(c)){sel.delete(c);d.classList.remove('sel')}else if(sel.size<max){sel.add(c);d.classList.add('sel')}else if(max===1){car.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));sel.clear();sel.add(c);d.classList.add('sel')}upd()};car.append(d)});
+ cards.forEach(c=>{const d=document.createElement('div');d.className='cc';d.innerHTML=`<img src="${imgOf(c)}" alt="${cname(c)}">`;if(!can(c)){d.style.opacity=.4;d.title='Tidak bisa dipilih';d.setAttribute('aria-disabled','true');car.append(d);return}d.onclick=()=>{if(sel.has(c)){sel.delete(c);d.classList.remove('sel')}else if(sel.size<max){sel.add(c);d.classList.add('sel')}else if(max===1){car.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));sel.clear();sel.add(c);d.classList.add('sel')}upd()};car.append(d)});
  if(cost){cancel.style.display='';cancel.onclick=()=>{panelClose();res(null)}}
  done.onclick=async()=>{
-  if(!cost&&sel.size<max&&cards.length>sel.size){const v=await dlg(`<h2>Ambil lebih sedikit?</h2><p>Kamu baru memilih <b>${sel.size}</b> kartu, padahal kartu ini membolehkan sampai <b>${max}</b> dan masih ada kartu yang cocok. Yakin lanjut dengan ${sel.size} kartu?</p>`,[['Ya, lanjut','y','atk'],['Kembali memilih','n','go']]);if(v!=='y')return}
+  if(!cost&&sel.size<max&&nPick>sel.size){const v=await dlg(`<h2>Ambil lebih sedikit?</h2><p>Kamu baru memilih <b>${sel.size}</b> kartu, padahal kartu ini membolehkan sampai <b>${max}</b> dan masih ada kartu yang cocok. Yakin lanjut dengan ${sel.size} kartu?</p>`,[['Ya, lanjut','y','atk'],['Kembali memilih','n','go']]);if(v!=='y')return}
   panelClose();res([...sel])};upd()})}
 function panelPay(o){return new Promise(res=>{
  const m=o.mon,sel=new Set();panelOpen(m.card,`Mundur ke ${cname(o.to.card)}: pilih ${o.cost} Energi untuk dibuang`);
@@ -117,6 +117,7 @@ const UIDEC={
  mon:o=>wantStart(o,['promote','retreat','gust'].includes(o.ctx)),
  cards:o=>panelPick({...o,max:o.max,min:o.min||0}),
  pay:o=>panelPay(o),
+ confirm:o=>dlg(`<h2>${o.title}</h2><p>${o.tx}</p>`,[['Pakai',true,'go'],['Lewati',false,'ghost']]),
  num:async o=>dlg(`<h2>${o.title}</h2>`,Array.from({length:o.max-o.min+1},(_,i)=>[String(o.min+i),o.min+i])),
  moveDmg:async o=>{
   const src=await wantStart({title:'Pilih Pokémonmu yang damage counter-nya mau dipindah',mons:o.srcs,sd:'p',ctx:'target',cancel:true},false);
@@ -146,6 +147,9 @@ Object.assign(FX,{
  announce:async o=>{const c=o.mon.card;$('ann2').innerHTML=`<img src="${imgOf(c)}" alt=""><div><small>${o.sd==='p'?'Kamu':'Bot'} • ${o.kind}</small><b>${o.name}</b><span>${cname(c)}${o.tx?' — '+o.tx:''}</span></div>`;{const g=M.get(o.mon.id);if(g)g.userData.pop=.6}$('ann2').classList.add('on');await sleep(3000);$('ann2').classList.remove('on')},
  revealPrizes:async(sd,ch)=>{if(sd!=='p'){await sleep(500);return}UI.reveal=new Set(ch.map(c=>c.id));sync();
   $('ann').innerHTML=`<div class="prz">${ch.map(c=>`<img src="${imgOf(c)}" alt="${cname(c)}">`).join('')}</div><b>Kartu Prize yang kamu ambil</b>`;$('ann').classList.add('on');await sleep(2400);$('ann').classList.remove('on');UI.reveal=null;sync();await sleep(250)},
+ reveal:async(sd,cards,src)=>{if(sd==='p')return;$('ann').innerHTML=`<div class="prz">${cards.map(c=>`<img src="${imgOf(c)}" alt="${cname(c)}" style="max-width:calc((100vw - 32px)/${cards.length} - 14px);height:auto;max-height:min(52dvh,460px)">`).join('')}</div><b>Bot memperlihatkan kartu (${cname(src)})</b>`;
+  $('ann').querySelectorAll('img').forEach((im,i)=>im.animate([{transform:'rotateY(90deg) scale(.6)',opacity:0},{transform:'rotateY(0) scale(1)',opacity:1}],{duration:450,delay:i*180,easing:'ease-out',fill:'backwards'}));
+  $('ann').classList.add('on');await sleep(1400+SPD[UI.si][1]+cards.length*180);$('ann').classList.remove('on');await sleep(250)},
  toolspot:async(tool,sd)=>{const g=M.get(tool.id);if(g){ring(g.position.x,g.position.z,0xfcd34d);burst(g.position.x,g.position.z,0xfff1a8,30,1.6);g.userData.pop=.9;g.userData.fl=.8;g.userData.glow=1}say(`${cname(tool)} aktif: penyerang terkena damage balik`,2600,'good');await sleep(1500)},
  ability:async m=>{const g=M.get(m.id);if(g){ring(g.position.x,g.position.z,0xa78bfa);g.userData.pop=.5}await sleep(450)},
  flip:(sd,heads,why)=>new Promise(res=>{say(`🪙 ${why}...`,1800);COIN.visible=true;CS={t0:performance.now(),D:1500,end:(8+(heads?0:1))*Math.PI,res:()=>setTimeout(()=>{COIN.visible=false;CS=null;res()},650),done:0,fast:1}}),
@@ -306,6 +310,7 @@ function loop(t){
   const o=OV.get(id);if(o){o.g.position.set(g.position.x,g.position.y+.045,g.position.z);o.g.scale.setScalar(g.scale.x)}
   if(T.zone==='hand'){const q=PX.get(id);if(q){q.position.z=T.z-((UI.handUp&&!UI.drag)?((1-LAY.hvis)*1.4*LAY.hs+.3):0);q.updateMatrixWorld()}}}
  updHp();turnUpd(s,now);cfUpdate(s);
+ for(const k in AURA_M)AURA_M[k].opacity=.75+Math.sin(s*3)*.25;
  {const ids=UI.abl||[];ABG.forEach((m,i)=>{const it=ids[i]!==undefined&&LI.get(ids[i]);if(!it){m.visible=false;return}m.visible=true;m.position.set(it.x,.7+Math.sin(s*4+i)*.05,it.z+.5*it.s);m.scale.set(.42*(1+Math.sin(s*5)*.06),.42*(1+Math.sin(s*5)*.06),1)})}
  ZH.visible=false;
  const dzv=!!(UI.drag&&UI.drag.dz);DZ.visible=dzv;if(dzv){DZ.material.color.setHex(UI.drag.dzc||0x4dff88);DZ.material.opacity=.75+Math.sin(s*7)*.25}
