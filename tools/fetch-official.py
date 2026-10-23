@@ -1,6 +1,7 @@
-# usage: python3 -I tools/fetch-official.py <ids.txt> <out.jsonl> [delaySec]
+# usage: python3 -I tools/fetch-official.py <ids.txt | folder-html> <out.jsonl> [jeda min-max detik, default 1.5-3.5]
+# folder-html: halaman detail yang disimpan manual (Cmd+S "HTML Only"), nama file memuat id, mis. 13622.html
 # Ambil teks resmi kartu dari asia.pokemon-card.com/id; bisa dilanjutkan (id yang sudah ada di out dilewati).
-import html, json, re, sys, time, urllib.request, urllib.error
+import glob, html, json, os, random, re, sys, time, urllib.request, urllib.error
 
 URL = 'https://asia.pokemon-card.com/id/card-search/detail/%d/'
 
@@ -50,6 +51,8 @@ def fetch(id):
         try:
             req = urllib.request.Request(URL % id, headers={'User-Agent': 'Mozilla/5.0 (personal card index)'})
             with urllib.request.urlopen(req, timeout=30) as r:
+                if r.geturl().endswith('/card-search/list/'):  # id tidak ada di situs
+                    return ''
                 if r.geturl() != URL % id:  # server membelokkan ke beranda = dibatasi, bukan kartu kosong
                     raise IOError('dialihkan ke ' + r.geturl())
                 return r.read().decode('utf-8', 'replace')
@@ -66,8 +69,17 @@ def fetch(id):
 
 def main():
     ids_path, out_path = sys.argv[1], sys.argv[2]
-    delay = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
-    ids = [int(x) for x in open(ids_path).read().split()]
+    lo, _, hi = (sys.argv[3] if len(sys.argv) > 3 else '1.5-3.5').partition('-')  # jeda acak "min-max" detik
+    lo, hi = float(lo), float(hi or lo)
+    pages = {}  # id -> isi HTML yang disimpan manual, kalau argumen pertama folder
+    if os.path.isdir(ids_path):
+        for f in glob.glob(os.path.join(ids_path, '*.htm*')):
+            m = re.search(r'\d+', os.path.basename(f))
+            if m:
+                pages[int(m.group())] = open(f, encoding='utf-8', errors='replace').read()
+        ids = sorted(pages)
+    else:
+        ids = [int(x) for x in open(ids_path).read().split()]
     try:
         done = {json.loads(l)['id'] for l in open(out_path, encoding='utf-8') if l.strip()}
     except FileNotFoundError:
@@ -76,12 +88,20 @@ def main():
     print('%d sudah, %d sisa' % (len(done), len(todo)), flush=True)
     with open(out_path, 'a', encoding='utf-8') as out:
         for n, id in enumerate(todo, 1):
+            if pages:
+                c = parse(id, pages[id])
+                if not c:  # tersimpan beranda, bukan kartu: lewati supaya bisa diulang
+                    print('id %d: bukan halaman kartu, dilewati' % id, file=sys.stderr)
+                    continue
+                out.write(json.dumps(c, ensure_ascii=False) + '\n')
+                continue
             c = parse(id, fetch(id)) or {'id': id, 'missing': True}
             out.write(json.dumps(c, ensure_ascii=False) + '\n')
             out.flush()
-            if n % 200 == 0:
-                print('%d/%d' % (n, len(todo)), flush=True)
-            time.sleep(delay)
+            if n % 50 == 0:
+                print('%d/%d, istirahat 20s' % (n, len(todo)), flush=True)
+                time.sleep(20)
+            time.sleep(random.uniform(lo, hi))
 
 if __name__ == '__main__':
     main()

@@ -1,5 +1,10 @@
 # ZIP aset asli (456 MB) melebihi batas 100 MB per file di GitHub; salin kartu yang dipakai ke assets/cards/
 assets/*.zip
 .DS_Store
-tools/card-ocr.tsv
-tools/card-official.jsonl
+tools/
+tests/
+README.md
+__pycache__/
+graphify-out/
+CLAUDE.md
+.claude/
