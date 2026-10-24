@@ -188,8 +188,8 @@ function lay(){
  return L}
 /* ---------- VFX ---------- */
 const FXL=[],shufT={p:0,o:0};
-function burst(x,z,col,n=40,up=2.2){const geo=new THREE.BufferGeometry(),pos=new Float32Array(n*3),vel=[];for(let i=0;i<n;i++){pos[i*3]=x;pos[i*3+1]=.5;pos[i*3+2]=z;const a=Math.random()*6.28,r=Math.random()*1.6;vel.push([Math.cos(a)*r,Math.random()*up+.6,Math.sin(a)*r])}
- geo.setAttribute('position',new THREE.BufferAttribute(pos,3));const mt=new THREE.PointsMaterial({size:.16,color:col,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}),o=new THREE.Points(geo,mt);scene.add(o);
+function burst(x,z,col,n=40,up=2.2,sz=.16){const geo=new THREE.BufferGeometry(),pos=new Float32Array(n*3),vel=[];for(let i=0;i<n;i++){pos[i*3]=x;pos[i*3+1]=.5;pos[i*3+2]=z;const a=Math.random()*6.28,r=Math.random()*1.6;vel.push([Math.cos(a)*r,Math.random()*up+.6,Math.sin(a)*r])}
+ geo.setAttribute('position',new THREE.BufferAttribute(pos,3));const mt=new THREE.PointsMaterial({size:sz,color:col,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}),o=new THREE.Points(geo,mt);scene.add(o);
  FXL.push({o,t0:performance.now(),dur:1100,upd(p){const q=geo.attributes.position;for(let i=0;i<n;i++){q.array[i*3]+=vel[i][0]*.016;q.array[i*3+1]+=vel[i][1]*.016-.02*p;q.array[i*3+2]+=vel[i][2]*.016}q.needsUpdate=true;mt.opacity=1-p}})}
 function ring(x,z,col){const r=new THREE.Mesh(new THREE.RingGeometry(.55,.7,40),new THREE.MeshBasicMaterial({color:col,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));r.rotation.x=-Math.PI/2;r.position.set(x,.2,z);scene.add(r);
  FXL.push({o:r,t0:performance.now(),dur:900,upd(p){r.scale.setScalar(.6+p*3.2);r.material.opacity=1-p}})}

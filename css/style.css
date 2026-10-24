@@ -68,11 +68,14 @@ body.bt .hud{display:flex}#hudt{top:calc(6px + env(safe-area-inset-top,0px));rig
 .bar{height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#38bdf8,#22c55e)}
 .chk{font-size:12px;line-height:1.5}.chk .ok{color:#15803d;font-weight:800}.chk .no{color:#b91c1c;font-weight:800}.chk .wn{color:#b45309}
 @media (max-width:760px){.dbmain{flex-direction:column}#db-side{width:100%;max-height:34dvh}}
-@media (prefers-reduced-motion:reduce){#ann img{animation-duration:.01s}.dmg,#atkb.on{animation:none}}
+@media (prefers-reduced-motion:reduce){#ann img{animation-duration:.01s}.dmg,#atkb.on,#abt.on{animation:none}}
 
-#ann2{position:fixed;left:50%;top:14%;transform:translateX(-50%);display:none;align-items:center;gap:12px;z-index:26;pointer-events:none;background:linear-gradient(90deg,#1d4ed8e6,#2563ebe6);border:2px solid #fcd34d;border-radius:16px;padding:10px 16px;max-width:min(92vw,620px);color:#fff;box-shadow:0 10px 30px #000a}
-#ann2.on{display:flex;animation:pop .35s}#ann2 img{height:min(24dvh,200px);border-radius:8px}#ann2 div{display:flex;flex-direction:column;gap:3px;font-size:12px;line-height:1.4}#ann2 b{font-size:20px}#ann2 small{opacity:.85;font-weight:800}
-@media (max-width:760px){#ann2{top:10%;flex-direction:column;text-align:center}#ann2 img{height:18dvh}}
+/* label Ability ala Pocket: menempel di atas kartu selama efeknya berjalan */
+#abt{position:fixed;z-index:16;transform:translate(-50%,-100%);display:none;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
+#abt.on{display:flex;animation:abt .3s ease-out}@keyframes abt{from{opacity:0;transform:translate(-50%,-60%) scale(.8)}}
+#abt b{display:flex;align-items:center;gap:8px;white-space:nowrap;background:linear-gradient(90deg,#fde047,#facc15);color:#1e293b;font-weight:900;font-size:14px;padding:3px 12px 3px 4px;border-radius:4px;box-shadow:0 3px 10px #0005}
+#abt em{font-style:italic;background:#dc2626;color:#fff;font-size:11px;padding:2px 10px;border-radius:3px;transform:skewX(-12deg)}
+#abt i{font-style:normal;font-size:11px;line-height:1.4;max-width:min(70vw,300px);background:#0f2a43e6;color:#fff;padding:5px 9px;border-radius:8px;text-align:center}
 
 #turn{position:fixed;left:0;right:0;top:34%;display:none;text-align:center;z-index:27;pointer-events:none;font:900 clamp(34px,9vw,68px) ui-rounded,system-ui,sans-serif;letter-spacing:.02em;color:#fff;-webkit-text-stroke:2px #0f2a43;paint-order:stroke fill;text-shadow:0 6px 30px #000a}
 #turn.on{display:block;animation:turnin 3s forwards}#turn.p{background:linear-gradient(90deg,transparent,#f59e0bcc 30%,#f59e0bcc 70%,transparent);padding:10px 0}#turn.o{background:linear-gradient(90deg,transparent,#be185dcc 30%,#7c3aedcc 70%,transparent);padding:10px 0}

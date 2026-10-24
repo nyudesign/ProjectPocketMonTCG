@@ -152,13 +152,13 @@ function actBasic(sd,c){const w=whyBasic(sd);if(w)return w;const S=G[sd];rmHand(
 function actEnergy(sd,c,m){const w=whyEnergy(sd);if(w)return w;const S=G[sd];rmHand(S,c);m.en.push(c);S.en=1;log(`${who(sd)} memasang ${cname(c)} ke ${cname(m.card)}`);fx('sync');fx('energy',m,c)}
 function actTool(sd,c,m){const w=whyTool(sd,c,m);if(w)return w;const S=G[sd];rmHand(S,c);m.tool=c;log(`${who(sd)} memasang ${cname(c)} ke ${cname(m.card)}`);fx('sync')}
 async function actEvolve(sd,c,m){const w=whyEvolve(sd,c,m);if(w)return w;const S=G[sd];rmHand(S,c);m.under.push(m.card);m.card=c;m.evo=S.tn;m.sp=null;m.poison=0;m.burn=0;log(`✨ ${who(sd)} mengevolusikan ke ${cname(c)}`);fx('evolve',m.id);fx('sync');
- if(c.ab&&c.ab.key==='jewel'&&inPlay(S).some(x=>x.card.tera)&&await ask(sd,'confirm',{title:`Pakai Ability ${c.ab.n}?`,tx:c.ab.tx,card:c})){log(`${who(sd)} memakai Ability ${c.ab.n} (${cname(c)})`);await fx('announce',{mon:m,name:c.ab.n,tx:c.ab.tx,sd,kind:'Ability'});await AB.jewel.run(sd,m)}}
+ if(c.ab&&c.ab.key==='jewel'&&inPlay(S).some(x=>x.card.tera)&&await ask(sd,'confirm',{title:`Pakai Ability ${c.ab.n}?`,tx:c.ab.tx,card:c})){log(`${who(sd)} memakai Ability ${c.ab.n} (${cname(c)})`);await fx('announce',{mon:m,name:c.ab.n,tx:c.ab.tx,sd,kind:'Ability'});await AB.jewel.run(sd,m);fx('abend')}}
 async function actTrainer(sd,c){const w=whyTrainer(sd,c);if(w)return w;const S=G[sd];rmHand(S,c);G.limbo=c;fx('sync');
  log(`${who(sd)} memakai ${cname(c)}`);await fx('playcard',c,sd);
  const r=await(EFF[c.key]||EFF[c.k])(sd,c);G.limbo=null;
  if(r==='cancel'){S.hand.push(c);log('Dibatalkan');await fx('endcard',c,sd,true);return}
  if(c.k==='supporter')S.sup=1;if(c.k!=='stadium')S.discard.push(c);await fx('endcard',c,sd,false);if(c.k==='stadium')await enforceBoth(G.stadOld)}
-async function actAbility(sd,m){const w=abWhy(sd,m);if(w)return w;log(`${who(sd)} memakai Ability ${m.card.ab.n} (${cname(m.card)})`);await fx('announce',{mon:m,name:m.card.ab.n,tx:m.card.ab.tx,sd,kind:'Ability'});await fx('ability',m);const rr_=await AB[m.card.ab.key].run(sd,m);if(rr_==='cancel')log('Ability dibatalkan')}
+async function actAbility(sd,m){const w=abWhy(sd,m);if(w)return w;log(`${who(sd)} memakai Ability ${m.card.ab.n} (${cname(m.card)})`);await fx('announce',{mon:m,name:m.card.ab.n,tx:m.card.ab.tx,sd,kind:'Ability'});const rr_=await AB[m.card.ab.key].run(sd,m);fx('abend');if(rr_==='cancel')log('Ability dibatalkan')}
 async function actRetreat(sd){const w=whyRetreat(sd);if(w)return w;const S=G[sd],a=S.active;
  const m=await ask(sd,'mon',{title:'Seret Pokémon Bench ke Active untuk mundur',mons:S.bench,ctx:'retreat',sd,cancel:true,pref:x=>afford(x,x.card.atk[0].cost)?100+hp(x):hp(x)});if(!m)return;
  const cost=rcost(a);let pay=[];

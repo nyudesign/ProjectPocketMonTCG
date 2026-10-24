@@ -39,7 +39,7 @@ const SPD=[['Pelan',1900],['Normal',1100],['Cepat',450]];FX.pause=()=>sleep(SPD[
 $('b-menu').onclick=async()=>{if(!G)return;const v=await dlg('<h2>☰ Menu</h2>',[['📜 Battle Log','log','go'],[`⏱ Kecepatan Bot: ${SPD[UI.si][0]} (ketuk untuk ganti)`,'spd','ghost'],[`Konfirmasi akhiri giliran: ${lsGet('ptcg.confirmEnd','1')==='1'?'Aktif':'Mati'}`,'ce','ghost'],['📖 Aturan main','rules','ghost'],['🏳️ Menyerah','conc','atk'],['Tutup',0,'ghost']]);
  if(v==='log')$('log').classList.add('on');else if(v==='spd'){UI.si=(UI.si+1)%3;say('Kecepatan Bot: '+SPD[UI.si][0],1600)}else if(v==='ce'){const on=lsGet('ptcg.confirmEnd','1')==='1';lsSet('ptcg.confirmEnd',on?'0':'1');say('Konfirmasi akhiri giliran: '+(on?'Mati':'Aktif'),1800)}else if(v==='rules')showRules();else if(v==='conc')askConcede()};
 async function askConcede(){const v=await dlg('<h2>🏳️ Menyerah?</h2><p>Kalau kamu menyerah, pertandingan ini dihitung <b>kalah</b>. Apakah kamu yakin?</p>',[['Ya, saya menyerah','y','atk'],['Lanjut bermain','n','go']]);if(v==='y'&&G&&!G.over){closeAll();concede('p')}}
-function closeAll(){UI.attach=null;UI.reveal=null;$('cfx').style.display='none';UI.want=null;UI.stage=null;UI.limbo=null;UI.drag=null;DCS.forEach(m=>m.visible=false);pickHide();['panel','zoom','disc','dlg'].forEach(i=>$(i).classList.remove('on'));UI.panel=null;$('pback').style.display='none';$('ann').classList.remove('on');$('ann2').classList.remove('on');$('turn').className=''}
+function closeAll(){UI.attach=null;UI.reveal=null;$('cfx').style.display='none';UI.want=null;UI.stage=null;UI.limbo=null;UI.drag=null;DCS.forEach(m=>m.visible=false);pickHide();['panel','zoom','disc','dlg'].forEach(i=>$(i).classList.remove('on'));UI.panel=null;$('pback').style.display='none';$('ann').classList.remove('on');$('abt').classList.remove('on');$('turn').className=''}
 /* --- Log --- */
 FX.log=t=>{const d=document.createElement('div');if(t.startsWith('—'))d.className='t';d.textContent=t;const b=$('log-b');b.append(d);b.scrollTop=1e9;if(!t.startsWith('—')&&!t.startsWith('Kamu'))say(t,2400,'bot')};
 FX.sync=()=>sync();
@@ -136,6 +136,8 @@ const UIDEC={
  turn:async()=>{}};
 DEC.p=UIDEC;DEC.o={...BOT,turn:s=>botTurn(s)};
 /* --- Efek visual / FX dari mesin --- */
+const cardFlash=g=>{const m=new THREE.Mesh(GEO,new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));m.position.copy(g.position);m.position.y+=.06;m.rotation.copy(g.rotation);m.scale.copy(g.scale);scene.add(m);
+ FXL.push({o:m,t0:performance.now(),dur:750,upd(p){m.material.opacity=p<.18?p/.18:1-(p-.18)/.82}})};
 const monMeshes=m=>[m.id,...m.en.map(e=>e.id),m.tool&&m.tool.id].map(i=>M.get(i)).filter(Boolean);
 Object.assign(FX,{
  shuffle:async sd=>{shufT[sd]=performance.now()+800;await sleep(820)},
@@ -156,14 +158,19 @@ Object.assign(FX,{
  evolve:id=>{const g=M.get(id);if(!g)return;const p=g.position;ring(p.x,p.z,0xfcd34d);burst(p.x,p.z,0xfff1a8,70,3);burst(p.x,p.z,0x7dd3fc,30,2);g.userData.pop=1;g.userData.fl=1;g.userData.glow=1},
  announce:async o=>{const c=o.mon.card;
   if(o.kind==='Jurus'){const b=$('atkb'),gs=monMeshes(o.mon),ms=o.tx?2600:1500;b.innerHTML=`<b>${o.name}</b><small>${cname(c)}</small>${o.tx?`<i>${o.tx}</i>`:''}`;b.style.animationDuration=ms+'ms';
-   gs.forEach(m=>m.userData.lift=1);b.classList.remove('on');void b.offsetWidth;b.classList.add('on');await sleep(ms);b.classList.remove('on');gs.forEach(m=>m.userData.lift=0);return}$('ann2').innerHTML=`<img src="${imgOf(c)}" alt=""><div><small>${o.sd==='p'?'Kamu':'Bot'} • ${o.kind}</small><b>${o.name}</b><span>${cname(c)}${o.tx?' — '+o.tx:''}</span></div>`;{const g=M.get(o.mon.id);if(g)g.userData.pop=.6}$('ann2').classList.add('on');await sleep(3000);$('ann2').classList.remove('on')},
+   gs.forEach(m=>m.userData.lift=1);b.classList.remove('on');void b.offsetWidth;b.classList.add('on');await sleep(ms);b.classList.remove('on');gs.forEach(m=>m.userData.lift=0);return}
+  /* Ability: kartu berkilat putih + percikan emas, label menempel di atas kartu sampai efeknya selesai (abend); teks hanya untuk Ability Bot */
+  const g=M.get(o.mon.id),t=$('abt');t.innerHTML=`<b><em>Ability</em>${o.name}</b>${o.sd==='o'&&o.tx?`<i>${o.tx}</i>`:''}`;
+  if(g){const p=g.position;cardFlash(g);ring(p.x,p.z,0xfcd34d);burst(p.x,p.z,0xfcd34d,90,3,.3);burst(p.x,p.z,0xffffff,30,2,.22);g.userData.pop=.6;
+   const v=p.clone().setZ(p.z-.9*g.scale.x).project(cam);t.style.left=(v.x+1)/2*innerWidth+'px';t.style.top=(1-v.y)/2*innerHeight+'px'}else{t.style.left='50%';t.style.top='16%'}
+  t.classList.remove('on');void t.offsetWidth;t.classList.add('on');await sleep(o.sd==='o'&&o.tx?2200:1100)},
+ abend:()=>$('abt').classList.remove('on'),
  revealPrizes:async(sd,ch)=>{if(sd!=='p'){await sleep(500);return}UI.reveal=new Set(ch.map(c=>c.id));sync();
   $('ann').innerHTML=`<div class="prz">${ch.map(c=>`<img src="${imgOf(c)}" alt="${cname(c)}">`).join('')}</div><b>Kartu Prize yang kamu ambil</b>`;$('ann').classList.add('on');await sleep(2400);$('ann').classList.remove('on');UI.reveal=null;sync();await sleep(250)},
  reveal:async(sd,cards,src)=>{if(sd==='p')return;$('ann').innerHTML=`<div class="prz">${cards.map(c=>`<img src="${imgOf(c)}" alt="${cname(c)}" style="max-width:calc((100vw - 32px)/${cards.length} - 14px);height:auto;max-height:min(52dvh,460px)">`).join('')}</div><b>Bot memperlihatkan kartu (${cname(src)})</b>`;
   $('ann').querySelectorAll('img').forEach((im,i)=>im.animate([{transform:'rotateY(90deg) scale(.6)',opacity:0},{transform:'rotateY(0) scale(1)',opacity:1}],{duration:450,delay:i*180,easing:'ease-out',fill:'backwards'}));
   $('ann').classList.add('on');await sleep(1400+SPD[UI.si][1]+cards.length*180);$('ann').classList.remove('on');await sleep(250)},
  toolspot:async(tool,sd)=>{const g=M.get(tool.id);if(g){ring(g.position.x,g.position.z,0xfcd34d);burst(g.position.x,g.position.z,0xfff1a8,30,1.6);g.userData.pop=.9;g.userData.fl=.8;g.userData.glow=1}say(`${cname(tool)} aktif: penyerang terkena damage balik`,2600,'good');await sleep(1500)},
- ability:async m=>{const g=M.get(m.id);if(g){ring(g.position.x,g.position.z,0xa78bfa);g.userData.pop=.5}await sleep(450)},
  flip:(sd,heads,why)=>new Promise(res=>{say(`🪙 ${why}...`,1800);COIN.visible=true;CS={t0:performance.now(),D:1500,end:(8+(heads?0:1))*Math.PI,res:()=>setTimeout(()=>{COIN.visible=false;CS=null;res()},650),done:0,fast:1}}),
  playcard:async(c,sd)=>{if(sd==='p'){panelOpen(c,`Kartu digunakan: ${cname(c)}. ${c.tx}`)}else{UI.limbo={c,sd,pos:'hidden'};sync();say(`Bot memakai ${cname(c)}`,4200,'bot');await cardFlyIn(c,sd);UI.limbo.pos='side';sync();await sleep(1100)}},
  endcard:async(c,sd,cancelled)=>{if(sd==='p'){if(!cancelled)await sleep(700);panelClose()}else{await sleep(800);UI.limbo=null;sync()}},
