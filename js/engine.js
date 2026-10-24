@@ -106,7 +106,7 @@ const AB={
  upper:{why:(sd,m)=>m.used.upper?'Sudah dipakai giliran ini':!G[sd].deck.some(c=>c.k==='energy'&&c.t==='D')?'Tidak ada Energi Dasar Kegelapan di Deck':!G[sd].bench.some(x=>x.card.type==='D')?'Tidak ada Pokémon Kegelapan di Bench':'',
   async run(sd,m){const S=G[sd];m.used.upper=1;const e=S.deck.find(c=>c.k==='energy'&&c.t==='D');
    const t=await ask(sd,'mon',{title:'Pilih Pokémon Kegelapan di Bench penerima Energi',mons:S.bench.filter(x=>x.card.type==='D'),ctx:'target',sd,pref:x=>x.card.hp-x.dmg});
-   S.deck.splice(S.deck.indexOf(e),1);t.en.push(e);await shuffleDeck(sd);t.dmg+=20;fx('hit',t.id,20);log(`${who(sd)} memasang Energi ke ${cname(t.card)} (+20 damage)`);await resolveKO()}}};
+   S.deck.splice(S.deck.indexOf(e),1);t.en.push(e);await shuffleDeck(sd);fx('energy',t,e);t.dmg+=20;fx('hit',t.id,20);log(`${who(sd)} memasang Energi ke ${cname(t.card)} (+20 damage)`);await resolveKO()}}};
 const isTrainer=x=>['item','supporter','tool','stadium'].includes(x.k);
 /* kartu ke tangan yang teksnya "perlihatkan ke lawan" */
 async function toHand(sd,src,r){r.forEach(x=>G[sd].hand.push(x));if(r.length){log(`${who(sd)} memperlihatkan ${r.map(cname).join(', ')}`);await fx('reveal',sd,r,src)}}
@@ -149,7 +149,7 @@ const EFF={
 async function act(fn){if(!G||G.busy||G.over)return;G.busy=1;try{return await fn()}finally{G.busy=0;fx('sync')}}
 const rmHand=(S,c)=>S.hand.splice(S.hand.indexOf(c),1);
 function actBasic(sd,c){const w=whyBasic(sd);if(w)return w;const S=G[sd];rmHand(S,c);S.bench.push(mkMon(c,sd));log(`${who(sd)} menaruh ${cname(c)} ke Bench`);fx('sync')}
-function actEnergy(sd,c,m){const w=whyEnergy(sd);if(w)return w;const S=G[sd];rmHand(S,c);m.en.push(c);S.en=1;log(`${who(sd)} memasang ${cname(c)} ke ${cname(m.card)}`);fx('sync')}
+function actEnergy(sd,c,m){const w=whyEnergy(sd);if(w)return w;const S=G[sd];rmHand(S,c);m.en.push(c);S.en=1;log(`${who(sd)} memasang ${cname(c)} ke ${cname(m.card)}`);fx('sync');fx('energy',m,c)}
 function actTool(sd,c,m){const w=whyTool(sd,c,m);if(w)return w;const S=G[sd];rmHand(S,c);m.tool=c;log(`${who(sd)} memasang ${cname(c)} ke ${cname(m.card)}`);fx('sync')}
 async function actEvolve(sd,c,m){const w=whyEvolve(sd,c,m);if(w)return w;const S=G[sd];rmHand(S,c);m.under.push(m.card);m.card=c;m.evo=S.tn;m.sp=null;m.poison=0;m.burn=0;log(`✨ ${who(sd)} mengevolusikan ke ${cname(c)}`);fx('evolve',m.id);fx('sync');
  if(c.ab&&c.ab.key==='jewel'&&inPlay(S).some(x=>x.card.tera)&&await ask(sd,'confirm',{title:`Pakai Ability ${c.ab.n}?`,tx:c.ab.tx,card:c})){log(`${who(sd)} memakai Ability ${c.ab.n} (${cname(c)})`);await fx('announce',{mon:m,name:c.ab.n,tx:c.ab.tx,sd,kind:'Ability'});await AB.jewel.run(sd,m)}}
@@ -186,7 +186,7 @@ async function actAttack(sd,k){const w=whyAttack(sd,k);if(w)return w;
   case'draw2':{const n=draw(sd,2);log(`${who(sd)} mengambil ${n} kartu`);break}
   case'call':{const r=await pickDeck(sd,a.card,{title:'Pilih s/d 2 Pokémon Basic untuk Bench',pred:isBasic,max:Math.min(2,bmax(sd)-S.bench.length),pref:x=>x.hp});r.forEach(x=>S.bench.push(mkMon(x,sd)));log(`${who(sd)} memanggil ${r.length} Pokémon ke Bench`);await shuffleDeck(sd);break}
   case'turbo':{let r=await pickDeck(sd,a.card,{title:'Ambil s/d 3 Energi Dasar dari Deck',pred:x=>x.k==='energy',max:S.bench.length?3:0,pref:()=>1});
-   if(r.length){await ask(sd,'attachEnergies',{energies:r,targets:S.bench,card:a.card,apply:(en,t)=>{t.en.push(en);fx('sync')}});
+   if(r.length){await ask(sd,'attachEnergies',{energies:r,targets:S.bench,card:a.card,apply:(en,t)=>{t.en.push(en);fx('sync');fx('energy',t,en)}});
     for(const en of r)if(!S.bench.some(b=>b.en.includes(en)))S.bench[0].en.push(en)}
    if(r.length)log(`${who(sd)} memasang ${r.length} Energi ke Bench`);await shuffleDeck(sd);break}}
  fx('sync');await sleep(0);await resolveKO();G.atk=null;if(!G.over)finishTurn()}

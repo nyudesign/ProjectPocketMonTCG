@@ -136,15 +136,27 @@ const UIDEC={
  turn:async()=>{}};
 DEC.p=UIDEC;DEC.o={...BOT,turn:s=>botTurn(s)};
 /* --- Efek visual / FX dari mesin --- */
+const monMeshes=m=>[m.id,...m.en.map(e=>e.id),m.tool&&m.tool.id].map(i=>M.get(i)).filter(Boolean);
 Object.assign(FX,{
  shuffle:async sd=>{shufT[sd]=performance.now()+800;await sleep(820)},
  hit:(id,d,type)=>{const g=M.get(id);if(!g)return;g.userData.sh=1.2;g.userData.fl=1;const p=g.position,col=TYC[type];
   if(col){ring(p.x,p.z,col);burst(p.x,p.z,col,60,2.6);const f=$('flash');f.style.setProperty('--fc','#'+col.toString(16).padStart(6,'0'));f.classList.remove('on');void f.offsetWidth;f.classList.add('on')}
-  const v=p.clone().project(cam),e=document.createElement('div');e.className='pop big';e.textContent='-'+d;e.style.left=(v.x+1)/2*innerWidth+'px';e.style.top=(1-v.y)/2*innerHeight-30+'px';document.body.append(e);setTimeout(()=>e.remove(),1300)},
- lunge:async(id,sd,type)=>{const g=M.get(id);if(!g)return;const col=TYC[type]||0xffffff;ring(g.position.x,g.position.z,col);g.userData.pop=.5;g.userData.fl=.6;await sleep(500);g.userData.off.z=(sd==='p'?-1:1)*2.2;await sleep(260);g.userData.off.z=0;await sleep(380)},
+  const v=p.clone().project(cam),e=document.createElement('div');e.className='dmg';e.innerHTML=`<b>${d}</b>`;e.style.left=(v.x+1)/2*innerWidth+'px';e.style.top=(1-v.y)/2*innerHeight+'px';document.body.append(e);setTimeout(()=>e.remove(),1450)},
+ lunge:async(id,sd,type)=>{const g=M.get(id),a=G[sd].active;if(!g)return;const gs=a&&a.id===id?monMeshes(a):[g],col=TYC[type]||0xffffff,t=G[opp(sd)].active,tg=t&&M.get(t.id),dir=sd==='p'?-1:1,
+  set=(x,z,k)=>gs.forEach(m=>{const u=m.userData;u.off.x=x;u.off.z=z;u.dash=k;u.lift=0});
+  ring(g.position.x,g.position.z,col);g.userData.fl=.6;set(0,-dir*.45,0);await sleep(240);
+  set(tg?(tg.position.x-g.position.x)*.78:0,tg?(tg.position.z-g.position.z)*.78:dir*2.2,1);await sleep(190);
+  setTimeout(()=>{set(0,0,1);setTimeout(()=>gs.forEach(m=>m.userData.dash=0),400)},140)},
+ energy:async(m,e)=>{sync();const g=M.get(m.id),o=OV.get(m.id);if(!g||!o||!o.g.visible)return;o.g.updateMatrixWorld(true);
+  const k=e.key==='prism'?'prism':e.t,i=m.en.length<=4?m.en.indexOf(e):orbList(m).findIndex(x=>x[0]===k),sl=o.sub.children.find(c=>c.userData.slot===i);
+  const to=sl?sl.getWorldPosition(new THREE.Vector3()):g.position.clone(),fr=g.position.clone().setY(g.position.y+1),s1=g.scale.x,b=orbMesh(k);if(sl)sl.visible=false;b.rotation.x=-Math.PI/2;scene.add(b);
+  FXL.push({o:b,t0:performance.now(),dur:900,upd(p){const q=Math.min(1,p/.28),gr=1+2.6*(1-(1-q)**3)*(1+.22*Math.sin(q*Math.PI)),f=p<.45?0:(p-.45)/.55,ef=f*f*(3-2*f);b.position.lerpVectors(fr,to,ef);b.scale.setScalar(s1*(gr+(1-gr)*ef))}});
+  await sleep(900);if(sl)sl.visible=true;g.userData.pop=.35;ring(g.position.x,g.position.z,0x67e8f9);burst(to.x,to.z,AURAC[k]||0x67e8f9,24,1.2)},
  ko:async id=>{const g=M.get(id);if(g){g.userData.sh=1.5;g.userData.fl=1}await sleep(650)},
  evolve:id=>{const g=M.get(id);if(!g)return;const p=g.position;ring(p.x,p.z,0xfcd34d);burst(p.x,p.z,0xfff1a8,70,3);burst(p.x,p.z,0x7dd3fc,30,2);g.userData.pop=1;g.userData.fl=1;g.userData.glow=1},
- announce:async o=>{const c=o.mon.card;$('ann2').innerHTML=`<img src="${imgOf(c)}" alt=""><div><small>${o.sd==='p'?'Kamu':'Bot'} • ${o.kind}</small><b>${o.name}</b><span>${cname(c)}${o.tx?' — '+o.tx:''}</span></div>`;{const g=M.get(o.mon.id);if(g)g.userData.pop=.6}$('ann2').classList.add('on');await sleep(3000);$('ann2').classList.remove('on')},
+ announce:async o=>{const c=o.mon.card;
+  if(o.kind==='Jurus'){const b=$('atkb'),gs=monMeshes(o.mon),ms=o.tx?2600:1500;b.innerHTML=`<b>${o.name}</b><small>${cname(c)}</small>${o.tx?`<i>${o.tx}</i>`:''}`;b.style.animationDuration=ms+'ms';
+   gs.forEach(m=>m.userData.lift=1);b.classList.remove('on');void b.offsetWidth;b.classList.add('on');await sleep(ms);b.classList.remove('on');gs.forEach(m=>m.userData.lift=0);return}$('ann2').innerHTML=`<img src="${imgOf(c)}" alt=""><div><small>${o.sd==='p'?'Kamu':'Bot'} • ${o.kind}</small><b>${o.name}</b><span>${cname(c)}${o.tx?' — '+o.tx:''}</span></div>`;{const g=M.get(o.mon.id);if(g)g.userData.pop=.6}$('ann2').classList.add('on');await sleep(3000);$('ann2').classList.remove('on')},
  revealPrizes:async(sd,ch)=>{if(sd!=='p'){await sleep(500);return}UI.reveal=new Set(ch.map(c=>c.id));sync();
   $('ann').innerHTML=`<div class="prz">${ch.map(c=>`<img src="${imgOf(c)}" alt="${cname(c)}">`).join('')}</div><b>Kartu Prize yang kamu ambil</b>`;$('ann').classList.add('on');await sleep(2400);$('ann').classList.remove('on');UI.reveal=null;sync();await sleep(250)},
  reveal:async(sd,cards,src)=>{if(sd==='p')return;$('ann').innerHTML=`<div class="prz">${cards.map(c=>`<img src="${imgOf(c)}" alt="${cname(c)}" style="max-width:calc((100vw - 32px)/${cards.length} - 14px);height:auto;max-height:min(52dvh,460px)">`).join('')}</div><b>Bot memperlihatkan kartu (${cname(src)})</b>`;
@@ -299,8 +311,8 @@ function loop(t){
     if((Math.hypot(g.position.x-dx,g.position.z-dz)<.18&&g.rotation.x>1.2)||now-d.dieT>1600){scene.remove(g);M.delete(id)}}
    else{g.scale.multiplyScalar(.86);g.position.y+=.03;if(g.scale.x<.04){scene.remove(g);M.delete(id)}}
    continue}
-  const dr=UI.drag&&UI.drag.id===id,hv=hov===id&&T.zone==='hand',k=dr?.4:.17;
-  let tx=T.x+d.off.x,tz=T.z+d.off.z-(hv?(T.s*.55):0)-((UI.handUp&&!UI.drag&&T.zone==='hand')?((1-LAY.hvis)*1.4*LAY.hs+.3):0),ty=T.y+(hv?.9:0),ts=T.s*(1+d.pop*.25),rx=T.up?-Math.PI/2+(T.tilt||0)+(hv?.1:0):Math.PI/2;
+  const dr=UI.drag&&UI.drag.id===id,hv=hov===id&&T.zone==='hand',k=dr?.4:d.dash?.32:.17,lf=d.lift||0;
+  let tx=T.x+d.off.x,tz=T.z+d.off.z-(hv?(T.s*.55):0)-((UI.handUp&&!UI.drag&&T.zone==='hand')?((1-LAY.hvis)*1.4*LAY.hs+.3):0),ty=T.y+(hv?.9:0)+lf*1.1,ts=T.s*(1+d.pop*.25+lf*.12),rx=T.up?-Math.PI/2+(T.tilt||0)+(hv?.1:0):Math.PI/2;
   if(T.zone==='dk'&&shufT[T.sd]>t){const i=+id.slice(3);tx+=Math.sin(t/60+i*2)*.5;tz+=Math.cos(t/55+i)*.18;ty+=.12*Math.abs(Math.sin(t/90+i))}
   if(dr){tx=UI.drag.x;tz=UI.drag.z;ty=1.6;ts=1.2;rx=-Math.PI/2+.3}
   else if(UI.drag&&UI.drag.hi&&T.mon&&Math.abs(T.x-UI.drag.hi.x)<.01&&Math.abs(T.z-UI.drag.hi.z)<.01)ts*=1.07+Math.sin(s*8)*.015;
