@@ -138,6 +138,9 @@ DEC.p=UIDEC;DEC.o={...BOT,turn:s=>botTurn(s)};
 /* --- Efek visual / FX dari mesin --- */
 const cardFlash=g=>{const m=new THREE.Mesh(GEO,new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));m.position.copy(g.position);m.position.y+=.06;m.rotation.copy(g.rotation);m.scale.copy(g.scale);scene.add(m);
  FXL.push({o:m,t0:performance.now(),dur:750,upd(p){m.material.opacity=p<.18?p/.18:1-(p-.18)/.82}})};
+/* warna pita/label mengikuti bingkai kartu per tipe: [atas, bawah, teks] */
+const TYB={D:['#2f9ea3','#13585d','#fff'],C:['#f1f5f9','#b8c0cc','#1e293b'],P:['#c084fc','#7e22ce','#fff'],R:['#f87171','#b91c1c','#fff'],G:['#86efac','#15803d','#fff'],W:['#7dd3fc','#0369a1','#fff'],L:['#fde047','#eab308','#1e293b'],F:['#d6a26a','#92400e','#fff'],M:['#e2e8f0','#94a3b8','#1e293b'],N:['#e6c65a','#a07c1c','#fff']};
+const tyVars=(el,t)=>['--b1','--b2','--tt'].forEach((k,i)=>el.style.setProperty(k,(TYB[t]||TYB.C)[i]));
 const monMeshes=m=>[m.id,...m.en.map(e=>e.id),m.tool&&m.tool.id].map(i=>M.get(i)).filter(Boolean);
 Object.assign(FX,{
  shuffle:async sd=>{shufT[sd]=performance.now()+800;await sleep(820)},
@@ -157,10 +160,10 @@ Object.assign(FX,{
  ko:async id=>{const g=M.get(id);if(g){g.userData.sh=1.5;g.userData.fl=1}await sleep(650)},
  evolve:id=>{const g=M.get(id);if(!g)return;const p=g.position;ring(p.x,p.z,0xfcd34d);burst(p.x,p.z,0xfff1a8,70,3);burst(p.x,p.z,0x7dd3fc,30,2);g.userData.pop=1;g.userData.fl=1;g.userData.glow=1},
  announce:async o=>{const c=o.mon.card;
-  if(o.kind==='Jurus'){const b=$('atkb'),gs=monMeshes(o.mon),ms=o.tx?2600:1500;b.innerHTML=`<b>${o.name}</b><small>${cname(c)}</small>${o.tx?`<i>${o.tx}</i>`:''}`;b.style.animationDuration=ms+'ms';
+  if(o.kind==='Jurus'){const b=$('atkb'),gs=monMeshes(o.mon),ms=1500;b.innerHTML=`<b>${o.name}</b><small>${cname(c)}</small>`;tyVars(b,c.type);
    gs.forEach(m=>m.userData.lift=1);b.classList.remove('on');void b.offsetWidth;b.classList.add('on');await sleep(ms);b.classList.remove('on');gs.forEach(m=>m.userData.lift=0);return}
   /* Ability: kartu berkilat putih + percikan emas, label menempel di atas kartu sampai efeknya selesai (abend); teks hanya untuk Ability Bot */
-  const g=M.get(o.mon.id),t=$('abt');t.innerHTML=`<b><em>Ability</em>${o.name}</b>${o.sd==='o'&&o.tx?`<i>${o.tx}</i>`:''}`;
+  const g=M.get(o.mon.id),t=$('abt');t.innerHTML=`<b><em>Ability</em>${o.name}</b>${o.sd==='o'&&o.tx?`<i>${o.tx}</i>`:''}`;tyVars(t,c.type);
   if(g){const p=g.position;cardFlash(g);ring(p.x,p.z,0xfcd34d);burst(p.x,p.z,0xfcd34d,90,3,.3);burst(p.x,p.z,0xffffff,30,2,.22);g.userData.pop=.6;
    const v=p.clone().setZ(p.z-.9*g.scale.x).project(cam);t.style.left=(v.x+1)/2*innerWidth+'px';t.style.top=(1-v.y)/2*innerHeight+'px'}else{t.style.left='50%';t.style.top='16%'}
   t.classList.remove('on');void t.offsetWidth;t.classList.add('on');await sleep(o.sd==='o'&&o.tx?2200:1100)},

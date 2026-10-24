@@ -54,11 +54,10 @@ body.bt .hud{display:flex}#hudt{top:calc(6px + env(safe-area-inset-top,0px));rig
 .dmg b{position:relative;font:900 44px ui-rounded,system-ui;color:#fff;-webkit-text-stroke:3px #7c2d12;paint-order:stroke fill}
 @keyframes dmg{0%{transform:scale(.2) rotate(-25deg);opacity:0}14%{transform:scale(1.3) rotate(4deg);opacity:1}26%{transform:scale(1) rotate(0)}78%{transform:scale(1);opacity:1}100%{transform:translateY(-34px) scale(.85);opacity:0}}
 /* pita nama serangan ala Pocket */
-#atkb{position:fixed;left:-10vw;right:-10vw;top:44%;z-index:26;pointer-events:none;display:none;flex-direction:column;align-items:center;padding:10px 14vw 12px;background:linear-gradient(180deg,#fde047,#facc15 60%,#eab308);border-top:3px solid #fff9;border-bottom:8px solid #1e293b;box-shadow:0 10px 30px #0006;color:#fff;transform:rotate(-8deg)}
+#atkb{position:fixed;left:-10vw;right:-10vw;top:44%;z-index:26;pointer-events:none;display:none;flex-direction:column;align-items:center;padding:10px 14vw 12px;background:linear-gradient(180deg,var(--b1,#fde047),var(--b2,#eab308));border-top:3px solid #fff9;border-bottom:8px solid #1e293b;box-shadow:0 10px 30px #0006;color:#fff;transform:rotate(-8deg)}
 #atkb.on{display:flex;animation:atkb 1.5s cubic-bezier(.2,.8,.2,1) forwards}
 #atkb b{font:italic 900 clamp(34px,7vw,64px)/1.05 ui-rounded,system-ui;-webkit-text-stroke:3px #1e293b;paint-order:stroke fill}
-#atkb small{font-weight:800;font-size:14px;text-shadow:0 1px 3px #0009}
-#atkb i{font-style:normal;color:#1e293b;font-size:12px;font-weight:600;max-width:min(80vw,560px);text-align:center;margin-top:4px}
+#atkb small{font-weight:800;font-size:14px;color:var(--tt,#fff);text-shadow:0 1px 3px #0006}
 @keyframes atkb{0%{transform:rotate(-8deg) translateX(-110%)}15%{transform:rotate(-8deg) translateX(0)}85%{transform:rotate(-8deg) translateX(0);opacity:1}100%{transform:rotate(-8deg) translateX(110%);opacity:0}}
 #db{align-items:stretch;padding:8px;background:#e8f0f8}.dbtop{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:4px 0 8px}.dbtop input,.dbtop select{border:2px solid #cbd5e1;border-radius:10px;padding:8px;font:700 13px ui-rounded,system-ui;min-width:0;flex:1;background:#fff;color:var(--ink)}
 .dbmain{display:flex;gap:10px;flex:1;min-height:0;width:100%}#db-grid{flex:1;overflow:auto;padding-right:4px}#db-side{width:300px;background:#fff;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;overflow:auto}
@@ -73,7 +72,7 @@ body.bt .hud{display:flex}#hudt{top:calc(6px + env(safe-area-inset-top,0px));rig
 /* label Ability ala Pocket: menempel di atas kartu selama efeknya berjalan */
 #abt{position:fixed;z-index:16;transform:translate(-50%,-100%);display:none;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
 #abt.on{display:flex;animation:abt .3s ease-out}@keyframes abt{from{opacity:0;transform:translate(-50%,-60%) scale(.8)}}
-#abt b{display:flex;align-items:center;gap:8px;white-space:nowrap;background:linear-gradient(90deg,#fde047,#facc15);color:#1e293b;font-weight:900;font-size:14px;padding:3px 12px 3px 4px;border-radius:4px;box-shadow:0 3px 10px #0005}
+#abt b{display:flex;align-items:center;gap:8px;white-space:nowrap;background:linear-gradient(90deg,var(--b1,#fde047),var(--b2,#facc15));color:var(--tt,#1e293b);font-weight:900;font-size:14px;padding:3px 12px 3px 4px;border-radius:4px;box-shadow:0 3px 10px #0005}
 #abt em{font-style:italic;background:#dc2626;color:#fff;font-size:11px;padding:2px 10px;border-radius:3px;transform:skewX(-12deg)}
 #abt i{font-style:normal;font-size:11px;line-height:1.4;max-width:min(70vw,300px);background:#0f2a43e6;color:#fff;padding:5px 9px;border-radius:8px;text-align:center}
 
