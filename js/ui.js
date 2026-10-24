@@ -154,7 +154,7 @@ Object.assign(FX,{
   setTimeout(()=>{set(0,0,1);setTimeout(()=>gs.forEach(m=>m.userData.dash=0),400)},140)},
  energy:async(m,e)=>{sync();const g=M.get(m.id),o=OV.get(m.id);if(!g||!o||!o.g.visible)return;o.g.updateMatrixWorld(true);
   const k=e.key==='prism'?'prism':e.t,i=m.en.length<=4?m.en.indexOf(e):orbList(m).findIndex(x=>x[0]===k),sl=o.sub.children.find(c=>c.userData.slot===i);
-  const to=sl?sl.getWorldPosition(new THREE.Vector3()):g.position.clone(),fr=g.position.clone().setY(g.position.y+1),s1=g.scale.x,b=orbMesh(k);if(sl)sl.visible=false;b.rotation.x=-Math.PI/2;scene.add(b);
+  const to=sl?sl.getWorldPosition(new THREE.Vector3()):g.position.clone(),fr=g.position.clone().setY(g.position.y+1),s1=g.scale.x,b=orbMesh(k,1);if(sl)sl.visible=false;b.rotation.x=-Math.PI/2;scene.add(b);
   FXL.push({o:b,t0:performance.now(),dur:900,upd(p){const q=Math.min(1,p/.28),gr=1+2.6*(1-(1-q)**3)*(1+.22*Math.sin(q*Math.PI)),f=p<.45?0:(p-.45)/.55,ef=f*f*(3-2*f);b.position.lerpVectors(fr,to,ef);b.scale.setScalar(s1*(gr+(1-gr)*ef))}});
   await sleep(900);if(sl)sl.visible=true;g.userData.pop=.35;ring(g.position.x,g.position.z,0x67e8f9);burst(to.x,to.z,AURAC[k]||0x67e8f9,24,1.2)},
  ko:async id=>{const g=M.get(id);if(g){g.userData.sh=1.5;g.userData.fl=1}await sleep(650)},
@@ -332,7 +332,7 @@ function loop(t){
   const o=OV.get(id);if(o){o.g.position.set(g.position.x,g.position.y+.045,g.position.z);o.g.scale.setScalar(g.scale.x)}
   if(T.zone==='hand'){const q=PX.get(id);if(q){q.position.z=T.z-((UI.handUp&&!UI.drag)?((1-LAY.hvis)*1.4*LAY.hs+.3):0);q.updateMatrixWorld()}}}
  updHp();turnUpd(s,now);cfUpdate(s);
- for(const k in AURA_M)AURA_M[k].opacity=.75+Math.sin(s*3)*.25;
+ for(const k in AURA_M)AURA_M[k].opacity=.55+Math.sin(s*3)*.2;
  {const ids=UI.abl||[];ABG.forEach((m,i)=>{const it=ids[i]!==undefined&&LI.get(ids[i]);if(!it){m.visible=false;return}m.visible=true;m.position.set(it.x,.7+Math.sin(s*4+i)*.05,it.z+.5*it.s);m.scale.set(.42*(1+Math.sin(s*5)*.06),.42*(1+Math.sin(s*5)*.06),1)})}
  ZH.visible=false;
  const dzv=!!(UI.drag&&UI.drag.dz);DZ.visible=dzv;if(dzv){DZ.material.color.setHex(UI.drag.dzc||0x4dff88);DZ.material.opacity=.75+Math.sin(s*7)*.25}

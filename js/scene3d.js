@@ -121,16 +121,25 @@ function drawHp(o){const x=o.cx,w=256,h=84,f=Math.max(0,Math.min(1,o.hpC)),dead=
  const col=dead?'#9ca3af':f>.55?'#22c55e':f>.28?'#facc15':'#ef4444';rr(x,12,62,w-24,12,6);x.fillStyle='#ffffff2e';x.fill();if(f>.015){rr(x,12,62,Math.max(14,(w-24)*f),12,6);x.fillStyle=col;x.fill()}
  o.tex.needsUpdate=true}
 function updHp(){for(const o of OV.values()){if(o.hpC===undefined)continue;const d=o.hpT-o.hpC;if(Math.abs(d)>.002){o.hpC+=d*.07;drawHp(o)}else if(o.hpC!==o.hpT){o.hpC=o.hpT;drawHp(o)}}}
-const ORBC={D:0x1f4f57,P:0xa855f7,R:0xef4444,C:0xe5e7eb,G:0x22c55e,F:0xb45309,W:0x0ea5e9,L:0xfacc15,M:0x9ca3af,prism:0xf8fafc},SG=new THREE.SphereGeometry(.13,20,14),DG=new THREE.PlaneGeometry(.24,.24),OT={},NT={};
-/* aura & kilap Energi: tekstur dibuat sekali, warna per tipe lewat material (Kegelapan/Logam dicerahkan agar auranya terlihat) */
-const AURAC={...ORBC,D:0x2fa3a8,M:0xe2e8f0,C:0xffffff},
- AURA_T=ctex(128,128,(x,w)=>{const g=x.createRadialGradient(64,64,8,64,64,64);g.addColorStop(0,'#fff');g.addColorStop(.5,'#ffffffdd');g.addColorStop(1,'#fff0');x.fillStyle=g;x.fillRect(0,0,w,w)}),
- SHINE_T=ctex(64,64,(x,w)=>{const g=x.createRadialGradient(24,22,0,24,22,24);g.addColorStop(0,'#ffffff');g.addColorStop(.45,'#ffffffaa');g.addColorStop(1,'#fff0');x.fillStyle=g;x.fillRect(0,0,w,w)}),
- AURA_M={},auraM=k=>AURA_M[k]||(AURA_M[k]=new THREE.MeshBasicMaterial({map:AURA_T,color:AURAC[k]||0x94a3b8,transparent:true,depthWrite:false})),
- ORB_M={},orbM=k=>ORB_M[k]||(ORB_M[k]=new THREE.MeshPhongMaterial({color:ORBC[k]||0x94a3b8,emissive:AURAC[k]||0x94a3b8,emissiveIntensity:.35,specular:0xffffff,shininess:110})),
- SHINE_M=new THREE.MeshBasicMaterial({map:SHINE_T,transparent:true,depthWrite:false}),AG=new THREE.PlaneGeometry(.58,.58),HG=new THREE.PlaneGeometry(.17,.17);
-const orbTex=k=>ICONS.orb[k]?(OT[k]||(OT[k]=TL.load(ICONS.orb[k]))):null;
-const numTex=n=>NT[n]||(NT[n]=ctex(64,64,(x)=>{x.font='900 46px '+FONT;x.textAlign='center';x.textBaseline='middle';x.lineWidth=8;x.strokeStyle='#0b2236';x.strokeText(String(n),32,34);x.fillStyle='#fff';x.fillText(String(n),32,34)}));
+/* bola Energi 3D: sphere ber-shader (gradasi tubuh, kilap, rim, cincin tepi putih ala Pocket) + decal simbol 512px (tools/orb-sym.py)
+   yang dipetakan ke permukaan bola dan selalu menghadap kamera; warna [terang, gelap] per tipe */
+const ORB={D:['#4cc4cf','#0d4b58'],P:['#e19be0','#71358a'],R:['#ff8a6a','#a3141a'],C:['#ffffff','#aab4c2'],G:['#7fe070','#16712a'],F:['#fbab4c','#934304'],W:['#6cd8ff','#0961b0'],L:['#ffeb6e','#d39306'],M:['#f1f3f5','#747d87'],prism:['#ffffff','#c9c1ec']},
+ orbC=k=>ORB[k]||ORB.C,AURAC=Object.fromEntries(Object.entries(ORB).map(([k,v])=>[k,new THREE.Color(v[0]).getHex()])),SG=new THREE.SphereGeometry(.115,32,20),NT={};
+/* normal diputar ke bingkai "menghadap kamera" dari pusat bola, agar simbol tetap di tengah walau bola di pinggir layar */
+const ORB_VS=`varying vec3 vN;void main(){vec3 f=normalize(-(modelViewMatrix*vec4(0.,0.,0.,1.)).xyz),rt=normalize(cross(vec3(0.,1.,0.),f)),up=cross(f,rt),n=normalize(normalMatrix*normal);
+ vN=vec3(dot(n,rt),dot(n,up),dot(n,f));gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+ ORB_FS=`uniform vec3 cA,cB;uniform sampler2D map;uniform float ir;varying vec3 vN;
+void main(){vec3 n=normalize(vN);float r=min(length(n.xy),1.);vec3 L=normalize(vec3(-.45,.62,.64));
+ vec3 c=mix(cB,cA,smoothstep(.12,.92,dot(n,L)*.5+.5));
+ vec2 d=r>1e-4?n.xy/r*asin(r):vec2(0.);vec4 s=texture2D(map,d*.56+.5);c=mix(c,s.rgb,s.a);
+ float h=max(dot(n,normalize(L+vec3(0.,0.,1.))),0.);c+=pow(h,64.)*.9+pow(h,8.)*.12;
+ vec3 rim=mix(cA,.62+.38*cos(6.2832*(atan(n.y,n.x)/6.2832+vec3(0.,.33,.67))),ir);c=mix(c,rim,pow(1.-n.z,2.5)*.65);
+ gl_FragColor=vec4(mix(c,vec3(1.),smoothstep(.915,.965,r)),1.);}`,
+ ORB_M={},orbM=k=>ORB_M[k]||(ORB_M[k]=new THREE.ShaderMaterial({uniforms:{cA:{value:new THREE.Color(orbC(k)[0])},cB:{value:new THREE.Color(orbC(k)[1])},map:{value:TL.load(ICONS.orb[k]||ICONS.orb.C)},ir:{value:k==='prism'?1:0}},vertexShader:ORB_VS,fragmentShader:ORB_FS})),
+ HALO_T=ctex(128,128,(x,w)=>{const g=x.createRadialGradient(64,64,0,64,64,64);[[0,'#fff0'],[.5,'#fff0'],[.66,'#ffffffd0'],[.8,'#ffffff40'],[1,'#fff0']].forEach(([t,c])=>g.addColorStop(t,c));x.fillStyle=g;x.fillRect(0,0,w,w)}),
+ AURA_M={},auraM=k=>AURA_M[k]||(AURA_M[k]=new THREE.SpriteMaterial({map:HALO_T,color:AURAC[k]||0xffffff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})),
+ SHAD_M=new THREE.MeshBasicMaterial({map:ctex(64,64,(x,w)=>{const g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'#000c');g.addColorStop(.5,'#0008');g.addColorStop(1,'#0000');x.fillStyle=g;x.fillRect(0,0,w,w)}),transparent:true,depthWrite:false}),SHG=new THREE.PlaneGeometry(.34,.34);
+const cntTex=n=>NT[n]||(NT[n]=ctex(64,64,(x)=>{x.beginPath();x.arc(32,32,28,0,7);x.fillStyle='#0f2a43';x.fill();x.lineWidth=5;x.strokeStyle='#fff';x.stroke();x.font='900 34px '+FONT;x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.fillText(String(n),32,35)}));
 function orbList(mon){if(mon.en.length<=4)return mon.en.map(e=>[e.key==='prism'?'prism':e.t,0]);const c=new Map();for(const e of mon.en){const k=e.key==='prism'?'prism':e.t;c.set(k,(c.get(k)||0)+1)}return[...c]}
 function ovBuild(o,mon){
  if(!o.pill){const c=document.createElement('canvas');c.width=256;c.height=84;o.cx=c.getContext('2d');o.tex=new THREE.CanvasTexture(c);o.pill=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:o.tex,transparent:true,depthWrite:false}));o.pill.scale.set(.6,.197,1);o.pill.position.set(.19,.595,.02);o.g.add(o.pill);o.sub=new THREE.Group();o.g.add(o.sub);o.hpC=undefined}
@@ -140,10 +149,10 @@ function ovBuild(o,mon){
  const bd=[];if(mon.sp==='asleep')bd.push('💤');if(mon.sp==='confused')bd.push('😵');if(mon.sp==='paralyzed')bd.push('⚡');if(mon.poison)bd.push('☠️');if(mon.burn)bd.push('🔥');
  bd.forEach((e,i)=>{const b=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:ctex(96,96,(x,w,h)=>{x.fillStyle='#fff';x.beginPath();x.arc(48,48,44,0,7);x.fill();x.lineWidth=4;x.strokeStyle='#0f2a43';x.stroke();x.font='54px '+FONT;x.textAlign='center';x.textBaseline='middle';x.fillText(e,48,52)}),transparent:true,depthWrite:false}));b.scale.setScalar(.26);b.position.set(-.34+i*.28,.3,.03);o.sub.add(b)});
  orbList(mon).forEach(([k,n],i)=>{const px=-.375+i*.25,sg=orbMesh(k);sg.userData.slot=i;sg.position.set(px,-.55,0);o.sub.add(sg);
-  if(n>1){const q=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:numTex(n),transparent:true,depthWrite:false}));q.scale.setScalar(.2);q.position.set(.13,.09,.23);sg.add(q)}})}
-/* satu bola energi (aura+bola+kilap+ikon) di titik 0,0; dipakai overlay & animasi pasang Energi */
-function orbMesh(k){const sg=new THREE.Group(),au=new THREE.Mesh(AG,auraM(k));au.position.z=.06;const s=new THREE.Mesh(SG,orbM(k));s.position.z=.08;const hl=new THREE.Mesh(HG,SHINE_M);hl.position.set(-.04,.04,.222);sg.add(au,s,hl);
- const t=orbTex(k);if(t){const d=new THREE.Mesh(DG,new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false}));d.position.z=.215;sg.add(d)}return sg}
+  if(n>1){const q=new THREE.Sprite(new THREE.SpriteMaterial({map:cntTex(n),depthWrite:false}));q.scale.setScalar(.13);q.position.set(.09,.085,.3);sg.add(q)}})}
+/* satu bola Energi di titik 0,0; dipakai overlay & animasi pasang Energi. Di kartu: bayangan kontak (ala ikon Pocket); air=1 (bola terbang): halo cahaya */
+function orbMesh(k,air){const sg=new THREE.Group(),b=new THREE.Mesh(SG,orbM(k)),x=air?new THREE.Sprite(auraM(k)):new THREE.Mesh(SHG,SHAD_M);b.position.z=.14;
+ if(air){x.position.z=.14;x.scale.setScalar(.36)}else x.position.set(.016,-.02,.02);sg.add(b,x);return sg}
 function sync(){
  if(!G||!G.p)return;{const bn=Math.max(bmax('p'),bmax('o'));if(bn!==BENCHN){BENCHN=bn;redrawMat()}}
  const L=lay(),seen=new Set();LI=new Map();
