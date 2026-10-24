@@ -167,8 +167,8 @@ async function actRetreat(sd){const w=whyRetreat(sd);if(w)return w;const S=G[sd]
 const bestTarget=(sd,pref)=>{const l=sideMons(sd);return l.sort((a,b)=>pref(b)-pref(a))[0]};
 async function actAttack(sd,k){const w=whyAttack(sd,k);if(w)return w;
  const S=G[sd],E=G[opp(sd)],a=S.active,at=a.card.atk[k],o=opp(sd);
- log(`⚔️ ${cname(a.card)} memakai ${at.n}`);await fx('announce',{mon:a,name:at.n,tx:at.tx,sd,kind:'Jurus'});await fx('lunge',a.id,sd,a.card.type);
- if(a.sp==='confused'){const h=await flip(sd,'Confused');if(!h){a.dmg+=30;fx('hit',a.id,30);log(`${cname(a.card)} melukai dirinya sendiri (30)`);await resolveKO();return finishTurn()}}
+ log(`⚔️ ${cname(a.card)} memakai ${at.n}`);await fx('announce',{mon:a,name:at.n,tx:at.tx,sd,kind:'Jurus'});
+ if(a.sp==='confused'){const h=await flip(sd,'Confused');if(!h){await fx('strike',{a,at,sd,fail:1});a.dmg+=30;fx('hit',a.id,30);log(`${cname(a.card)} melukai dirinya sendiri (30)`);await resolveKO();return finishTurn()}}
  let base=at.dmg,tgt=E.active;
  if(at.fx==='jaw'&&a.dmg>0)base+=150;
  if(at.fx==='ledak')base=60*(G.prizeN-E.prizes.length);
@@ -178,6 +178,7 @@ async function actAttack(sd,k){const w=whyAttack(sd,k);if(w)return w;
  if(at.fx==='landing'&&!G.stadium){base=0;log('Tidak ada Stadium: serangan gagal')}
  G.atk={sd,tera:!!a.card.tera,act:E.active};
  if(at.fx==='arrow'){tgt=await ask(sd,'mon',{title:'Pilih Pokémon lawan yang terkena 100 damage',mons:sideMons(o),ctx:'target',sd:o,pref:x=>hp(x)<=100?1000+(x.card.prize||1)*10:-hp(x)})}
+ await fx('strike',{a,at,sd,tgt,n:base/10});
  if((at.dmg>0||at.fx==='ledak'||at.fx==='en40')&&tgt)await hitMon(a,tgt,o,at.fx==='arrow'?100:base);
  switch(at.fx){
   case'conf':if(E.active&&hp(E.active)>0)setSp(E.active,o,'confused');break;

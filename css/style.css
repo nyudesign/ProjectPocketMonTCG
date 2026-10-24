@@ -54,11 +54,12 @@ body.bt .hud{display:flex}#hudt{top:calc(6px + env(safe-area-inset-top,0px));rig
 .dmg b{position:relative;font:900 44px ui-rounded,system-ui;color:#fff;-webkit-text-stroke:3px #7c2d12;paint-order:stroke fill}
 @keyframes dmg{0%{transform:scale(.2) rotate(-25deg);opacity:0}14%{transform:scale(1.3) rotate(4deg);opacity:1}26%{transform:scale(1) rotate(0)}78%{transform:scale(1);opacity:1}100%{transform:translateY(-34px) scale(.85);opacity:0}}
 /* pita nama serangan ala Pocket */
-#atkb{position:fixed;left:-10vw;right:-10vw;top:44%;z-index:26;pointer-events:none;display:none;flex-direction:column;align-items:center;padding:10px 14vw 12px;background:linear-gradient(180deg,var(--b1,#fde047),var(--b2,#eab308));border-top:3px solid #fff9;border-bottom:8px solid #1e293b;box-shadow:0 10px 30px #0006;color:#fff;transform:rotate(-8deg)}
+/* di celah antara kedua Active (kamera di-zoom ke titik ini); penyerang dipanggungkan di samping sehingga tidak tertutup */
+#atkb{position:fixed;left:-10vw;right:-10vw;top:calc(50% + var(--by,0px));z-index:26;pointer-events:none;display:none;flex-direction:column;align-items:center;padding:5px 14vw 7px;background:linear-gradient(180deg,var(--b1,#fde047),var(--b2,#eab308));border-top:3px solid #fff9;border-bottom:6px solid #1e293b;box-shadow:0 10px 30px #0006;color:#fff;transform:translateY(-50%) rotate(-6deg)}
 #atkb.on{display:flex;animation:atkb 1.5s cubic-bezier(.2,.8,.2,1) forwards}
-#atkb b{font:italic 900 clamp(34px,7vw,64px)/1.05 ui-rounded,system-ui;-webkit-text-stroke:3px #1e293b;paint-order:stroke fill}
-#atkb small{font-weight:800;font-size:14px;color:var(--tt,#fff);text-shadow:0 1px 3px #0006}
-@keyframes atkb{0%{transform:rotate(-8deg) translateX(-110%)}15%{transform:rotate(-8deg) translateX(0)}85%{transform:rotate(-8deg) translateX(0);opacity:1}100%{transform:rotate(-8deg) translateX(110%);opacity:0}}
+#atkb b{color:var(--tt,#fff);font:italic 900 clamp(28px,4.6vw,50px)/1.05 ui-rounded,system-ui;-webkit-text-stroke:2.5px #1e293b;paint-order:stroke fill}
+#atkb small{font-weight:800;font-size:13px;color:var(--tt,#fff);text-shadow:0 1px 3px #0006}
+@keyframes atkb{0%{transform:translateY(-50%) rotate(-6deg) translateX(-110%)}15%{transform:translateY(-50%) rotate(-6deg) translateX(0)}85%{transform:translateY(-50%) rotate(-6deg) translateX(0);opacity:1}100%{transform:translateY(-50%) rotate(-6deg) translateX(110%);opacity:0}}
 #db{align-items:stretch;padding:8px;background:#e8f0f8}.dbtop{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:4px 0 8px}.dbtop input,.dbtop select{border:2px solid #cbd5e1;border-radius:10px;padding:8px;font:700 13px ui-rounded,system-ui;min-width:0;flex:1;background:#fff;color:var(--ink)}
 .dbmain{display:flex;gap:10px;flex:1;min-height:0;width:100%}#db-grid{flex:1;overflow:auto;padding-right:4px}#db-side{width:300px;background:#fff;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;overflow:auto}
 #db-grid h3{margin:10px 0 6px;font-size:13px;display:flex;justify-content:space-between}.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}

@@ -97,7 +97,11 @@ function fit(){const w=innerWidth,h=innerHeight,a=w/h,land=a>=1.15;
  if(TURNG){TURNG[0].position.x=-(hw-1.1);TURNG[1].position.x=hw-1.1}
  if(G&&G.p)sync()}
 const setCam=()=>{};
-function camUpd(){cd+=(cdT-cd)*.1;ct+=(ctT-ct)*.1;cam.position.set(0,Math.sin(ELEV)*cd,Math.cos(ELEV)*cd+ct);cam.lookAt(0,0,ct)}
+/* zoom sinematik sesaat (pita serangan ala Pocket) + guncangan benturan; sudut kamera tetap, selalu kembali ke 1x. Mati bila reduced-motion */
+const RMO=matchMedia('(prefers-reduced-motion: reduce)').matches;let czm=1,czmT=1,czo=0,czoT=0,CSH=0;
+const camFx=(k=1,z=ctT)=>{if(RMO)return;czmT=1/k;czoT=z-ctT},shake=a=>{if(!RMO)CSH=Math.max(CSH,a)};
+function camUpd(){cd+=(cdT-cd)*.1;ct+=(ctT-ct)*.1;czm+=(czmT-czm)*.08;czo+=(czoT-czo)*.08;const d=cd*czm,z=ct+czo;cam.position.set(0,Math.sin(ELEV)*d,Math.cos(ELEV)*d+z);cam.lookAt(0,0,z);
+ if(CSH>.003){cam.position.x+=(Math.random()-.5)*CSH;cam.position.z+=(Math.random()-.5)*CSH;CSH*=.86}}
 addEventListener('resize',fit);
 
 /* ---------- kartu ---------- */
