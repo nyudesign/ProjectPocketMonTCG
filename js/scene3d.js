@@ -151,7 +151,7 @@ const orbGlowT=(fall,top)=>ctex(128,128,(x,w)=>{const d=x.createImageData(w,w),c
  
  GLOW_M={},glowM=k=>GLOW_M[k]||(GLOW_M[k]=GT.map((t,i)=>new THREE.SpriteMaterial({map:t,color:GLC[k]||'#ffffff',transparent:true,depthWrite:false,opacity:GLA[i]*(GLK[k]||1),blending:i?THREE.AdditiveBlending:THREE.NormalBlending})));
 function glowUpd(s){for(const k in GLOW_M){const m=GLOW_M[k],f=.8+.2*Math.sin(s*2.4+k.charCodeAt(0));m.forEach((x,i)=>x.opacity=GLA[i]*f*(GLK[k]||1));if(k==='prism'){m[0].color.setHSL(s*.1%1,.95,.62);m[1].color.copy(m[0].color)}}}
-const cntTex=n=>NT[n]||(NT[n]=ctex(64,64,(x)=>{x.beginPath();x.arc(32,32,28,0,7);x.fillStyle='#0f2a43';x.fill();x.lineWidth=5;x.strokeStyle='#fff';x.stroke();x.font='900 34px '+FONT;x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.fillText(String(n),32,35)}));
+const cntTex=n=>NT[n]||(NT[n]=ctex(128,128,(x)=>{x.beginPath();x.arc(64,64,58,0,7);x.fillStyle='#0f2a43';x.fill();x.lineWidth=8;x.strokeStyle='#fff';x.stroke();x.font=`900 ${n>9?68:90}px `+FONT;x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.fillText(String(n),64,70)}));   // jumlah Energi sejenis (badge)
 function orbList(mon){if(mon.en.length<=4)return mon.en.map(e=>[e.key==='prism'?'prism':e.t,0]);const c=new Map();for(const e of mon.en){const k=e.key==='prism'?'prism':e.t;c.set(k,(c.get(k)||0)+1)}return[...c]}
 function ovBuild(o,mon){
  if(!o.pill){const c=document.createElement('canvas');c.width=256;c.height=84;o.cx=c.getContext('2d');o.tex=new THREE.CanvasTexture(c);o.pill=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:o.tex,transparent:true,depthWrite:false}));o.pill.scale.set(.6,.197,1);o.pill.position.set(.19,.595,.02);o.g.add(o.pill);o.sub=new THREE.Group();o.g.add(o.sub);o.hpC=undefined}
@@ -161,7 +161,7 @@ function ovBuild(o,mon){
  const bd=[];if(mon.sp==='asleep')bd.push('💤');if(mon.sp==='confused')bd.push('😵');if(mon.sp==='paralyzed')bd.push('⚡');if(mon.poison)bd.push('☠️');if(mon.burn)bd.push('🔥');
  bd.forEach((e,i)=>{const b=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:ctex(96,96,(x,w,h)=>{x.fillStyle='#fff';x.beginPath();x.arc(48,48,44,0,7);x.fill();x.lineWidth=4;x.strokeStyle='#0f2a43';x.stroke();x.font='54px '+FONT;x.textAlign='center';x.textBaseline='middle';x.fillText(e,48,52)}),transparent:true,depthWrite:false}));b.scale.setScalar(.26);b.position.set(-.34+i*.28,.3,.03);o.sub.add(b)});
  orbList(mon).forEach(([k,n],i)=>{const px=-.375+i*.25,sg=orbMesh(k);sg.userData.slot=i;sg.position.set(px,-.55,0);o.sub.add(sg);
-  if(n>1){const q=new THREE.Sprite(new THREE.SpriteMaterial({map:cntTex(n),depthWrite:false}));q.scale.setScalar(.13);q.position.set(.09,.085,.3);sg.add(q)}})}
+  if(n>1){const q=new THREE.Sprite(new THREE.SpriteMaterial({map:cntTex(n),depthWrite:false}));q.scale.setScalar(.18);q.position.set(.105,.1,.3);sg.add(q)}})}
 /* satu bola Energi di titik 0,0; dipakai overlay & animasi pasang Energi. Di kartu: bayangan kontak + aura halus (di bawah permukaan bola,
    jadi tak menimpa bola tetangga); air=1 (bola terbang): halo cahaya */
 function orbMesh(k,air){const sg=new THREE.Group(),b=new THREE.Mesh(SG,orbM(k)),x=air?new THREE.Sprite(auraM(k)):new THREE.Mesh(SHG,SHAD_M);b.position.z=.14;
