@@ -151,9 +151,9 @@ function drawHp(o,now=performance.now()){
  x.setTransform(1,0,0,1,0,HPT);x.clearRect(0,-HPT,HPW,HPH);
  const pg=x.createRadialGradient(229,200,20,229,170,230);pg.addColorStop(0,`hsl(${P.h},${P.s*100}%,${P.l*112}%)`);pg.addColorStop(1,`hsl(${P.h},${P.s*100}%,${P.l*86}%)`);
  x.save();x.shadowColor='#0009';x.shadowBlur=10;x.shadowOffsetY=3;rr(x,42,102,374,125,30);x.fillStyle=pg;x.fill();x.restore();
- rr(x,66,170,225,36,18);x.fillStyle='#404040';x.fill();
- if(gf>f+.002){rr(x,66,170,Math.max(36,225*gf),36,18);x.fillStyle=a&&a.dir>0?'#c9ffd6':'#ffd9d2';x.fill()}
- if(f>.004){const g=x.createLinearGradient(0,170,0,206);g.addColorStop(0,rgb(bc[0]));g.addColorStop(1,rgb(bc[1]));rr(x,66,170,Math.max(36,225*f),36,18);x.fillStyle=g;x.fill()}
+ rr(x,66,147,225,36,18);x.fillStyle='#404040';x.fill();   // bar sejajar ikon tipe (pusat y 165), dekat angka
+ if(gf>f+.002){rr(x,66,147,Math.max(36,225*gf),36,18);x.fillStyle=a&&a.dir>0?'#c9ffd6':'#ffd9d2';x.fill()}
+ if(f>.004){const g=x.createLinearGradient(0,147,0,183);g.addColorStop(0,rgb(bc[0]));g.addColorStop(1,rgb(bc[1]));rr(x,66,147,Math.max(36,225*f),36,18);x.fillStyle=g;x.fill()}
  const src=ICONS.type[o.ty],im=src&&iconImg(src);
  if(im&&im.complete&&im.naturalWidth)x.drawImage(im,305,121,88,88);else{x.fillStyle=TYC2[o.ty]||'#64748b';x.beginPath();x.arc(349,165,44,0,7);x.fill()}
  const s=String(Math.round(n)),dc=a&&a.dir?NUMC[a.dir>0?'up':'dn']:null,b0=dead?[226,228,232]:mixc(W3,bc[0],.18),b1=dead?[176,180,188]:mixc(W3,bc[1],.38);
