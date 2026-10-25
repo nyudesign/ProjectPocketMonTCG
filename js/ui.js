@@ -53,7 +53,10 @@ function zoomCard(c,mon,sd){
  const stage=k=>k.stage===2?'Stage 2':k.stage===1?'Stage 1':'Basic',stack=[];
  if(mon){stack.push([mon.card,stage(mon.card)]);[...mon.under].reverse().forEach(u=>stack.push([u,stage(u)]));mon.en.forEach(e=>stack.push([e,'Energi']));if(mon.tool)stack.push([mon.tool,'Tool'])}else stack.push([c,'']);
  const zs=$('zstack');zs.innerHTML='';zs.style.display=stack.length>1?'flex':'none';
- const show=(cd,i)=>{$('zimg').src=imgOf(cd);$('zct').innerHTML=`<div><b>${cname(cd)}</b>${stack.length>1?` <span class="chip">${stack[i][1]}</span>`:''}</div>`+cardText(cd);[...zs.children].forEach((q,j)=>q.classList.toggle('on',j===i))};
+ const abOk=mon&&sd==='p'&&canAct()&&c.ab&&!c.ab.passive&&!c.ab.setup&&!abWhy('p',mon),za=$('zab');
+ za.onclick=()=>{closeZoom();run(()=>actAbility('p',mon))};
+ const show=(cd,i)=>{$('zimg').src=imgOf(cd);za.classList.toggle('on',!!abOk&&i===0);
+  if(abOk&&i===0){const[y0,y1]=abRect(cd)||[.54,.69];za.innerHTML=`<b><em>Ability</em>${cd.ab.n}</b><span>${cd.ab.tx}</span>`;za.style.top=y0*100-1+'%';za.style.minHeight=(y1-y0)*100+2+'%'}$('zct').innerHTML=`<div><b>${cname(cd)}</b>${stack.length>1?` <span class="chip">${stack[i][1]}</span>`:''}</div>`+cardText(cd);[...zs.children].forEach((q,j)=>q.classList.toggle('on',j===i))};
  let h='';
  if(mon){h+=`<div><b>${cname(c)}</b> • HP <b>${hp(mon)}</b> / ${c.hp}${mon.dmg?` • ${mon.dmg/10} damage counter`:''}</div>`;
   const sc=spChip(mon);if(sc.length)h+=`<div>${sc.map(q=>`<span class="chip">${q}</span>`).join('')}</div>`;
@@ -67,7 +70,7 @@ function zoomCard(c,mon,sd){
   if(isAct)c.atk.forEach((a,k)=>btn(`⚔️ ${a.n} — ${a.dmg?a.dmg+(a.plus?'+':a.times?'×':''):'efek'}`,'atk',whyAttack('p',k),()=>run(()=>actAttack('p',k))));
   if(c.ab&&!c.ab.passive&&!c.ab.setup)btn(`✨ Ability: ${c.ab.n}`,'go',abWhy('p',mon),()=>run(()=>actAbility('p',mon)));
   if(isAct)btn(`🔄 Mundur (biaya ${rcost(mon)} Energi)`,'ghost',whyRetreat('p'),()=>run(()=>actRetreat('p')))}
- $('zoom').classList.add('on')}
+ $('zoom').classList.add('on');requestAnimationFrame(()=>$('zab').style.setProperty('--fs',Math.max(9,Math.min(16,$('zimg').clientHeight*.021))+'px'))}
 const zoomMon=(m,sd)=>zoomCard(m.card,m,sd),closeZoom=()=>$('zoom').classList.remove('on');
 $('zx').onclick=closeZoom;$('zoom').onclick=e=>{if(e.target.id==='zoom')closeZoom()};
 /* --- Discard --- */
@@ -155,11 +158,11 @@ Object.assign(FX,{
  evolve:id=>{const g=M.get(id);if(!g)return;const p=g.position;ring(p.x,p.z,0xfcd34d);burst(p.x,p.z,0xfff1a8,70,3);burst(p.x,p.z,0x7dd3fc,30,2);g.userData.pop=1;g.userData.fl=1;g.userData.glow=1},
  announce:async o=>{const c=o.mon.card;
   if(o.kind==='Jurus')return atkIntro(o);
-  /* Ability: kartu berkilat putih + percikan emas, label menempel di atas kartu sampai efeknya selesai (abend); teks hanya untuk Ability Bot */
-  const g=M.get(o.mon.id),t=$('abt');t.innerHTML=`<b><em>Ability</em>${o.name}</b>${o.sd==='o'&&o.tx?`<i>${o.tx}</i>`:''}`;tyVars(t,c.type);
-  if(g){const p=g.position;cardFlash(g);ring(p.x,p.z,0xfcd34d);burst(p.x,p.z,0xfcd34d,90,3,.3);burst(p.x,p.z,0xffffff,30,2,.22);g.userData.pop=.6;
-   const v=p.clone().setZ(p.z-.9*g.scale.x).project(cam);t.style.left=(v.x+1)/2*innerWidth+'px';t.style.top=(1-v.y)/2*innerHeight+'px'}else{t.style.left='50%';t.style.top='16%'}
-  t.classList.remove('on');void t.offsetWidth;t.classList.add('on');await sleep(o.sd==='o'&&o.tx?2200:1100)},
+  /* Ability: kartu berkilat putih + percikan emas, label nama menempel di atas kartu sampai efeknya selesai (abend); bila terpotong tepi atas layar, pindah ke bawah kartu */
+  const g=M.get(o.mon.id),t=$('abt');t.innerHTML=`<b><em>Ability</em>${o.name}</b>`;tyVars(t,c.type);t.classList.remove('on');void t.offsetWidth;t.classList.add('on');
+  if(g){const p=g.position,sy=z=>(1-p.clone().setZ(z).project(cam).y)/2*innerHeight;cardFlash(g);ring(p.x,p.z,0xfcd34d);burst(p.x,p.z,0xfcd34d,90,3,.3);burst(p.x,p.z,0xffffff,30,2,.22);g.userData.pop=.6;
+   const y=sy(p.z-.9*g.scale.x),hw=t.offsetWidth/2;t.style.left=Math.min(innerWidth-6-hw,Math.max(6+hw,(p.clone().project(cam).x+1)/2*innerWidth))+'px';/* tetap di dalam layar */t.style.top=(y-t.offsetHeight<6?sy(p.z+.8*g.scale.x)+t.offsetHeight:y)+'px'}else{t.style.left='50%';t.style.top='16%'}
+  await sleep(1100)},
  abend:()=>$('abt').classList.remove('on'),
  revealPrizes:async(sd,ch)=>{if(sd!=='p'){await sleep(500);return}UI.reveal=new Set(ch.map(c=>c.id));sync();
   $('ann').innerHTML=`<div class="prz">${ch.map(c=>`<img src="${imgOf(c)}" alt="${cname(c)}">`).join('')}</div><b>Kartu Prize yang kamu ambil</b>`;$('ann').classList.add('on');await sleep(2400);$('ann').classList.remove('on');UI.reveal=null;sync();await sleep(250)},
@@ -302,7 +305,6 @@ function glows(){const L=[];if(!G||!G.p)return L;
  if(UI.drag&&UI.drag.hi)L.push(UI.drag.hi);
  if(UI.want)for(const m of UI.want.mons){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}
  if(UI.stage&&!UI.drag)for(const m of (UI.stage.tgt?[UI.stage.tgt]:UI.stage.tgts)){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}
- for(const id of UI.abl||[]){const it=LI.get(id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:2})}
  if(UI.hp)L.push(UI.hp);
  return L}
 /* --- loop render --- */
@@ -326,11 +328,11 @@ function loop(t){
   if(T.zone==='hand'){const q=PX.get(id);if(q){q.position.z=T.z-((UI.handUp&&!UI.drag)?((1-LAY.hvis)*1.4*LAY.hs+.3):0);q.updateMatrixWorld()}}}
  updHp();turnUpd(s,now);cfUpdate(s);
  for(const k in AURA_M)AURA_M[k].opacity=.55+Math.sin(s*3)*.2;glowUpd(s);
- {const ids=UI.abl||[];ABG.forEach((m,i)=>{const it=ids[i]!==undefined&&LI.get(ids[i]);if(!it){m.visible=false;return}m.visible=true;m.position.set(it.x,.7+Math.sin(s*4+i)*.05,it.z+.5*it.s);m.scale.set(.42*(1+Math.sin(s*5)*.06),.42*(1+Math.sin(s*5)*.06),1)})}
+ abUpd(s,UI.abl||[]);
  ZH.visible=false;
  const dzv=!!(UI.drag&&UI.drag.dz);DZ.visible=dzv;if(dzv){DZ.material.color.setHex(UI.drag.dzc||0x4dff88);DZ.material.opacity=.75+Math.sin(s*7)*.25}
  if(UI.stage){DCS.forEach((m,i)=>{if(!m.visible)return;const dc=UI.drag&&UI.drag.coin&&UI.drag.ci===i;if(dc)m.position.set(UI.drag.x,1.8,UI.drag.z);else m.position.set(-(LAY.W/2-1.1)+i*1.05,1.6+Math.sin(s*3+i)*.07,(LAY.handZ||5)-1.4)})}
- const gl=glows();RG.forEach((m,i)=>{const g=gl[i];if(!g){m.visible=false;return}m.visible=true;m.position.set(g.x,.2,g.z);m.scale.setScalar(g.s*(g.ok===2?1.22+Math.sin(s*5)*.07:1.14));m.material.color.setHex(g.ok===2?0x3dff7a:g.ok===3?0x9bdcff:g.ok?0xfcd34d:0xfb7185);m.material.opacity=.7+Math.sin(s*9)*.3});
+ const gl=glows();RG.forEach((m,i)=>{const g=gl[i];if(!g){m.visible=false;return}m.visible=true;m.position.set(g.x,.2,g.z);m.scale.setScalar(g.s*1.14);m.material.color.setHex(g.ok===3?0x9bdcff:g.ok?0xfcd34d:0xfb7185);m.material.opacity=.7+Math.sin(s*9)*.3});
  if(CS){const p=Math.min((now-CS.t0)/CS.D,1),q=Math.min(p/.86,1),e=1-Math.pow(1-q,3);COIN.rotation.x=CS.end*e;COIN.position.set(0,.3+Math.sin(Math.PI*q)*4.2,LAY.zc);if(p>=1&&!CS.done){CS.done=1;CS.res()}}
  if(DS){const p=Math.min((now-DS.t0)/DS.D,1),q=Math.min(p/.85,1),e=1-Math.pow(1-q,3);{const d=DICE[0],f=DROT[d.userData.v],sp=d.userData.s;d.rotation.set(f[0]+sp[0]*(1-e),f[1]+sp[1]*(1-e),f[2]+sp[2]*(1-e));d.position.set(0,.65+Math.sin(Math.PI*q)*2.8,LAY.zc)}if(p>=1&&!DS.done){DS.done=1;DS.res()}}
  for(let i=FXL.length-1;i>=0;i--){const f=FXL[i],p=(now-f.t0)/f.dur;if(p>=1){scene.remove(f.o);FXL.splice(i,1)}else f.upd(p)}

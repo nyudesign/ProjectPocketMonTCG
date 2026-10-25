@@ -157,7 +157,7 @@ function ovBuild(o,mon){
  if(!o.pill){const c=document.createElement('canvas');c.width=256;c.height=84;o.cx=c.getContext('2d');o.tex=new THREE.CanvasTexture(c);o.pill=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:o.tex,transparent:true,depthWrite:false}));o.pill.scale.set(.6,.197,1);o.pill.position.set(.19,.595,.02);o.g.add(o.pill);o.sub=new THREE.Group();o.g.add(o.sub);o.hpC=undefined}
  o.ty=mon.card.type;o.mx=mon.card.hp;o.hpT=Math.max(0,hp(mon))/mon.card.hp;if(o.hpC===undefined)o.hpC=o.hpT;drawHp(o);
  while(o.sub.children.length)o.sub.remove(o.sub.children[0]);
- coinsFor(mon.dmg).forEach((v,i)=>{const c=new THREE.Mesh(CG,new THREE.MeshBasicMaterial({map:coinT(v),transparent:true,depthWrite:false}));const r=i>>2,cc=i%4;c.scale.setScalar(v>=50?1.2:1);c.position.set(-.3+cc*.27+(r?.1:0),.08-r*.28,.03+i*.001);o.sub.add(c)});
+ coinsFor(mon.dmg).forEach((v,i)=>{const c=new THREE.Mesh(CG,new THREE.MeshBasicMaterial({map:coinT(v),transparent:true,depthWrite:false}));const r=i>>2,cc=i%4;c.scale.setScalar(v>=50?1.2:1);c.position.set(-.3+cc*.27+(r?.1:0),.08-r*.28,.09+i*.001);o.sub.add(c)});
  const bd=[];if(mon.sp==='asleep')bd.push('💤');if(mon.sp==='confused')bd.push('😵');if(mon.sp==='paralyzed')bd.push('⚡');if(mon.poison)bd.push('☠️');if(mon.burn)bd.push('🔥');
  bd.forEach((e,i)=>{const b=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:ctex(96,96,(x,w,h)=>{x.fillStyle='#fff';x.beginPath();x.arc(48,48,44,0,7);x.fill();x.lineWidth=4;x.strokeStyle='#0f2a43';x.stroke();x.font='54px '+FONT;x.textAlign='center';x.textBaseline='middle';x.fillText(e,48,52)}),transparent:true,depthWrite:false}));b.scale.setScalar(.26);b.position.set(-.34+i*.28,.3,.03);o.sub.add(b)});
  orbList(mon).forEach(([k,n],i)=>{const px=-.375+i*.25,sg=orbMesh(k);sg.userData.slot=i;sg.position.set(px,-.55,0);o.sub.add(sg);
@@ -167,6 +167,30 @@ function ovBuild(o,mon){
 function orbMesh(k,air){const sg=new THREE.Group(),b=new THREE.Mesh(SG,orbM(k)),x=air?new THREE.Sprite(auraM(k)):new THREE.Mesh(SHG,SHAD_M);b.position.z=.14;
  if(air){x.position.z=.14;x.scale.setScalar(.36)}else{x.position.set(.016,-.02,.02);for(const m of glowM(k)){const h=new THREE.Sprite(m);h.position.z=.06;h.scale.setScalar(2*.115/.62);sg.add(h)}}
  sg.add(b,x);return sg}
+/* Ability siap pakai ala Pocket: blok Ability di kartu itu sendiri "timbul" (potongan tekstur kartu terangkat + bayangan + bingkai emas berdenyut).
+   abRect: cari pil merah "Ability" (≈54% tinggi kartu SV) lalu baris teksnya sampai celah sebelum serangan; [atas,bawah] 0..1 dari atas */
+const ABR={};
+function abRect(c){if(c.img in ABR)return ABR[c.img];const im=cardTex(c).image;if(!im||!im.complete||!im.naturalWidth)return null;let r=[.54,.69];
+ try{const W=im.naturalWidth,H=im.naturalHeight,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');x.drawImage(im,0,0);const d=x.getImageData(0,0,W,H).data,
+   fr=y=>{let n=0;for(let i=W*.05|0;i<W*.2;i++){const k=(y*W+i)*4;if(d[k]>150&&d[k+1]<70&&d[k+2]<80)n++}return n/(W*.15)},   // porsi merah pil
+   ink=y=>{let n=0,p=0;for(let i=W*.06|0;i<W*.94;i++){const k=(y*W+i)*4,l=d[k]*.299+d[k+1]*.587+d[k+2]*.114;if(i>(W*.06|0)&&Math.abs(l-p)>48)n++;p=l}return n},   // tepi huruf per baris
+   need=Math.max(3,H*.012|0),gap=Math.max(3,H*.019|0),lim=H*.86|0,thr=W*.02;let y=H*.47|0,run=0,p0=-1;
+  for(;y<H*.7;y++){run=fr(y)>=.22?run+1:0;if(run>=need){p0=y-run+1;break}}
+  if(p0>=0){while(fr(y+1)>=.22)y++;y++;while(y<lim&&ink(y)<thr)y++;run=0;for(;y<lim;y++){run=ink(y)<thr?run+1:0;if(run>=gap)break}r=[p0/H,(y-run+1)/H]}
+ }catch(e){}   // kanvas tercemar (mis. file://): pakai blok baku
+ return ABR[c.img]=r}
+const ABM=.055,abTex=(w,h,glow)=>ctex(512,Math.round(512*(h+2*ABM)/(w+2*ABM)),(x,W,H)=>{const m=512*ABM/(w+2*ABM);rr(x,m,m,W-2*m,H-2*m,14);   // tepi persegi = tepi potongan
+ if(glow){const g=x.createLinearGradient(0,m,0,H-m);g.addColorStop(0,'#fff6c2');g.addColorStop(.5,'#f5c542');g.addColorStop(1,'#c98a12');x.shadowColor='#ffcf40';x.shadowBlur=26;x.lineWidth=13;x.strokeStyle=g;x.stroke();
+  x.shadowBlur=0;x.lineWidth=3;x.strokeStyle='#fffbe0';x.stroke()}else{x.shadowColor='#000';x.shadowBlur=24;x.fillStyle='#000e';x.fill()}});
+function abPlate(c){const r=abRect(c);if(!r)return null;const[y0,y1]=r,w=.91,h=(y1-y0)*1.4,g=new THREE.Group(),top=new THREE.Group(),geo=new THREE.PlaneGeometry(w,h),uv=geo.attributes.uv;
+ [[.045,1-y0],[.955,1-y0],[.045,1-y1],[.955,1-y1]].forEach(([u,v],i)=>uv.setXY(i,u,v));   // potongan tekstur = blok Ability kartu ini
+ const M=t=>new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false})),
+  crop=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({map:cardTex(c)})),fr=M(abTex(w,h,1)),sh=M(abTex(w,h,0));
+ fr.scale.set(w+2*ABM,h+2*ABM,1);sh.scale.set((w+2*ABM)*1.05,(h+2*ABM)*1.1,1);sh.position.set(.015,-.045,.012);crop.position.z=.05;fr.position.z=.055;
+ top.add(crop,fr);top.scale.setScalar(1.05);g.add(sh,top);g.position.y=.7-(y0+y1)/2*1.4;g.userData={top,fr};return g}
+function abUpd(s,ids){for(const[id,o]of OV){const on=o.g.visible&&ids.includes(id),it=on&&LI.get(id);
+  if(it&&it.mon&&o.abImg!==it.mon.card.img){const p=abPlate(it.mon.card);if(p){if(o.ab)o.g.remove(o.ab);o.ab=p;o.abImg=it.mon.card.img;o.g.add(p)}}   // gambar belum termuat: coba frame berikutnya
+  if(o.ab){o.ab.visible=!!on;if(on){const q=Math.sin(s*4);o.ab.userData.top.scale.setScalar(1.05+.02*q);o.ab.userData.fr.material.opacity=.82+.18*q}}}}
 function sync(){
  if(!G||!G.p)return;{const bn=Math.max(bmax('p'),bmax('o'));if(bn!==BENCHN){BENCHN=bn;redrawMat()}}
  const L=lay(),seen=new Set();LI=new Map();
@@ -265,8 +289,6 @@ const glowT=ctex(128,256,(x,w,h)=>{const g=x.createLinearGradient(0,0,w,0);g.add
 const mkGlow=(sx)=>{const g=new THREE.Mesh(new THREE.PlaneGeometry(2.0,16),new THREE.MeshBasicMaterial({map:glowT,color:0xffd35a,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));g.rotation.x=-Math.PI/2;g.position.set(sx*5.2,.03,.3);if(sx>0)g.scale.x=-1;scene.add(g);return g};
 TURNG=[mkGlow(-1),mkGlow(1)];let TURN={cur:null,t0:0};setTheme(0);fit();
 function turnUpd(s,now){const c=TURN.cur==='o'?0xff4f8f:0xffd35a,tg=TURN.cur?.34+Math.sin(s*2)*.05+Math.max(0,1-(now-TURN.t0)/1800)*.3:0;for(const g of TURNG){g.material.color.setHex(c);g.material.opacity+=(tg-g.material.opacity)*.1}}
-const abIcon=ctex(96,96,(x)=>{x.fillStyle='#16a34a';x.beginPath();x.arc(48,48,44,0,7);x.fill();x.lineWidth=6;x.strokeStyle='#fff';x.stroke();x.font='50px '+FONT;x.textAlign='center';x.textBaseline='middle';x.fillText('✨',48,52)});
-const ABG=Array.from({length:6},()=>{const m=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:abIcon,transparent:true,depthWrite:false}));m.rotation.x=-Math.PI/2+.2;m.scale.set(.42,.42,1);m.visible=false;scene.add(m);return m});
 /* ---------- kotak mainkan Trainer & koin damage yang diseret ---------- */
 const DZ=new THREE.Mesh(new THREE.PlaneGeometry(4.6,1.3),new THREE.MeshBasicMaterial({map:ctex(512,144,(x,w,h)=>{x.fillStyle='#ffffff26';rr(x,6,6,w-12,h-12,28);x.fill();x.setLineDash([22,14]);x.lineWidth=7;x.strokeStyle='#fff';rr(x,6,6,w-12,h-12,28);x.stroke();x.setLineDash([]);x.fillStyle='#fff';x.font='900 34px '+FONT;x.textAlign='center';x.textBaseline='middle';x.shadowColor='#000a';x.shadowBlur=6;x.fillText('LEPAS DI SINI UNTUK MEMAINKAN KARTU',w/2,h/2,w-40)}),transparent:true,depthWrite:false,color:0x4dff88}));
 DZ.rotation.x=-Math.PI/2;DZ.position.set(0,.24,0);DZ.visible=false;scene.add(DZ);

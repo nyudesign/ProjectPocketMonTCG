@@ -43,10 +43,11 @@ function bolt(a,b,col,seg=7){for(let r=0;r<3;r++){const pts=[a];for(let i=1;i<se
 const DOMEG=new THREE.IcosahedronGeometry(1,1);
 function dome(g){const m=new THREE.Mesh(DOMEG,new THREE.MeshBasicMaterial({color:0xbae6fd,wireframe:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));scene.add(m);
  FXL.push({o:m,t0:performance.now(),dur:1500,upd(p){m.position.copy(g.position);m.scale.set(g.scale.x*.78,g.scale.x*.5,g.scale.x);m.rotation.y=p*1.6;m.material.opacity=Math.sin(Math.PI*p)*.9}})}
-/* aura bingkai di bawah kartu penyerang (mengikuti kartu); fungsi kembalian memudarkannya */
+/* aura bingkai di bawah kartu penyerang (mengikuti kartu) sampai serangan selesai, berapa lama pun pilih target/lempar koin; fungsi kembalian memudarkannya.
+   Juga padam sendiri bila kartunya hilang dari meja (KO, ganti pertandingan) */
 function aura(g,col){let end=0;const m=new THREE.Mesh(GEO,new THREE.MeshBasicMaterial({map:VX.card,color:col,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));scene.add(m);
- FXL.push({o:m,t0:performance.now(),dur:15000,upd(){const t=performance.now()/1000;m.position.copy(g.position);m.position.y-=.03;m.rotation.copy(g.rotation);m.scale.setScalar(g.scale.x*1.38*(1+Math.sin(t*7)*.025));
-  m.material.opacity=end?Math.max(0,m.material.opacity-.07):.75+Math.sin(t*7)*.2;if(end&&m.material.opacity<=0)this.t0=-1e9}});return()=>end=1}
+ FXL.push({o:m,t0:performance.now(),dur:1e9,upd(){if(!g.parent)end=1;const t=performance.now()/1000;m.position.copy(g.position);m.position.y-=.03;m.rotation.copy(g.rotation);m.scale.setScalar(g.scale.x*1.38*(1+Math.sin(t*7)*.025));
+  m.material.opacity=end?Math.max(0,m.material.opacity-.07):.75+Math.sin(t*7)*.2;if(end&&m.material.opacity<=0)this.t0=-1e12}});return()=>end=1}
 /* ---------- gerak penyerang: panggung (samping, menjauhi celah pita), terjang, kembali ---------- */
 const setOff=(gs,x,z,o)=>gs.forEach(g=>{const u=g.userData;u.off.x=x;u.off.z=z;Object.assign(u,o)});
 function stageAtk(a,sd){const m=sd==='p'?1:-1,P=portrait(),st=[(P?1.55:1.95)*m,(P?.45:.65)*m,.16*m];monMeshes(a).forEach(g=>{const u=g.userData;u.stg=st;u.off.x=st[0];u.off.z=st[1];Object.assign(u,{lift:1.2,stz:st[2],dash:0})})}
