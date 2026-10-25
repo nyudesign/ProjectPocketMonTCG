@@ -106,7 +106,14 @@ const ATK={stop:null,hc:null},VHC={fire:0xff7a1a,explode:0xff3b1f,arrow:0x9333ea
 async function atkIntro(o){const a=o.mon,c=a.card,g=M.get(a.id),b=$('atkb');b.innerHTML=`<b>${o.name}</b><small>${cname(c)}</small>`;tyVars(b,c.type);b.style.setProperty('--by',(o.sd==='p'?-2:2)+'vh');   // geser sedikit ke arah bek
  if(g){stageAtk(a,o.sd);if(ATK.stop)ATK.stop();ATK.stop=aura(monMeshes(a),VC(c.type),{C:.6,M:.6}[c.type]||1);gather(g,VC(c.type))}camFx(1.14,0);
  b.classList.remove('on');void b.offsetWidth;b.classList.add('on');await sleep(1500);b.classList.remove('on');camFx();await sleep(220)}
-Object.assign(FX,{strike:async o=>{const a=o.a,g=M.get(a.id);if(!g){if(ATK.stop){ATK.stop();ATK.stop=null}return}const t=o.tgt&&M.get(o.tgt.id),
+Object.assign(FX,{
+ /* Pokémon Tool aktif (Helm Punk): setelah HP bek turun, kartu Tool keluar dari bawah Pokémon (terangkat, membesar, bercahaya) dengan label
+    "Pokémon Tool | nama", lalu duri melesat ke penyerang. Mesin menerapkan damage balik sesudah ini (FX.hit) */
+ toolspot:async(tool,sd,att)=>{const g=M.get(tool.id),d=G[sd].active,ag=att&&M.get(att.id),t=showTag(`<b><em>Pokémon Tool</em>${cname(tool)}</b>`,d&&M.get(d.id),1);
+  try{if(g){const u=g.userData;Object.assign(u,{lift:1.2,pop:.9,glow:1});u.off.x=.95*g.scale.x;u.off.z=(sd==='p'?1:-1)*.12*g.scale.x;/* ke samping: HP & damage counter bek tetap terlihat */ring(g.position.x,g.position.z,0xfcd34d);burst(g.position.x,g.position.z,0xfff1a8,30,1.6)}
+   await sleep(700);if(g&&ag){await shot(above(g,.3),above(ag,.5),{tex:VX.star,col:0xfde68a,s:.75,dur:380,h:.9,trail:0xfcd34d});boom(above(ag,.5),0xfcd34d,.9)}await sleep(120)}
+  finally{if(g){const u=g.userData;u.lift=0;u.off.x=u.off.z=0}t.classList.remove('on','tool')}},
+ strike:async o=>{const a=o.a,g=M.get(a.id);if(!g){if(ATK.stop){ATK.stop();ATK.stop=null}return}const t=o.tgt&&M.get(o.tgt.id),
   c={a,g,t,gs:monMeshes(a),sd:o.sd,at:o.at,n:o.n,col:VC(a.card.type),big:Math.min(1.7,.85+Math.max(0,(o.n||0)*10)/160)};   // n = damage akhir/10 (Kepala untuk flip3)
  const k=o.fail?'fail':t?vfxOf(a.card,o.at):'buff';ATK.hc=VHC[k]||null;
  try{await VR[k](c)}finally{if(ATK.stop){ATK.stop();ATK.stop=null}homeAtk(c);setTimeout(()=>ATK.hc=null)}}});

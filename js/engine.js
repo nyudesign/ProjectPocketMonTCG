@@ -39,7 +39,7 @@ async function hitMon(att,def,defSd,base){
  if(isAct&&att){if(def.card.weak&&def.card.weak===att.card.type)d*=2;if(def.card.res&&def.card.res===att.card.type)d=Math.max(0,d-30)}
  if(d>0&&def.card.key==='cinccino'){if(await flip(defSd,'Lapisan Mulus')){log('Lapisan Mulus mencegah damage');d=0}}
  if(d>0){def.dmg+=d;fx('hit',def.id,d,att&&att.card.type);log(`${cname(def.card)} menerima ${d} damage`)}
- if(d>0&&att&&isAct&&def.tool&&def.tool.key==='helmet'&&def.card.type==='D'){await fx('pause');await fx('toolspot',def.tool,defSd);att.dmg+=40;fx('hit',att.id,40,def.card.type);log(`Helm Punk: ${cname(att.card)} menerima 4 damage counter`)}
+ if(d>0&&att&&isAct&&def.tool&&def.tool.key==='helmet'&&def.card.type==='D'){await fx('pause');await fx('toolspot',def.tool,defSd,att);att.dmg+=40;fx('hit',att.id,40,def.card.type);log(`Helm Punk: ${cname(att.card)} menerima 4 damage counter`)}
  return d}
 const winnersNow=()=>{const w=[];for(const sd of['p','o']){if(G[sd].prizes.length===0)w.push(sd);if(inPlay(G[opp(sd)]).length===0&&!w.includes(sd))w.push(sd)}return w};
 async function resolveKO(){

@@ -140,10 +140,15 @@ const cardFlash=g=>{const m=new THREE.Mesh(GEO,new THREE.MeshBasicMaterial({colo
 /* warna pita/label mengikuti bingkai kartu per tipe: [atas, bawah, teks] */
 const TYB={D:['#2f9ea3','#13585d','#fff'],C:['#f1f5f9','#b8c0cc','#1e293b'],P:['#c084fc','#7e22ce','#fff'],R:['#f87171','#b91c1c','#fff'],G:['#86efac','#15803d','#fff'],W:['#7dd3fc','#0369a1','#fff'],L:['#fde047','#eab308','#1e293b'],F:['#d6a26a','#92400e','#fff'],M:['#e2e8f0','#94a3b8','#1e293b'],N:['#e6c65a','#a07c1c','#fff']};
 const tyVars=(el,t)=>['--b1','--b2','--tt'].forEach((k,i)=>el.style.setProperty(k,(TYB[t]||TYB.C)[i]));
+/* label #abt (Ability / Pokémon Tool) di atas kartu g; bila terpotong tepi atas layar pindah ke bawah kartu; dijepit di dalam layar */
+const showTag=(html,g,tool)=>{const t=$('abt');t.innerHTML=html;t.classList.remove('on');t.classList.toggle('tool',!!tool);void t.offsetWidth;t.classList.add('on');
+ if(!g){t.style.left='50%';t.style.top='16%';return t}const p=g.position,sy=z=>(1-p.clone().setZ(z).project(cam).y)/2*innerHeight,y=sy(p.z-.9*g.scale.x),hw=t.offsetWidth/2;
+ t.style.left=Math.min(innerWidth-6-hw,Math.max(6+hw,(p.clone().project(cam).x+1)/2*innerWidth))+'px';t.style.top=(y-t.offsetHeight<6?sy(p.z+.8*g.scale.x)+t.offsetHeight:y)+'px';return t};
 const monMeshes=m=>[m.id,...m.en.map(e=>e.id),m.tool&&m.tool.id].map(i=>M.get(i)).filter(Boolean);
 Object.assign(FX,{
  shuffle:async sd=>{shufT[sd]=performance.now()+800;await sleep(820)},
- hit:(id,d,type)=>{const g=M.get(id);if(!g)return;g.userData.sh=1.2;g.userData.fl=1;shake(Math.min(.28,.05+d/500));const p=g.position,col=ATK.hc||type&&VC(type);
+ hit:(id,d,type)=>{sync();const g=M.get(id);if(!g)return;   // damage sudah diterapkan mesin: HP & koin turun saat angka muncul
+ g.userData.sh=1.2;g.userData.fl=1;shake(Math.min(.28,.05+d/500));const p=g.position,col=ATK.hc||type&&VC(type);
   if(col){ring(p.x,p.z,col);burst(p.x,p.z,col,60,2.6);const f=$('flash');f.style.setProperty('--fc','#'+col.toString(16).padStart(6,'0'));f.classList.remove('on');void f.offsetWidth;f.classList.add('on')}
   const v=p.clone().project(cam),e=document.createElement('div');e.className='dmg';e.innerHTML=`<b>${d}</b>`;e.style.left=(v.x+1)/2*innerWidth+'px';e.style.top=(1-v.y)/2*innerHeight+'px';document.body.append(e);setTimeout(()=>e.remove(),1450)},
  energy:async(m,e)=>{sync();const g=M.get(m.id),o=OV.get(m.id);if(!g||!o||!o.g.visible)return;o.g.updateMatrixWorld(true);
@@ -155,10 +160,9 @@ Object.assign(FX,{
  evolve:id=>{const g=M.get(id);if(!g)return;const p=g.position;ring(p.x,p.z,0xfcd34d);burst(p.x,p.z,0xfff1a8,70,3);burst(p.x,p.z,0x7dd3fc,30,2);g.userData.pop=1;g.userData.fl=1;g.userData.glow=1},
  announce:async o=>{const c=o.mon.card;
   if(o.kind==='Jurus')return atkIntro(o);
-  /* Ability: kartu berkilat putih + percikan emas, label nama menempel di atas kartu sampai efeknya selesai (abend); bila terpotong tepi atas layar, pindah ke bawah kartu */
-  const g=M.get(o.mon.id),t=$('abt');t.innerHTML=`<b><em>Ability</em>${o.name}</b>`;tyVars(t,c.type);t.classList.remove('on');void t.offsetWidth;t.classList.add('on');
-  if(g){const p=g.position,sy=z=>(1-p.clone().setZ(z).project(cam).y)/2*innerHeight;cardFlash(g);ring(p.x,p.z,0xfcd34d);burst(p.x,p.z,0xfcd34d,90,3,.3);burst(p.x,p.z,0xffffff,30,2,.22);g.userData.pop=.6;
-   const y=sy(p.z-.9*g.scale.x),hw=t.offsetWidth/2;t.style.left=Math.min(innerWidth-6-hw,Math.max(6+hw,(p.clone().project(cam).x+1)/2*innerWidth))+'px';/* tetap di dalam layar */t.style.top=(y-t.offsetHeight<6?sy(p.z+.8*g.scale.x)+t.offsetHeight:y)+'px'}else{t.style.left='50%';t.style.top='16%'}
+  /* Ability: kartu berkilat putih + percikan emas, label nama menempel di atas kartu sampai efeknya selesai (abend) */
+  const g=M.get(o.mon.id);tyVars(showTag(`<b><em>Ability</em>${o.name}</b>`,g),c.type);
+  if(g){const p=g.position;cardFlash(g);ring(p.x,p.z,0xfcd34d);burst(p.x,p.z,0xfcd34d,90,3,.3);burst(p.x,p.z,0xffffff,30,2,.22);g.userData.pop=.6}
   await sleep(1100)},
  abend:()=>$('abt').classList.remove('on'),
  revealPrizes:async(sd,ch)=>{if(sd!=='p'){await sleep(500);return}UI.reveal=new Set(ch.map(c=>c.id));sync();
@@ -166,7 +170,6 @@ Object.assign(FX,{
  reveal:async(sd,cards,src)=>{if(sd==='p')return;$('ann').innerHTML=`<div class="prz">${cards.map(c=>`<img src="${imgOf(c)}" alt="${cname(c)}" style="max-width:calc((100vw - 32px)/${cards.length} - 14px);height:auto;max-height:min(52dvh,460px)">`).join('')}</div><b>Bot memperlihatkan kartu (${cname(src)})</b>`;
   $('ann').querySelectorAll('img').forEach((im,i)=>im.animate([{transform:'rotateY(90deg) scale(.6)',opacity:0},{transform:'rotateY(0) scale(1)',opacity:1}],{duration:450,delay:i*180,easing:'ease-out',fill:'backwards'}));
   $('ann').classList.add('on');await sleep(1400+SPD[UI.si][1]+cards.length*180);$('ann').classList.remove('on');await sleep(250)},
- toolspot:async(tool,sd)=>{const g=M.get(tool.id);if(g){ring(g.position.x,g.position.z,0xfcd34d);burst(g.position.x,g.position.z,0xfff1a8,30,1.6);g.userData.pop=.9;g.userData.fl=.8;g.userData.glow=1}say(`${cname(tool)} aktif: penyerang terkena damage balik`,2600,'good');await sleep(1500)},
  flip:(sd,heads,why)=>new Promise(res=>{say(`🪙 ${why}...`,1800);COIN.visible=true;CS={t0:performance.now(),D:1500,end:(8+(heads?0:1))*Math.PI,res:()=>setTimeout(()=>{COIN.visible=false;CS=null;res()},650),done:0,fast:1}}),
  playcard:async(c,sd)=>{if(sd==='p'){panelOpen(c,`Kartu digunakan: ${cname(c)}. ${c.tx}`)}else{UI.limbo={c,sd,pos:'hidden'};sync();say(`Bot memakai ${cname(c)}`,4200,'bot');await cardFlyIn(c,sd);UI.limbo.pos='side';sync();await sleep(1100)}},
  endcard:async(c,sd,cancelled)=>{if(sd==='p'){if(!cancelled)await sleep(700);panelClose()}else{await sleep(800);UI.limbo=null;sync()}},

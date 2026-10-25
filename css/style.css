@@ -74,6 +74,7 @@ body.bt .hud{display:flex}#hudt{top:calc(6px + env(safe-area-inset-top,0px));rig
 #abt{position:fixed;z-index:16;transform:translate(-50%,-100%);display:none;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
 #abt.on{display:flex;animation:abt .3s ease-out}@keyframes abt{from{opacity:0;transform:translate(-50%,-60%) scale(.8)}}
 #abt b{display:flex;align-items:center;gap:8px;white-space:nowrap;background:linear-gradient(90deg,var(--b1,#fde047),var(--b2,#facc15));color:var(--tt,#1e293b);font-weight:900;font-size:14px;padding:3px 12px 3px 4px;border-radius:4px;box-shadow:0 3px 10px #0005}
+#abt.tool b{background:linear-gradient(90deg,#ccfbf1,#99f6e4);color:#134e4a}#abt.tool em{background:#0f766e}
 #abt em{font-style:italic;background:#dc2626;color:#fff;font-size:11px;padding:2px 10px;border-radius:3px;transform:skewX(-12deg)}
 
 #turn{position:fixed;left:0;right:0;top:34%;display:none;text-align:center;z-index:27;pointer-events:none;font:900 clamp(34px,9vw,68px) ui-rounded,system-ui,sans-serif;letter-spacing:.02em;color:#fff;-webkit-text-stroke:2px #0f2a43;paint-order:stroke fill;text-shadow:0 6px 30px #000a}
