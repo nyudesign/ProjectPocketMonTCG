@@ -329,7 +329,7 @@ function loop(t){
   g.position.x+=(tx+(d.sh>.02?(Math.random()-.5)*.25*d.sh:0)-g.position.x)*k;g.position.z+=(tz-g.position.z)*k;g.position.y+=(ty-g.position.y)*k;
   g.scale.x+=(ts-g.scale.x)*k;g.scale.y=g.scale.z=g.scale.x;g.rotation.x+=(rx-g.rotation.x)*(dr?.3:.14);d.rzb=(d.rzb??g.rotation.z)+((T.rz||0)-(d.rzb??g.rotation.z))*.12;d.st=(d.st||0)+((d.stz||0)-(d.st||0))*.12;g.rotation.z=d.rzb+d.st;
   d.sh*=.9;d.fl*=.92;d.pop*=.9;const c=d.fl>.02?1-d.fl*.7:1;if(d.fl>.02||d.glow){d.f.material.color.setRGB(1,d.glow?1:c,d.glow?Math.min(1,c+.2):c);if(d.fl<=.02)d.glow=0}else d.f.material.color.setRGB(1,1,1);
-  const o=OV.get(id);if(o){o.g.position.set(g.position.x,g.position.y+.045,g.position.z);o.g.scale.setScalar(g.scale.x);o.g.rotation.z=d.st||0}
+  const o=OV.get(id);if(o){o.g.position.set(g.position.x,g.position.y+.045*g.scale.x,g.position.z);o.g.scale.setScalar(g.scale.x);o.g.rotation.x=g.rotation.x;o.g.rotation.z=d.st||0}   // ikut miring & skala kartu (stage ×1.5), kalau tidak panel HP tertutup kartu
   if(T.zone==='hand'){const q=PX.get(id);if(q){q.position.z=T.z-((UI.handUp&&!UI.drag)?((1-LAY.hvis)*1.4*LAY.hs+.3):0);q.updateMatrixWorld()}}}
  updHp();cfUpdate(s);
  for(const k in AURA_M)AURA_M[k].opacity=.55+Math.sin(s*3)*.2;glowUpd(s);
