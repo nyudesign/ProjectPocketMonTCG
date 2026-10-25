@@ -1,7 +1,7 @@
 /* ===== MENU, PILIH DECK, DECK BUILDER ===== */
 const esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');/* nama deck dari input user → jangan masuk innerHTML mentah */
 const store={mem:null,get(){try{const v=JSON.parse(localStorage.getItem('ptcg.decks.v1')||'null');if(v){v.forEach(d=>{for(const k in d.list)if(!CARDS[k])delete d.list[k]});/* kartu yang sudah dihapus dari CARDS */store.mem=v;return v}}catch(e){}return store.mem||[]},set(a){store.mem=a;try{localStorage.setItem('ptcg.decks.v1',JSON.stringify(a))}catch(e){}}};
-const BUILTIN={id:'builtin',name:'Wishlist deck 2 (bawaan)',list:USER_DECK},BUILTIN_TERA={id:'builtin-tera',name:'Terapagos ex (bawaan)',list:TERA_DECK},BUILTINS=[BUILTIN,BUILTIN_TERA],isBuiltin=id=>BUILTINS.some(b=>b.id===id);
+const BUILTIN={id:'builtin',name:'Wishlist deck 2 (bawaan)',list:USER_DECK},BUILTIN_TERA={id:'builtin-tera',name:'Terapagos ex (bawaan)',list:TERA_DECK},BUILTIN_DRAGA={id:'builtin-draga',name:'Dragapult ex (bawaan)',list:DRAGA_DECK},BUILTINS=[BUILTIN,BUILTIN_TERA,BUILTIN_DRAGA],isBuiltin=id=>BUILTINS.some(b=>b.id===id);
 const showScr=id=>{['menu','pre','db'].forEach(i=>$(i).classList.toggle('on',i===id))};
 function seg(el,opts,cur,f){el.innerHTML='';opts.forEach(([k,l])=>{const b=document.createElement('button');b.textContent=l;b.className=k===cur?'on':'';b.onclick=()=>{f(k)};el.append(b)})}
 $('m-battle').onclick=()=>{PRE.fmt=PRE.fmt||'std';renderPre();showScr('pre')};$('m-deck').onclick=()=>{renderDB();showScr('db')};
@@ -26,7 +26,7 @@ function renderPre(){
   const r=document.createElement('div');r.className='row';
   const a=document.createElement('button');a.className='b go';a.textContent='🃏 Buat deck dulu';a.onclick=()=>{DB.list={};DB.id=null;renderDB();showScr('db')};
   const c=document.createElement('button');c.className='b atk';c.textContent='🎲 Deck acak';c.onclick=()=>startBattle(randomDeck(),PRE.fmt);r.append(a,c);box.append(r)}
- const h2=document.createElement('div');h2.className='lbl';h2.textContent='Deck bawaan';box.append(h2);item(BUILTIN,'dari screenshot-mu');item(BUILTIN_TERA,'archetype Tera');
+ const h2=document.createElement('div');h2.className='lbl';h2.textContent='Deck bawaan';box.append(h2);item(BUILTIN,'dari screenshot-mu');item(BUILTIN_TERA,'archetype Tera');item(BUILTIN_DRAGA,'archetype Dragapult');
  if(saved.length){const c=document.createElement('button');c.className='b atk';c.textContent='🎲 Deck acak';c.onclick=()=>startBattle(randomDeck(),PRE.fmt);box.append(c)}}
 $('pre-back').onclick=()=>showScr('menu');
 /* ----- deck builder ----- */
