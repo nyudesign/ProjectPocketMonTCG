@@ -127,7 +127,7 @@ const coinsFor=d=>{const r=[];while(d>=100){r.push(100);d-=100}while(d>=50){r.pu
    HP berubah: angka menghitung naik/turun dgn ▲ hijau / ▼ merah, jejak merah muda menyusul bar yang turun, hijau muda mendahului saat pulih */
 const ICT={},TYC2={G:'#22c55e',W:'#0ea5e9',F:'#b45309',L:'#facc15',M:'#9ca3af',N:'#7c3aed',D:'#3b2f5c',P:'#a855f7',R:'#ef4444',C:'#e5e7eb'};
 const iconImg=src=>{if(!ICT[src]){const im=new Image();im.onload=()=>{for(const o of OV.values())if(o.ty&&ICONS.type[o.ty]===src)drawHp(o)};im.src=src;ICT[src]=im}return ICT[src]};
-const HPW=416,HPH=256;   // kanvas 1024 px/unit kartu: tepi kanan = tepi kartu, atasnya .1 di luar kartu untuk angka yang menyembul
+const HPW=416,HPH=256,HPK=1.5;   // kanvas digambar 1024 px/unit, dipasang ×HPK (lebih besar dari contoh agar terbaca di HP); atas panel = y 102 kanvas, angka menyembul di atasnya
 const hsl=([r,g,b])=>{const M=Math.max(r,g,b),m=Math.min(r,g,b),d=M-m,l=(M+m)/510,h=!d?0:M===r?(g-b)/d%6:M===g?(b-r)/d+2:(r-g)/d+4;return[h*60,d?d/255/(1-Math.abs(2*l-1)):0,l]},
  mixc=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t),rgb=c=>`rgb(${c.map(Math.round)})`,W3=[255,255,255],
  BARC={g:[[146,228,144],[116,208,116]],y:[[232,212,152],[214,188,120]],r:[[230,108,106],[204,80,80]],k:[[190,195,202],[128,134,144]]},
@@ -193,7 +193,7 @@ function glowUpd(s){for(const k in GLOW_M){const m=GLOW_M[k],f=.8+.2*Math.sin(s*
 const cntTex=n=>NT[n]||(NT[n]=ctex(128,128,(x)=>{x.beginPath();x.arc(64,64,58,0,7);x.fillStyle='#0f2a43';x.fill();x.lineWidth=8;x.strokeStyle='#fff';x.stroke();x.font=`900 ${n>9?68:90}px `+FONT;x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.fillText(String(n),64,70)}));   // jumlah Energi sejenis (badge)
 function orbList(mon){if(mon.en.length<=4)return mon.en.map(e=>[e.key==='prism'?'prism':e.t,0]);const c=new Map();for(const e of mon.en){const k=e.key==='prism'?'prism':e.t;c.set(k,(c.get(k)||0)+1)}return[...c]}
 function ovBuild(o,mon){
- if(!o.pill){const c=document.createElement('canvas');c.width=HPW;c.height=HPH;o.cx=c.getContext('2d');o.tex=new THREE.CanvasTexture(c);o.tex.anisotropy=4;o.pill=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:o.tex,transparent:true,depthWrite:false}));o.pill.scale.set(HPW/1024,HPH/1024,1);o.pill.position.set(.5-HPW/2048,.8-HPH/2048,-.03);o.g.add(o.pill);o.sub=new THREE.Group();o.g.add(o.sub)}   // panel .015 di atas kartu: di kamera miring (desktop) tak bergeser dari HP cetak kartu
+ if(!o.pill){const c=document.createElement('canvas');c.width=HPW;c.height=HPH;o.cx=c.getContext('2d');o.tex=new THREE.CanvasTexture(c);o.tex.anisotropy=4;o.pill=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:o.tex,transparent:true,depthWrite:false}));o.pill.scale.set(HPW*HPK/1024,HPH*HPK/1024,1);o.pill.position.set(.5-HPW*HPK/2048,.7+(102-HPH/2)*HPK/1024,-.03);o.g.add(o.pill);o.sub=new THREE.Group();o.g.add(o.sub)}   // panel .015 di atas kartu: di kamera miring (desktop) tak bergeser dari HP cetak kartu
  const v=Math.max(0,hp(mon)),mx=mon.card.hp;o.ty=mon.card.type;o.img=mon.card.img;
  if(o.hp===undefined){o.hp=o.n=v;o.mx=mx;o.f=o.gf=v/mx}
  else if(v!==o.hp||mx!==o.mx){o.a={t0:performance.now(),n0:o.n,f0:o.f,g0:o.gf,D:RMO?0:500+Math.min(700,Math.abs(v-o.n)*3),dir:Math.sign(v-o.hp)};o.hp=v;o.mx=mx}
