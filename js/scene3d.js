@@ -127,7 +127,7 @@ const coinsFor=d=>{const r=[];while(d>=100){r.push(100);d-=100}while(d>=50){r.pu
    HP berubah: angka menghitung naik/turun dgn ▲ hijau / ▼ merah, jejak merah muda menyusul bar yang turun, hijau muda mendahului saat pulih */
 const ICT={},TYC2={G:'#22c55e',W:'#0ea5e9',F:'#b45309',L:'#facc15',M:'#9ca3af',N:'#7c3aed',D:'#3b2f5c',P:'#a855f7',R:'#ef4444',C:'#e5e7eb'};
 const iconImg=src=>{if(!ICT[src]){const im=new Image();im.onload=()=>{for(const o of OV.values())if(o.ty&&ICONS.type[o.ty]===src)drawHp(o)};im.src=src;ICT[src]=im}return ICT[src]};
-const HPW=416,HPH=256,HPK=1.5;   // kanvas digambar 1024 px/unit, dipasang ×HPK (lebih besar dari contoh agar terbaca di HP); atas panel = y 102 kanvas, angka menyembul di atasnya
+const HPW=416,HPH=256,HPK=1.7;   // kanvas digambar 1024 px/unit, dipasang ×HPK (lebih besar dari contoh agar terbaca di HP); atas panel = y 102 kanvas, angka menyembul di atasnya
 const hsl=([r,g,b])=>{const M=Math.max(r,g,b),m=Math.min(r,g,b),d=M-m,l=(M+m)/510,h=!d?0:M===r?(g-b)/d%6:M===g?(b-r)/d+2:(r-g)/d+4;return[h*60,d?d/255/(1-Math.abs(2*l-1)):0,l]},
  mixc=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t),rgb=c=>`rgb(${c.map(Math.round)})`,W3=[255,255,255],
  BARC={g:[[146,228,144],[116,208,116]],y:[[232,212,152],[214,188,120]],r:[[230,108,106],[204,80,80]],k:[[190,195,202],[128,134,144]]},
