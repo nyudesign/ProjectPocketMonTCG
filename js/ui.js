@@ -181,7 +181,7 @@ Object.assign(FX,{
    <p class="sub">${me?'Lawan boleh ambil kartu ekstra.':'Kamu boleh ambil kartu ekstra.'}</p>`,[['Lanjut',1]])},
  dealPrizes:async()=>{say('Membagikan kartu Prize...',1500);await sleep(900)},
  revealSetup:async()=>{for(const sd of['p','o']){const a=G[sd].active;if(a){const g=M.get(a.id);if(g)ring(g.position.x,g.position.z,0x7dd3fc)}}await sleep(900)},
- turnstart:async sd=>{TURN={cur:sd,t0:performance.now()};const t=$('turn');t.textContent=sd==='p'?'Giliran Kamu':'Giliran Bot';t.className='on '+sd;
+ turnstart:async sd=>{const l=$('tl');l.className='';void l.offsetWidth;l.className='on '+sd;const t=$('turn');t.textContent=sd==='p'?'Giliran Kamu':'Giliran Bot';t.className='on '+sd;
   if(sd==='p')say('Seret kartu dari tangan ke arena. Ikon hijau ✨ pada kartu = Ability bisa dipakai (arahkan kursor untuk nama Abilitynya).',4500,'good');
   await sleep(3000);t.className=''},
  end:r=>{setTimeout(()=>showEnd(r),700)},
@@ -276,12 +276,16 @@ cvs.addEventListener('pointerdown',e=>{
  {const ci=hitCoin(e);if(ci>=0){UI.drag={coin:1,ci,x:0,z:0,hi:null,txt:'',tgt:null};cvs.style.cursor='grabbing';UI.dn.coin=1;return}}
 
  const dn=UI.dn;if(!UI.drag)hideHv();
- {const it0=dn.i!==null&&LI.get(dn.i);if(it0&&it0.zone==='hand'&&e.pointerType==='touch'&&G&&!UI.panel&&!G.hidden){hov=dn.i;showHv(it0.c);dn.lpOn=1;return}}
+ {const it0=dn.i!==null&&LI.get(dn.i);if(it0&&it0.zone==='hand'&&e.pointerType==='touch'&&G&&!UI.panel&&!G.hidden){hov=dn.i;showHv(it0.c);dn.lpOn=1;dn.br=1;return}}
  if(dn.i!==null)dn.lp=setTimeout(()=>{if(UI.dn===dn&&!UI.drag&&G){const it=LI.get(dn.i);if(canPrev(it)){showHv(it.c);dn.lpOn=1}}},420)});
 cvs.addEventListener('pointermove',e=>{
  if(UI.drag)return moveDrag(e);
  const dn=UI.dn;
  if(dn){const mv=Math.hypot(e.clientX-dn.x,e.clientY-dn.y);
+  if(dn.br){   // jari di kartu tangan (HP): menyamping = lihat kartu lain ala Pocket, naik = seret kartu yang sedang dilihat
+   const up=dn.y-e.clientY;if(mv<=9)return;if(dn.br===1&&up<Math.abs(e.clientX-dn.x))dn.br=2;
+   if(dn.br===1||up>28){dn.br=0;dn.lpOn=0;dn.pan=1;hideHv();const it=LI.get(hov);if(it){startDrag(it);if(UI.drag)return moveDrag(e)}hov=null;return}
+   const i=hitId(e),it=i!==null&&LI.get(i);if(it&&it.zone==='hand'&&i!==hov){hov=i;showHv(it.c)}dn.pan=1;return}
   if(mv>9){clearTimeout(dn.lp);if(dn.lpOn){hideHv();dn.lpOn=0}}
   if(mv>9&&dn.i!==null&&!dn.pan){const it=LI.get(dn.i);if(it&&G){startDrag(it);if(UI.drag)return moveDrag(e)}dn.pan=1}
   if(mv>9)dn.pan=1;return}
@@ -294,7 +298,7 @@ cvs.addEventListener('pointermove',e=>{
   if(it&&it.zone==='ohand'){tt=`Tangan musuh (${G.o.hand.length} kartu)`}
   else if(!(it&&it.zone==='hand')&&!overHand){aim(e);const gp=ray.ray.intersectPlane(PL0,PT),sl=gp&&slotAt(gp.x,gp.z);if(sl){tt=sl.t;rg={x:sl.p[0],z:sl.p[1],s:sl.p[2],ok:3};if(sl.mon&&UI.abl&&UI.abl.includes(sl.mon.id))tt+=`\n✨ Ability siap dipakai: ${sl.mon.card.ab.n}`}}
   if(tt){tip.textContent=tt;tip.style.display='block';tip.style.left=Math.min(e.clientX+14,innerWidth-270)+'px';tip.style.top=e.clientY+16+'px';UI.hp=rg}else{tip.style.display='none';UI.hp=null}}});
-const endDn=()=>{const dn=UI.dn;if(dn){clearTimeout(dn.lp);if(dn.lpOn){hideHv();if(hov===dn.i)hov=null}}};
+const endDn=()=>{const dn=UI.dn;if(dn){clearTimeout(dn.lp);if(dn.lpOn){hideHv();if(hov===dn.i||dn.br)hov=null}}};
 cvs.addEventListener('pointerup',e=>{
  if(UI.drag){endDn();UI.dn=null;return drop()}
  const dn=UI.dn;endDn();UI.dn=null;if(!dn||dn.pan||dn.lpOn)return;if(Math.hypot(e.clientX-dn.x,e.clientY-dn.y)<=9){if(dn.i!==null)tap(dn.i);else if(G&&G.p&&!UI.want&&!UI.panel&&!UI.stage){aim(e);const gp=ray.ray.intersectPlane(PL0,PT),sl=gp&&slotAt(gp.x,gp.z);if(sl)say(sl.t.replace(/\n/g,' — '),2600)}}});
@@ -327,7 +331,7 @@ function loop(t){
   d.sh*=.9;d.fl*=.92;d.pop*=.9;const c=d.fl>.02?1-d.fl*.7:1;if(d.fl>.02||d.glow){d.f.material.color.setRGB(1,d.glow?1:c,d.glow?Math.min(1,c+.2):c);if(d.fl<=.02)d.glow=0}else d.f.material.color.setRGB(1,1,1);
   const o=OV.get(id);if(o){o.g.position.set(g.position.x,g.position.y+.045,g.position.z);o.g.scale.setScalar(g.scale.x);o.g.rotation.z=d.st||0}
   if(T.zone==='hand'){const q=PX.get(id);if(q){q.position.z=T.z-((UI.handUp&&!UI.drag)?((1-LAY.hvis)*1.4*LAY.hs+.3):0);q.updateMatrixWorld()}}}
- updHp();turnUpd(s,now);cfUpdate(s);
+ updHp();cfUpdate(s);
  for(const k in AURA_M)AURA_M[k].opacity=.55+Math.sin(s*3)*.2;glowUpd(s);
  ZH.visible=false;
  const dzv=!!(UI.drag&&UI.drag.dz);DZ.visible=dzv;if(dzv){DZ.material.color.setHex(UI.drag.dzc||0x4dff88);DZ.material.opacity=.75+Math.sin(s*7)*.25}
@@ -340,7 +344,7 @@ function loop(t){
  ren.render(scene,cam)}
 requestAnimationFrame(loop);
 /* --- mulai / akhir pertandingan --- */
-function resetScene(){for(const g of M.values())scene.remove(g);for(const g of PX.values())scene.remove(g);for(const o of OV.values())scene.remove(o.g);for(const id of [...CF.keys()])cfDrop(id);M.clear();PX.clear();OV.clear();LI=new Map();DCS.forEach(m=>m.visible=false);DZ.visible=false}
+function resetScene(){for(const g of M.values())scene.remove(g);for(const g of PX.values())scene.remove(g);for(const o of OV.values())scene.remove(o.g);for(const id of [...CF.keys()])cfDrop(id);M.clear();PX.clear();OV.clear();LI=new Map();DCS.forEach(m=>m.visible=false);DZ.visible=false;$('tl').className=''}
 async function startBattle(list,fmt,opt){
  UI.last={list,fmt};closeAll();resetScene();UI.placing=null;UI.si=UI.si||0;
  ['menu','pre','db'].forEach(i=>$(i).classList.remove('on'));$('end').classList.remove('on');
