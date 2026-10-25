@@ -143,6 +143,14 @@ void main(){vec3 n=normalize(vN);float r=min(length(n.xy),1.);vec3 L=normalize(v
  HALO_T=ctex(128,128,(x,w)=>{const g=x.createRadialGradient(64,64,0,64,64,64);[[0,'#fff0'],[.5,'#fff0'],[.66,'#ffffffd0'],[.8,'#ffffff40'],[1,'#fff0']].forEach(([t,c])=>g.addColorStop(t,c));x.fillStyle=g;x.fillRect(0,0,w,w)}),
  AURA_M={},auraM=k=>AURA_M[k]||(AURA_M[k]=new THREE.SpriteMaterial({map:HALO_T,color:AURAC[k]||0xffffff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})),
  SHAD_M=new THREE.MeshBasicMaterial({map:ctex(64,64,(x,w)=>{const g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'#000c');g.addColorStop(.5,'#0008');g.addColorStop(1,'#0000');x.fillStyle=g;x.fillRect(0,0,w,w)}),transparent:true,depthWrite:false}),SHG=new THREE.PlaneGeometry(.34,.34);
+/* aura halus Energi di kartu: cincin cahaya rapat di luar tepi bola (r>.62 tekstur), meredup ke arah atas agar teks serangan tetap terbaca.
+   Lapis 0 normal (rona, terlihat di kartu terang), lapis 1 aditif (pendar, terlihat di kartu gelap, kontras teks hitam tetap). Denyut & rona Prism: glowUpd */
+const orbGlowT=(fall,top)=>ctex(128,128,(x,w)=>{const d=x.createImageData(w,w),cl=v=>Math.min(1,Math.max(0,v));for(let j=0;j<w;j++)for(let i=0;i<w;i++){const u=(i+.5)/w*2-1,v=(j+.5)/w*2-1,r=Math.hypot(u,v);
+  d.data.set([255,255,255,255*cl((r-.58)/.05)*Math.pow(cl(1-(r-.62)/.38),fall)*(top+(1-top)*cl((v+.85)/.65))|0],(j*w+i)*4)}x.putImageData(d,0,0)}),   // v<0 = atas layar
+ GLC={D:'#2fd3dc',P:'#d46bff',R:'#ff5a3c',G:'#4ee05f',W:'#3ab4ff',L:'#ffd21f',F:'#ff9a3c',M:'#d5dde6',C:'#ffffff',prism:'#ffffff'},GT=[orbGlowT(1.7,.22),orbGlowT(3.4,.3)],GLA=[.4,.85],GLK={C:.4,M:.55},   // putih/perak diredam: pendar putih di meja/kartu berwarna terlihat seperti kabut
+ 
+ GLOW_M={},glowM=k=>GLOW_M[k]||(GLOW_M[k]=GT.map((t,i)=>new THREE.SpriteMaterial({map:t,color:GLC[k]||'#ffffff',transparent:true,depthWrite:false,opacity:GLA[i]*(GLK[k]||1),blending:i?THREE.AdditiveBlending:THREE.NormalBlending})));
+function glowUpd(s){for(const k in GLOW_M){const m=GLOW_M[k],f=.8+.2*Math.sin(s*2.4+k.charCodeAt(0));m.forEach((x,i)=>x.opacity=GLA[i]*f*(GLK[k]||1));if(k==='prism'){m[0].color.setHSL(s*.1%1,.95,.62);m[1].color.copy(m[0].color)}}}
 const cntTex=n=>NT[n]||(NT[n]=ctex(64,64,(x)=>{x.beginPath();x.arc(32,32,28,0,7);x.fillStyle='#0f2a43';x.fill();x.lineWidth=5;x.strokeStyle='#fff';x.stroke();x.font='900 34px '+FONT;x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.fillText(String(n),32,35)}));
 function orbList(mon){if(mon.en.length<=4)return mon.en.map(e=>[e.key==='prism'?'prism':e.t,0]);const c=new Map();for(const e of mon.en){const k=e.key==='prism'?'prism':e.t;c.set(k,(c.get(k)||0)+1)}return[...c]}
 function ovBuild(o,mon){
@@ -154,9 +162,11 @@ function ovBuild(o,mon){
  bd.forEach((e,i)=>{const b=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:ctex(96,96,(x,w,h)=>{x.fillStyle='#fff';x.beginPath();x.arc(48,48,44,0,7);x.fill();x.lineWidth=4;x.strokeStyle='#0f2a43';x.stroke();x.font='54px '+FONT;x.textAlign='center';x.textBaseline='middle';x.fillText(e,48,52)}),transparent:true,depthWrite:false}));b.scale.setScalar(.26);b.position.set(-.34+i*.28,.3,.03);o.sub.add(b)});
  orbList(mon).forEach(([k,n],i)=>{const px=-.375+i*.25,sg=orbMesh(k);sg.userData.slot=i;sg.position.set(px,-.55,0);o.sub.add(sg);
   if(n>1){const q=new THREE.Sprite(new THREE.SpriteMaterial({map:cntTex(n),depthWrite:false}));q.scale.setScalar(.13);q.position.set(.09,.085,.3);sg.add(q)}})}
-/* satu bola Energi di titik 0,0; dipakai overlay & animasi pasang Energi. Di kartu: bayangan kontak (ala ikon Pocket); air=1 (bola terbang): halo cahaya */
+/* satu bola Energi di titik 0,0; dipakai overlay & animasi pasang Energi. Di kartu: bayangan kontak + aura halus (di bawah permukaan bola,
+   jadi tak menimpa bola tetangga); air=1 (bola terbang): halo cahaya */
 function orbMesh(k,air){const sg=new THREE.Group(),b=new THREE.Mesh(SG,orbM(k)),x=air?new THREE.Sprite(auraM(k)):new THREE.Mesh(SHG,SHAD_M);b.position.z=.14;
- if(air){x.position.z=.14;x.scale.setScalar(.36)}else x.position.set(.016,-.02,.02);sg.add(b,x);return sg}
+ if(air){x.position.z=.14;x.scale.setScalar(.36)}else{x.position.set(.016,-.02,.02);for(const m of glowM(k)){const h=new THREE.Sprite(m);h.position.z=.06;h.scale.setScalar(2*.115/.62);sg.add(h)}}
+ sg.add(b,x);return sg}
 function sync(){
  if(!G||!G.p)return;{const bn=Math.max(bmax('p'),bmax('o'));if(bn!==BENCHN){BENCHN=bn;redrawMat()}}
  const L=lay(),seen=new Set();LI=new Map();
