@@ -68,7 +68,7 @@ body.bt .hud{display:flex}#hudt{top:calc(6px + env(safe-area-inset-top,0px));rig
 .bar{height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#38bdf8,#22c55e)}
 .chk{font-size:12px;line-height:1.5}.chk .ok{color:#15803d;font-weight:800}.chk .no{color:#b91c1c;font-weight:800}.chk .wn{color:#b45309}
 @media (max-width:760px){.dbmain{flex-direction:column}#db-side{width:100%;max-height:34dvh}}
-@media (prefers-reduced-motion:reduce){#ann img{animation-duration:.01s}.dmg,#atkb.on,#abt.on,#zab{animation:none}}
+@media (prefers-reduced-motion:reduce){#ann img{animation-duration:.01s}.dmg,#atkb.on,#abt.on{animation:none}}
 
 /* label Ability ala Pocket: menempel di atas kartu selama efeknya berjalan */
 #abt{position:fixed;z-index:16;transform:translate(-50%,-100%);display:none;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
@@ -111,13 +111,6 @@ body.bt .hud{display:flex}#hudt{top:calc(6px + env(safe-area-inset-top,0px));rig
 @media (max-width:760px){.dbmain{flex-direction:column}#db-grid{flex:1 1 auto;min-height:0}#db-side{width:100%;flex:none;max-height:40dvh;padding:8px}.tiles{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}.dbtop .seg{flex:1 1 100%}.dbtop .b{padding:9px 12px}#db-side .row .b{padding:9px 6px;font-size:12px}}
 
 /* ---- v5 ---- */
-/* zoom: blok Ability timbul emas di atas gambar kartu (ala Pocket), ketuk untuk memakai; --fs diisi JS dari tinggi gambar */
-#zwrap{position:relative;line-height:0}
-#zab{position:absolute;left:2%;width:96%;display:none;flex-direction:column;gap:.3em;padding:.5em .85em .6em;border:3px solid #ffe58a;border-radius:10px;background:linear-gradient(180deg,#fff3b0,#f5c542 55%,#e0a21b);color:#1e293b;text-align:left;font:600 var(--fs,13px)/1.35 ui-rounded,system-ui,sans-serif;box-shadow:0 0 0 2px #b7791f,0 0 18px #fcd34dcc,0 12px 22px #0008;cursor:pointer;animation:zab 1.6s ease-in-out infinite}
-#zab.on{display:flex}#zab b{display:flex;align-items:center;gap:.5em;font-weight:900;font-size:1.12em;color:#9f1239}
-#zab em{font-style:italic;font-weight:900;font-size:.8em;background:#dc2626;color:#fff;padding:.1em .8em;border-radius:4px;transform:skewX(-12deg)}
-#zab:active{border-color:#fff;box-shadow:0 0 0 2px #fff,0 0 18px #fffc,0 6px 12px #0008}#zab:focus-visible{outline:3px solid #fff;outline-offset:2px}
-@keyframes zab{50%{box-shadow:0 0 0 2px #b7791f,0 0 28px #fde68a,0 12px 22px #0008;transform:scale(1.015)}}
 #zleft{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}#zstack{display:none;gap:6px;max-width:46vw;overflow-x:auto;padding:4px 2px}
 .zt{border:2px solid transparent;border-radius:9px;background:#0f2a43;padding:3px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;flex:none;color:#fff;font:800 10px ui-rounded,system-ui,sans-serif}
 .zt img{height:62px;border-radius:5px;display:block}.zt.on{border-color:#fcd34d;box-shadow:0 0 12px #fcd34d}.zt:focus-visible{outline:3px solid #fff}

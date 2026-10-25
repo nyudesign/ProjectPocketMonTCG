@@ -53,10 +53,7 @@ function zoomCard(c,mon,sd){
  const stage=k=>k.stage===2?'Stage 2':k.stage===1?'Stage 1':'Basic',stack=[];
  if(mon){stack.push([mon.card,stage(mon.card)]);[...mon.under].reverse().forEach(u=>stack.push([u,stage(u)]));mon.en.forEach(e=>stack.push([e,'Energi']));if(mon.tool)stack.push([mon.tool,'Tool'])}else stack.push([c,'']);
  const zs=$('zstack');zs.innerHTML='';zs.style.display=stack.length>1?'flex':'none';
- const abOk=mon&&sd==='p'&&canAct()&&c.ab&&!c.ab.passive&&!c.ab.setup&&!abWhy('p',mon),za=$('zab');
- za.onclick=()=>{closeZoom();run(()=>actAbility('p',mon))};
- const show=(cd,i)=>{$('zimg').src=imgOf(cd);za.classList.toggle('on',!!abOk&&i===0);
-  if(abOk&&i===0){const[y0,y1]=abRect(cd)||[.54,.69];za.innerHTML=`<b><em>Ability</em>${cd.ab.n}</b><span>${cd.ab.tx}</span>`;za.style.top=y0*100-1+'%';za.style.minHeight=(y1-y0)*100+2+'%'}$('zct').innerHTML=`<div><b>${cname(cd)}</b>${stack.length>1?` <span class="chip">${stack[i][1]}</span>`:''}</div>`+cardText(cd);[...zs.children].forEach((q,j)=>q.classList.toggle('on',j===i))};
+ const show=(cd,i)=>{$('zimg').src=imgOf(cd);$('zct').innerHTML=`<div><b>${cname(cd)}</b>${stack.length>1?` <span class="chip">${stack[i][1]}</span>`:''}</div>`+cardText(cd);[...zs.children].forEach((q,j)=>q.classList.toggle('on',j===i))};
  let h='';
  if(mon){h+=`<div><b>${cname(c)}</b> • HP <b>${hp(mon)}</b> / ${c.hp}${mon.dmg?` • ${mon.dmg/10} damage counter`:''}</div>`;
   const sc=spChip(mon);if(sc.length)h+=`<div>${sc.map(q=>`<span class="chip">${q}</span>`).join('')}</div>`;
@@ -70,7 +67,7 @@ function zoomCard(c,mon,sd){
   if(isAct)c.atk.forEach((a,k)=>btn(`⚔️ ${a.n} — ${a.dmg?a.dmg+(a.plus?'+':a.times?'×':''):'efek'}`,'atk',whyAttack('p',k),()=>run(()=>actAttack('p',k))));
   if(c.ab&&!c.ab.passive&&!c.ab.setup)btn(`✨ Ability: ${c.ab.n}`,'go',abWhy('p',mon),()=>run(()=>actAbility('p',mon)));
   if(isAct)btn(`🔄 Mundur (biaya ${rcost(mon)} Energi)`,'ghost',whyRetreat('p'),()=>run(()=>actRetreat('p')))}
- $('zoom').classList.add('on');requestAnimationFrame(()=>$('zab').style.setProperty('--fs',Math.max(9,Math.min(16,$('zimg').clientHeight*.021))+'px'))}
+ $('zoom').classList.add('on')}
 const zoomMon=(m,sd)=>zoomCard(m.card,m,sd),closeZoom=()=>$('zoom').classList.remove('on');
 $('zx').onclick=closeZoom;$('zoom').onclick=e=>{if(e.target.id==='zoom')closeZoom()};
 /* --- Discard --- */
@@ -305,6 +302,7 @@ function glows(){const L=[];if(!G||!G.p)return L;
  if(UI.drag&&UI.drag.hi)L.push(UI.drag.hi);
  if(UI.want)for(const m of UI.want.mons){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}
  if(UI.stage&&!UI.drag)for(const m of (UI.stage.tgt?[UI.stage.tgt]:UI.stage.tgts)){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}
+ if(!UI.drag)for(const id of UI.abl||[]){const it=LI.get(id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}   // Ability siap: cahaya tepi kuning ala Pocket (tak saat drag, agar tak tertukar dgn sasaran)
  if(UI.hp)L.push(UI.hp);
  return L}
 /* --- loop render --- */
@@ -328,7 +326,6 @@ function loop(t){
   if(T.zone==='hand'){const q=PX.get(id);if(q){q.position.z=T.z-((UI.handUp&&!UI.drag)?((1-LAY.hvis)*1.4*LAY.hs+.3):0);q.updateMatrixWorld()}}}
  updHp();turnUpd(s,now);cfUpdate(s);
  for(const k in AURA_M)AURA_M[k].opacity=.55+Math.sin(s*3)*.2;glowUpd(s);
- abUpd(s,UI.abl||[]);
  ZH.visible=false;
  const dzv=!!(UI.drag&&UI.drag.dz);DZ.visible=dzv;if(dzv){DZ.material.color.setHex(UI.drag.dzc||0x4dff88);DZ.material.opacity=.75+Math.sin(s*7)*.25}
  if(UI.stage){DCS.forEach((m,i)=>{if(!m.visible)return;const dc=UI.drag&&UI.drag.coin&&UI.drag.ci===i;if(dc)m.position.set(UI.drag.x,1.8,UI.drag.z);else m.position.set(-(LAY.W/2-1.1)+i*1.05,1.6+Math.sin(s*3+i)*.07,(LAY.handZ||5)-1.4)})}
