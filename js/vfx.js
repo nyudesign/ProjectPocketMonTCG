@@ -1,5 +1,5 @@
 /* ===== VFX serangan (hibrida Pocket + PTCGL) =====
-   atkIntro (dipanggil FX.announce 'Jurus'): penyerang dipanggungkan di samping (terangkat, membesar, miring) + aura & energi
+   atkIntro (dipanggil FX.announce 'Jurus'): penyerang dipanggungkan di samping (terangkat, membesar, miring) + energi
    berkumpul, pita di celah antara kedua Active, kamera zoom sesaat. FX.strike: resep VFX per jurus (kode efek → kata kunci
    nama → tipe kartu); selesai tepat saat benturan agar angka damage muncul saat kena, lalu penyerang kembali ke slot. */
 const V3=(x,y,z)=>new THREE.Vector3(x,y,z),VC=t=>parseInt((TYB[t]||TYB.C)[0].slice(1),16);
@@ -15,7 +15,13 @@ const VX={
  arrow:ctex(256,64,(x)=>{x.fillStyle='#fff';x.shadowColor='#fff';x.shadowBlur=6;x.fillRect(30,28,170,8);x.beginPath();x.moveTo(250,32);x.lineTo(196,10);x.lineTo(208,32);x.lineTo(196,54);x.closePath();x.moveTo(34,32);x.lineTo(8,12);x.lineTo(48,30);x.closePath();x.moveTo(34,32);x.lineTo(8,52);x.lineTo(48,34);x.closePath();x.fill()}),
  puff:ctex(128,128,(x)=>{for(const[a,b,r]of[[64,70,40],[44,60,28],[86,58,30],[62,44,26]]){const g=x.createRadialGradient(a,b,0,a,b,r);g.addColorStop(0,'#ffffffd0');g.addColorStop(1,'#fff0');x.fillStyle=g;x.beginPath();x.arc(a,b,r,0,7);x.fill()}}),
  swirl:ctex(128,128,(x)=>{x.strokeStyle='#fff';x.lineWidth=7;x.lineCap='round';x.shadowColor='#fff';x.shadowBlur=8;x.beginPath();for(let t=0;t<14;t+=.1)x.lineTo(64+Math.cos(t)*(4+t*3.8),64+Math.sin(t)*(4+t*3.8));x.stroke()}),
- card:ctex(160,208,(x)=>{x.shadowColor='#fff';x.shadowBlur=26;rr(x,20,26,120,156,14);x.lineWidth=16;x.strokeStyle='#fff';x.stroke()})};
+ rays:ctex(512,512,(x)=>{x.translate(256,256);x.filter='blur(3px)';const g=x.createRadialGradient(0,0,0,0,0,256);g.addColorStop(0,'#fff');g.addColorStop(.28,'#ffffffcc');g.addColorStop(.75,'#ffffff30');g.addColorStop(1,'#fff0');x.fillStyle=g;   // sunburst evolusi: 28 sinar runcing tak sama panjang
+  for(let i=0;i<28;i++){const a=i/28*Math.PI*2,w=(i%2?.035:.06)+(i*37%7)*.004,r=(i%2?190:252)-(i*53%5)*14;x.beginPath();x.moveTo(0,0);x.lineTo(Math.cos(a-w)*r,Math.sin(a-w)*r);x.lineTo(Math.cos(a+w)*r,Math.sin(a+w)*r);x.closePath();x.fill()}}),
+ arc:ctex(256,256,(x)=>{x.lineCap='round';x.shadowColor='#fff';x.shadowBlur=10;for(let i=0;i<24;i++){const a=i/24*2.2;x.strokeStyle=`rgba(255,255,255,${(i/24)**1.6})`;x.lineWidth=3+i*.35;x.beginPath();x.arc(128,128,104,a,a+.12);x.stroke()}}),   // lengkung cahaya berekor (heal)
+ pillar:ctex(64,512,(x)=>{const g=x.createLinearGradient(0,0,64,0);g.addColorStop(0,'#fff0');g.addColorStop(.5,'#fff');g.addColorStop(1,'#fff0');x.fillStyle=g;x.fillRect(0,0,64,512);   // pilar cahaya naik
+  x.globalCompositeOperation='destination-in';const v=x.createLinearGradient(0,0,0,512);v.addColorStop(0,'#fff0');v.addColorStop(.35,'#fffc');v.addColorStop(1,'#fff');x.fillStyle=v;x.fillRect(0,0,64,512)}),
+ spike:ctex(256,256,(x)=>{x.translate(128,128);x.fillStyle='#fff';x.shadowColor='#fff';x.shadowBlur=12;x.beginPath();for(let i=0;i<26;i++){const a=i/26*Math.PI*2,r=i%2?38+(i*37%13):92+(i*53%29);x.lineTo(Math.cos(a)*r,Math.sin(a)*r)}x.closePath();x.fill()})};   // semburan runcing (benturan ala Pocket)
+ren.initTexture(VX.rays);ren.initTexture(VX.pillar);ren.initTexture(VX.arc);   // unggah ke GPU sekarang: evolusi pertama tak tersendat
 /* sprite FX: muncul setelah o.d ms, f(m,q) tiap frame (q 0..1); o.r rotasi layar, o.ar rasio tinggi/lebar, o.nb blending normal (asap) */
 function vsp(tex,col,p,s,dur,f,o={}){const m=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,color:col,transparent:true,depthWrite:false,rotation:o.r||0,blending:o.nb?THREE.NormalBlending:THREE.AdditiveBlending}));
  m.position.copy(p);m.scale.set(s,s*(o.ar||1),1);m.visible=!o.d;scene.add(m);FXL.push({o:m,t0:performance.now()+(o.d||0),dur,upd(q){if(q<0)return;m.visible=true;if(f)f(m,q)}});return m}
@@ -40,15 +46,38 @@ function jaws(q,k=1){const s=2.1*k,u=SU();for(const d of[1,-1])vsp(VX.fang,0xfff
   if(e>=1&&!m.userData.hit){m.userData.hit=1;shake(.08*k)}},{r:d>0?0:Math.PI,ar:.5})}
 function bolt(a,b,col,seg=7){for(let r=0;r<3;r++){const pts=[a];for(let i=1;i<seg;i++){const p=a.clone().lerp(b,i/seg);p.x+=(Math.random()-.5)*.55;p.z+=(Math.random()-.5)*.55;pts.push(p)}pts.push(b);
  for(let i=0;i<seg;i++){const A=pts[i],B=pts[i+1];vsp(VX.streak,col,A.clone().lerp(B,.5),1,170,(m,k)=>{m.scale.set(A.distanceTo(B)*1.2,.17,1);m.material.opacity=(1-k)*(Math.random()<.75?1:.35)},{r:sang(A,B),d:r*80})}}}
+/* benturan ala Pocket di kartu yang terkena: semburan runcing warna tipe + inti putih + dua cincin melebar */
+function impact(p,col,k=1){vsp(VX.spike,col,p,1.2*k,430,(m,q)=>{m.scale.setScalar(k*(1.1+q*1.7));m.material.rotation=q*.5;m.material.opacity=q<.25?1:(1-q)/.75});
+ vsp(VX.spike,0xffffff,p,.8*k,260,(m,q)=>{m.scale.setScalar(k*(.7+q*1.2));m.material.opacity=1-q},{r:.3});
+ for(let i=0;i<2;i++)vsp(VX.circ,col,p,.6*k,560,(m,q)=>{const r=k*(.6+q*2.6);m.scale.set(r,r*.62,1);m.material.opacity=(1-q)*.9},{d:i*110})}
+/* titik tepat di belakang g dilihat dari kamera (sejauh k): sinar evolusi tampak memancar dari balik kartu, kartu menutupi pusatnya */
+const behind=(g,k=2)=>g.position.clone().add(g.position.clone().sub(cam.position).normalize().multiplyScalar(k));
+/* sunburst evolusi ala Pocket: dua lapis sinar berputar berlawanan + inti cahaya + kilau beterbangan, mengikuti kartu selama dur ms */
+function sunburst(g,col,dur){const sc=()=>g.scale.x*(1+2/g.position.distanceTo(cam.position)),fade=q=>Math.min(1,q/.18)*Math.min(1,(1-q)/.3);
+ vsp(VX.glow,0xffffff,behind(g),1,dur,(m,q)=>{m.position.copy(behind(g));m.scale.setScalar(sc()*3.1);m.material.opacity=.85*fade(q)});
+ vsp(VX.rays,col,behind(g),1,dur,(m,q)=>{m.position.copy(behind(g));m.scale.setScalar(sc()*(3.4+q*.8));m.material.rotation=-q*1.1;m.material.opacity=.9*fade(q)});
+ vsp(VX.rays,0xffffff,behind(g),1,dur,(m,q)=>{m.position.copy(behind(g));m.scale.setScalar(sc()*(4.3+q*.6));m.material.rotation=.3+q*.8;m.material.opacity=fade(q)});
+ for(let i=0;i<16;i++){const a=Math.random()*Math.PI*2,r=.7+Math.random()*.9,d=Math.random()*dur*.5,v=V3(Math.cos(a)*r,0,Math.sin(a)*r);
+  vsp(VX.star,i%3?0xffffff:col,g.position,.3,dur*.55,(m,q)=>{m.position.copy(g.position).addScaledVector(v,g.scale.x*(.5+q*1.4));m.position.y+=.1;m.scale.setScalar(g.scale.x*(.18+.22*Math.sin(Math.PI*q)));m.material.rotation=q*4;m.material.opacity=Math.sin(Math.PI*q)},{d})}}
+/* heal ala TCG Pocket (Butterfree "Sunny Wind"): kartu berkilat hijau, cahaya hijau membesar, dua lengkung cahaya berputar mengelilingi kartu,
+   bintik hijau naik, lalu kilau kuning-putih berkelip di sekitarnya */
+function healFx(g){const s=g.scale.x,A=()=>above(g,.25);
+ const wf=new THREE.Mesh(GEO,new THREE.MeshBasicMaterial({color:0x86efac,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));scene.add(wf);
+ FXL.push({o:wf,t0:performance.now()+120,dur:900,upd(p){if(p<0)return;wf.position.copy(g.position);wf.position.y+=.02;wf.rotation.copy(g.rotation);wf.scale.copy(g.scale);wf.material.opacity=p<.35?p/.35*.75:.75*(1-(p-.35)/.65)}});
+ vsp(VX.glow,0x4ade80,A(),1,1000,(m,q)=>{m.position.copy(A());m.scale.setScalar(s*(1.4+q*1.8));m.material.opacity=Math.sin(Math.PI*q)*.85},{d:80});
+ for(const[d,dir,c]of[[0,1,0xbbf7d0],[60,-1,0xffffff]])vsp(VX.arc,c,A(),1,1100,(m,q)=>{m.position.copy(A());m.scale.setScalar(s*(1.5+q*.5));m.material.rotation=dir*q*5.5;m.material.opacity=Math.sin(Math.PI*q)},{d:250+d});
+ for(let i=0;i<14;i++){const ox=(Math.random()-.5)*.9*s,oz=(Math.random()-.5)*1.2*s,up=SU();vsp(VX.glow,0x86efac,g.position,.2,900,(m,q)=>{m.position.set(g.position.x+ox,g.position.y+.1,g.position.z+oz).addScaledVector(up,q*1.3*s);m.scale.setScalar(s*.22*(1-q*.5));m.material.opacity=Math.sin(Math.PI*q)},{d:200+i*45})}
+ for(let i=0;i<10;i++){const a=Math.random()*6.28,r=(.55+Math.random()*.35)*s,v=V3(Math.cos(a)*r,0,Math.sin(a)*r*1.3);vsp(VX.star,i%2?0xfef08a:0xffffff,g.position,.3,620,(m,q)=>{m.position.copy(g.position).add(v);m.position.y+=.3;m.scale.setScalar(s*.26*Math.sin(Math.PI*q));m.material.rotation=q*3;m.material.opacity=Math.sin(Math.PI*q)},{d:650+i*60})}}
+/* pulih dari Kondisi Khusus: gelombang putih + warna kondisi menghilang naik menjadi kilau putih */
+function cleanseFx(g,col){const s=g.scale.x,P=g.position;ring(P.x,P.z,0xffffff);vsp(VX.glow,col,above(g,.25),1,700,(m,q)=>{m.position.copy(above(g,.25+q*.6));m.scale.setScalar(s*(2.2-q*1.2));m.material.opacity=(1-q)*.8});
+ const up=SU();for(let i=0;i<12;i++){const ox=(Math.random()-.5)*s,oz=(Math.random()-.5)*1.3*s;vsp(VX.star,0xffffff,P,.2,800,(m,q)=>{m.position.set(P.x+ox,P.y+.15,P.z+oz).addScaledVector(up,q*1.1*s);m.scale.setScalar(s*.2*Math.sin(Math.PI*q));m.material.opacity=Math.sin(Math.PI*q)},{d:i*35})}}
+/* mendarat sesudah evolusi: pilar cahaya naik dari slot + kilau naik */
+function pillars(P,s,col){const up=SU();for(let i=0;i<9;i++){const ox=(i/8-.5)*1.1*s,h=1.4+Math.random()*1.2,c=i%3===1?col:i%2?0xa5f3fc:0xffffff;
+ vsp(VX.pillar,c,P,1,700+i%3*80,(m,q)=>{const e=1-(1-q)**3;m.position.set(P.x+ox,P.y+.15,P.z).addScaledVector(up,s*(.15+e*h*.5));m.scale.set(s*.26,s*h*(.35+e*.65),1);m.material.opacity=Math.sin(Math.PI*Math.min(1,q*1.3))*.95},{d:i*22})}
+ for(let i=0;i<10;i++){const ox=(Math.random()-.5)*s;vsp(VX.star,0xffffff,P,.2,800,(m,q)=>{m.position.set(P.x+ox,P.y+.2,P.z).addScaledVector(up,s*q*2.2);m.scale.setScalar(s*.16*Math.sin(Math.PI*q));m.material.opacity=Math.sin(Math.PI*q)},{d:100+i*40})}}
 const DOMEG=new THREE.IcosahedronGeometry(1,1);
 function dome(g){const m=new THREE.Mesh(DOMEG,new THREE.MeshBasicMaterial({color:0xbae6fd,wireframe:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));scene.add(m);
  FXL.push({o:m,t0:performance.now(),dur:1500,upd(p){m.position.copy(g.position);m.scale.set(g.scale.x*.78,g.scale.x*.5,g.scale.x);m.rotation.y=p*1.6;m.material.opacity=Math.sin(Math.PI*p)*.9}})}
-/* aura bingkai di bawah tumpukan kartu penyerang (gs[0] = kartu Pokémon) sampai serangan selesai, berapa lama pun pilih target/lempar koin; fungsi kembalian memudarkannya.
-   Selalu .02 di bawah kartu terendah (Energi/Tool) agar tak sebidang dgn kartu mana pun (sebidang = z-fighting, aura berkedip).
-   k: redam aura putih/perak. Padam sendiri bila kartunya hilang dari meja (KO, ganti pertandingan) */
-function aura(gs,col,k=1){let end=0;const g=gs[0],m=new THREE.Mesh(GEO,new THREE.MeshBasicMaterial({map:VX.card,color:col,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));scene.add(m);
- FXL.push({o:m,t0:performance.now(),dur:1e9,upd(){if(!g.parent)end=1;const t=performance.now()/1000;m.position.copy(g.position);m.position.y=Math.min(...gs.map(x=>x.position.y))-.02;m.rotation.copy(g.rotation);m.scale.setScalar(g.scale.x*1.38*(1+Math.sin(t*2.6)*.015));
-  m.material.opacity=end?Math.max(0,m.material.opacity-.07):(.8+Math.sin(t*2.6)*.1)*k;if(end&&m.material.opacity<=0)this.t0=-1e12}});return()=>end=1}
 /* ---------- gerak penyerang: panggung (samping, menjauhi celah pita), terjang, kembali ---------- */
 const setOff=(gs,x,z,o)=>gs.forEach(g=>{const u=g.userData;u.off.x=x;u.off.z=z;Object.assign(u,o)});
 function stageAtk(a,sd){const m=sd==='p'?1:-1,P=portrait(),st=[(P?1.55:1.95)*m,(P?.45:.65)*m,.16*m];monMeshes(a).forEach(g=>{const u=g.userData;u.stg=st;u.off.x=st[0];u.off.z=st[1];Object.assign(u,{lift:1.2,stz:st[2],dash:0})})}
@@ -102,9 +131,9 @@ const VFX_FX={turbo:'fire',conf:'psy',draw2:'bite',jaw:'bite',arrow:'arrow',leda
   [/cakar|claw|tebas|nebas|sabet|slash/,'slash'],[/terjang|nerjang|serang|nyerang|sundul|nyundul|hantam|tabrak|nabrak|head|tackle|\bram\b/,'ram']],
  VFX_TY={D:'slash',M:'slash',P:'psy',R:'fire',W:'water',G:'leaf',L:'zap',F:'kick',N:'ram',C:'ram'};
 const vfxOf=(card,at)=>VFX_FX[at.fx]||(VFX_KW.find(([r])=>r.test(at.n.toLowerCase()))||[])[1]||VFX_TY[card.type]||'ram';
-const ATK={stop:null,hc:null},VHC={fire:0xff7a1a,explode:0xff3b1f,arrow:0x9333ea,ghost:0x9333ea,phantom:0x9333ea,crystal:0xe0f2fe,water:0x38bdf8,leaf:0x22c55e,zap:0xfacc15,bite:0xff4d6d};   // warna benturan FX.hit per resep
+const ATK={hc:null},VHC={fire:0xff7a1a,explode:0xff3b1f,arrow:0x9333ea,ghost:0x9333ea,phantom:0x9333ea,crystal:0xe0f2fe,water:0x38bdf8,leaf:0x22c55e,zap:0xfacc15,bite:0xff4d6d};   // warna benturan FX.hit per resep
 async function atkIntro(o){const a=o.mon,c=a.card,g=M.get(a.id),b=$('atkb');b.innerHTML=`<b>${o.name}</b><small>${cname(c)}</small>`;tyVars(b,c.type);b.style.setProperty('--by',(o.sd==='p'?-2:2)+'vh');   // geser sedikit ke arah bek
- if(g){stageAtk(a,o.sd);if(ATK.stop)ATK.stop();ATK.stop=aura(monMeshes(a),VC(c.type),{C:.6,M:.6}[c.type]||1);gather(g,VC(c.type))}camFx(1.14,0);
+ if(g){stageAtk(a,o.sd);gather(g,VC(c.type))}camFx(1.14,0);   // tanpa pelat aura di belakang kartu (user: tidak perlu)
  b.classList.remove('on');void b.offsetWidth;b.classList.add('on');await sleep(1500);b.classList.remove('on');camFx();await sleep(220)}
 Object.assign(FX,{
  /* Pokémon Tool aktif (Helm Punk): setelah HP bek turun, kartu Tool keluar dari bawah Pokémon (terangkat, membesar, bercahaya) dengan label
@@ -113,7 +142,7 @@ Object.assign(FX,{
   try{if(g){const u=g.userData;Object.assign(u,{lift:1.2,pop:.9,glow:1});u.off.x=.95*g.scale.x;u.off.z=(sd==='p'?1:-1)*.12*g.scale.x;/* ke samping: HP & damage counter bek tetap terlihat */ring(g.position.x,g.position.z,0xfcd34d);burst(g.position.x,g.position.z,0xfff1a8,30,1.6)}
    await sleep(700);if(g&&ag){await shot(above(g,.3),above(ag,.5),{tex:VX.star,col:0xfde68a,s:.75,dur:380,h:.9,trail:0xfcd34d});boom(above(ag,.5),0xfcd34d,.9)}await sleep(120)}
   finally{if(g){const u=g.userData;u.lift=0;u.off.x=u.off.z=0}t.classList.remove('on','tool')}},
- strike:async o=>{const a=o.a,g=M.get(a.id);if(!g){if(ATK.stop){ATK.stop();ATK.stop=null}return}const t=o.tgt&&M.get(o.tgt.id),
+ strike:async o=>{const a=o.a,g=M.get(a.id);if(!g)return;const t=o.tgt&&M.get(o.tgt.id),
   c={a,g,t,gs:monMeshes(a),sd:o.sd,at:o.at,n:o.n,col:VC(a.card.type),big:Math.min(1.7,.85+Math.max(0,(o.n||0)*10)/160)};   // n = damage akhir/10 (Kepala untuk flip3)
  const k=o.fail?'fail':t?vfxOf(a.card,o.at):'buff';ATK.hc=VHC[k]||null;
- try{await VR[k](c)}finally{if(ATK.stop){ATK.stop();ATK.stop=null}homeAtk(c);setTimeout(()=>ATK.hc=null)}}});
+ try{await VR[k](c)}finally{homeAtk(c);setTimeout(()=>ATK.hc=null)}}});
