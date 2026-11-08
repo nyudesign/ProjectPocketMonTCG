@@ -1,35 +1,51 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Pokémon TCG Simulator • Aturan Asli</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0e12">
+<title>Pokémon TCG Simulator</title>
+<link rel="preload" href="assets/fonts/ChakraPetch-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/Barlow-500.woff2" as="font" type="font/woff2" crossorigin>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <link rel="stylesheet" href="css/style.css">
 </head><body>
-<canvas id="cv"></canvas><div id="tl"></div>
-<div id="menu" class="scr on"><div class="mbox"><h1>Pokémon TCG<br><small>Simulator • aturan fisik asli</small></h1>
-<button class="b atk" id="m-battle"><i data-ic="swords"></i> Battle</button><button class="b go" id="m-deck"><i data-ic="deck"></i> Deck Build</button><button class="b ghost" id="m-rules"><i data-ic="rules"></i> Aturan &amp; catatan</button>
-<p class="note">Kartu: 43 kartu (deck "wishlist deck 2", Terapagos ex, Dragapult ex, item pemulih), gambar dari ZIP kamu.</p></div></div>
-<div id="pre" class="scr"><div class="mbox"><h2>Siapkan pertandingan</h2>
-<div class="lbl" id="pre-fmt-l">Format</div><div class="seg" id="pre-fmt"></div>
-<div class="lbl">Deck-mu</div><div id="pre-decks" class="list"></div>
-<div class="row"><button class="b ghost" id="pre-back"><i data-ic="back"></i> Kembali</button></div></div></div>
-<div id="db" class="scr"><div class="dbtop"><button class="b ghost" id="db-back" aria-label="Kembali"><i data-ic="back"></i></button><input id="db-name" placeholder="Nama deck" maxlength="30"><select id="db-load"></select>
-<div class="seg" id="db-fmt"></div></div>
-<div class="dbmain"><div id="db-grid"></div><div id="db-side"><div id="db-sum"></div><div id="db-chk"></div>
-<div class="row"><button class="b go" id="db-rec"><i data-ic="spark"></i> Rekomendasi</button><button class="b atk" id="db-save"><i data-ic="save"></i> Simpan</button></div>
-<div class="row"><button class="b ghost" id="db-clear">Kosongkan</button><button class="b ghost" id="db-del">Hapus tersimpan</button></div></div></div></div>
-<div id="hudt" class="hud"><div class="pl"><div class="nm"><b><i data-ic="bot"></i> Bot</b><div class="pips" id="op"></div></div></div></div>
-<div id="msg"></div><div id="pickbar"><span id="pk-t"></span><span id="pk-st"><button class="b ghost" id="pk-m" aria-label="Kurangi"><i data-ic="minus"></i></button><b id="pk-k"></b><button class="b ghost" id="pk-p" aria-label="Tambah"><i data-ic="plus"></i></button></span><button class="b atk" id="pk-ok">Selesai</button><button class="b ghost" id="pk-x">Batal</button></div><div id="hv"><img id="hv-i" alt="pratinjau kartu"></div><div id="tip"></div>
-<div id="hudb" class="hud"><div class="pl"><div class="nm"><b><i data-ic="user"></i> Kamu</b><div class="pips" id="pp"></div></div></div></div>
+<main id="app">
+<canvas id="cv" aria-label="Arena permainan"></canvas><div id="tl"></div>
+<section id="menu" class="scr on" aria-labelledby="m-title"><div class="mwrap">
+ <header class="mhead"><p class="code"><span class="slash" aria-hidden="true"></span>PTCG/SIM<span class="sep">Standard H · I · J</span></p>
+  <h1 id="m-title">Pokémon TCG<span>Simulator</span></h1>
+  <p class="lead">Duel melawan Bot dengan aturan turnamen resmi. Kartu dimainkan dengan menyeretnya ke arena.</p></header>
+ <nav class="mnav" aria-label="Menu utama">
+  <button class="mb main" id="m-battle" aria-keyshortcuts="1"><i data-ic="swords"></i><span><b>Main</b><small>Pilih deck, lawan Bot</small></span><kbd>1</kbd></button>
+  <button class="mb" id="m-deck" aria-keyshortcuts="2"><i data-ic="deck"></i><span><b>Susun deck</b><small>60 kartu, cek legal otomatis</small></span><kbd>2</kbd></button>
+  <button class="mb" id="m-rules" aria-keyshortcuts="3"><i data-ic="rules"></i><span><b>Aturan</b><small>Alur giliran &amp; istilah kartu</small></span><kbd>3</kbd></button>
+ </nav>
+ <p class="mfoot" id="m-foot"></p>
+ <div class="mshow" id="m-show" role="group" aria-label="Main cepat dengan deck bawaan"></div>
+</div></section>
+<section id="pre" class="scr" aria-labelledby="pre-h"><div class="mbox">
+ <div class="mtop"><button class="b ghost ib" id="pre-back" aria-label="Kembali ke menu"><i data-ic="back"></i></button><h2 id="pre-h">Pilih deck</h2><span class="code">MAIN/01</span></div>
+ <div class="lbl" id="pre-fmt-l">Format</div><div class="seg" id="pre-fmt"></div>
+ <div id="pre-decks" class="list"></div></div></section>
+<section id="db" class="scr" aria-labelledby="db-h"><div class="dbtop"><button class="b ghost ib" id="db-back" aria-label="Kembali ke menu"><i data-ic="back"></i></button><h2 id="db-h">Susun deck</h2>
+ <label class="fld"><span>Nama deck</span><input id="db-name" placeholder="Contoh: Dragapult kantor" maxlength="30" autocomplete="off"></label>
+ <label class="fld"><span>Buka deck</span><select id="db-load"></select></label>
+ <div class="seg" id="db-fmt"></div></div>
+ <div class="dbmain"><div id="db-grid"></div><aside id="db-side" aria-label="Ringkasan deck"><div id="db-sum"></div><div id="db-chk" aria-live="polite"></div>
+ <div class="row"><button class="b go" id="db-rec"><i data-ic="spark"></i> Lengkapi otomatis</button><button class="b atk" id="db-save"><i data-ic="save"></i> Simpan deck</button></div>
+ <div class="row"><button class="b ghost" id="db-clear">Kosongkan</button><button class="b ghost" id="db-del">Hapus deck ini</button></div></aside></div></section>
+<div id="hudt" class="hud" role="status" aria-label="Bot"><div class="pl"><div class="nm"><b><i data-ic="bot"></i> Bot</b><div class="pips" id="op"></div></div></div></div>
+<div id="msg" role="status" aria-live="polite"></div><div id="pickbar" role="status" aria-live="polite"><span id="pk-t"></span><span id="pk-st"><button class="b ghost" id="pk-m" aria-label="Kurangi"><i data-ic="minus"></i></button><b id="pk-k"></b><button class="b ghost" id="pk-p" aria-label="Tambah"><i data-ic="plus"></i></button></span><button class="b atk" id="pk-ok">Selesai</button><button class="b ghost" id="pk-x">Batal</button></div><div id="hv"><img id="hv-i" alt="Pratinjau kartu"></div><div id="tip" role="tooltip"></div>
+<div id="hudb" class="hud" role="status" aria-label="Kamu"><div class="pl"><div class="nm"><b><i data-ic="user"></i> Kamu</b><div class="pips" id="pp"></div></div></div></div>
 <div class="btns" id="bbar"><button class="b ghost" id="b-log"><i data-ic="log"></i> Log</button><button class="b ghost" id="b-menu" aria-label="Menu"><i data-ic="menu"></i><span class="lg"> Menu</span></button><button class="b atk" id="b-atk" aria-label="Serang"><i data-ic="swords"></i><span class="lg"> Serang</span></button><button class="b go" id="b-end">Akhiri</button></div>
-<div id="log"><div class="lh"><b>Battle log</b><button class="x" id="log-x" aria-label="Tutup"><i data-ic="x"></i></button></div><div id="log-b"></div></div>
-<div id="turn"></div><div id="flash"></div><div id="cfx"></div><div id="ann"></div><div id="abt"></div><div id="atkb"></div><div id="flp" aria-live="polite"></div><div id="ban" aria-live="polite"></div><div id="go" aria-hidden="true"></div><div id="am"></div><div id="res" aria-live="polite"></div>
-<div id="zoom" class="ov"><div class="zbox"><button class="x" id="zx" aria-label="Tutup"><i data-ic="x"></i></button><div id="zleft"><img id="zimg" alt="kartu"></div><div id="zside"><div id="zinfo"></div><div id="zbtn"></div></div></div></div>
-<div id="panel" class="ov"><div class="pbox"><div class="ptop"><img id="pimg" alt=""><div class="pmain"><div class="pbanner" id="ptitle"></div><div id="pflt"></div><div id="pcar"></div><div class="prow"><button class="b ghost" id="p-look"><i data-ic="eye"></i> Lihat arena</button><button class="b ghost" id="p-cancel">Batal</button><button class="b atk" id="p-done">Selesai</button></div></div></div></div></div>
+<div id="log" role="log" aria-label="Catatan pertandingan"><div class="lh"><b>Catatan pertandingan</b><button class="x" id="log-x" aria-label="Tutup catatan"><i data-ic="x"></i></button></div><div id="log-b"></div></div>
+<div id="turn" aria-live="polite"></div><div id="flash"></div><div id="cfx"></div><div id="ann"></div><div id="abt"></div><div id="atkb"></div><div id="flp" aria-live="polite"></div><div id="ban" aria-live="polite"></div><div id="go" aria-hidden="true"></div><div id="am"></div><div id="res" aria-live="polite"></div>
+<div id="zoom" class="ov" role="dialog" aria-modal="true" aria-label="Detail kartu"><div class="zbox"><button class="x" id="zx" aria-label="Tutup"><i data-ic="x"></i></button><div id="zleft"><img id="zimg" alt="Kartu"></div><div id="zside"><div id="zinfo"></div><div id="zbtn"></div></div></div></div>
+<div id="panel" class="ov" role="dialog" aria-modal="true" aria-labelledby="ptitle"><div class="pbox"><div class="ptop"><img id="pimg" alt=""><div class="pmain"><div class="pbanner" id="ptitle"></div><div id="pflt"></div><div id="pcar"></div><div class="prow"><button class="b ghost" id="p-look"><i data-ic="eye"></i> Lihat arena</button><button class="b ghost" id="p-cancel">Batal</button><button class="b go" id="p-done">Selesai</button></div></div></div></div></div>
 <button class="b go" id="pback"><i data-ic="undo"></i> Kembali ke kartu</button>
-<div id="disc" class="ov"><div class="dbox"><div class="dh"><b>Discard</b><div class="seg" id="disc-tabs"></div><button class="x" id="disc-x" aria-label="Tutup"><i data-ic="x"></i></button></div><div id="disc-b"></div></div></div>
-<div id="dlg" class="ov"><div class="box" id="dlg-b"></div></div>
-<div id="end" class="ov"><div class="box" id="end-b"></div></div>
+<div id="disc" class="ov" role="dialog" aria-modal="true" aria-label="Isi Trash"><div class="dbox"><div class="dh"><b>Trash</b><div class="seg" id="disc-tabs"></div><button class="x" id="disc-x" aria-label="Tutup"><i data-ic="x"></i></button></div><div id="disc-b"></div></div></div>
+<div id="dlg" class="ov" role="dialog" aria-modal="true"><div class="box" id="dlg-b"></div></div>
+<div id="end" class="ov" role="dialog" aria-modal="true" aria-label="Hasil pertandingan"><div class="box" id="end-b"></div></div>
+</main>
 <script src="js/icons.js"></script>
 <script src="js/uiicons.js"></script>
 <script src="js/cards.js"></script>

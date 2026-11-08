@@ -1,64 +1,81 @@
-/* ===== MENU, PILIH DECK, DECK BUILDER ===== */
+/* ===== MENU, PILIH DECK, SUSUN DECK ===== */
 const esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');/* nama deck dari input user → jangan masuk innerHTML mentah */
 const store={mem:null,get(){try{const v=JSON.parse(localStorage.getItem('ptcg.decks.v1')||'null');if(v){v.forEach(d=>{for(const k in d.list)if(!CARDS[k])delete d.list[k]});/* kartu yang sudah dihapus dari CARDS */store.mem=v;return v}}catch(e){}return store.mem||[]},set(a){store.mem=a;try{localStorage.setItem('ptcg.decks.v1',JSON.stringify(a))}catch(e){}}};
-const BUILTIN={id:'builtin',name:'Wishlist deck 2 (bawaan)',list:USER_DECK},BUILTIN_TERA={id:'builtin-tera',name:'Terapagos ex (bawaan)',list:TERA_DECK},BUILTIN_DRAGA={id:'builtin-draga',name:'Dragapult ex (bawaan)',list:DRAGA_DECK},BUILTINS=[BUILTIN,BUILTIN_TERA,BUILTIN_DRAGA],isBuiltin=id=>BUILTINS.some(b=>b.id===id);
-const showScr=id=>{['menu','pre','db'].forEach(i=>$(i).classList.toggle('on',i===id))};
-function seg(el,opts,cur,f){el.innerHTML='';opts.forEach(([k,l])=>{const b=document.createElement('button');b.textContent=l;b.className=k===cur?'on':'';b.onclick=()=>{f(k)};el.append(b)})}
+const BUILTIN={id:'builtin',name:'Wishlist deck 2',list:USER_DECK,ace:'sharpedo'},BUILTIN_TERA={id:'builtin-tera',name:'Terapagos ex',list:TERA_DECK,ace:'terapagos'},BUILTIN_DRAGA={id:'builtin-draga',name:'Dragapult ex',list:DRAGA_DECK,ace:'dragapult'},BUILTINS=[BUILTIN,BUILTIN_TERA,BUILTIN_DRAGA],isBuiltin=id=>BUILTINS.some(b=>b.id===id);
+const showScr=id=>{['menu','pre','db'].forEach(i=>$(i).classList.toggle('on',i===id));if(id==='menu')renderMenu();const f=$(id).querySelector(id==='menu'?'#m-battle':'.b.ib');if(f)f.focus({preventScroll:true})};
+function seg(el,opts,cur,f){el.innerHTML='';opts.forEach(([k,l])=>{const b=document.createElement('button');b.textContent=l;b.className=k===cur?'on':'';b.setAttribute('aria-pressed',k===cur);b.onclick=()=>{f(k)};el.append(b)})}
+/* ----- menu utama: angka di kaki menu dihitung dari data (bukan karangan), kartu deck bawaan = main cepat ----- */
+const playable=()=>Object.values(CARDS).filter(c=>!c.hide).length;
+function renderMenu(){const n=store.get().length;$('m-foot').innerHTML=`<b>${playable()}</b> kartu siap main · <b>${n}</b> deck tersimpan`;
+ const sh=$('m-show');if(sh.childElementCount)return;
+ BUILTINS.forEach(d=>{const c=CARDS[d.ace],b=document.createElement('button');b.className='qp';
+  b.innerHTML=`<img src="${IMG[c.img]}" alt="" width="250" height="350"><span class="tag"><span><small>Deck bawaan</small><b>${esc(d.name)}</b></span>${ic('play')}</span>`;
+  b.setAttribute('aria-label',`Main cepat dengan deck ${d.name}`);b.onclick=()=>startBattle(d.list,'std');sh.append(b)})}
 $('m-battle').onclick=()=>{PRE.fmt=PRE.fmt||'std';renderPre();showScr('pre')};$('m-deck').onclick=()=>{renderDB();showScr('db')};
-const showRules=()=>dlg(`<h2>Aturan & catatan</h2><div class="rules" style="font-size:12.5px;line-height:1.55;text-align:left">
-<b>Alur:</b> koin atau dadu (acak) → pemenang pilih giliran → 7 kartu → yang punya Pokémon Basic menaruh Active/Bench tertutup lebih dulu; yang tidak punya mulligan (tangan diperlihatkan lalu dikocok) sampai dapat Basic, lalu menaruh → lawannya boleh ambil kartu ekstra sebanyak selisih mulligan (Basic yang terambil boleh ke Bench, Active tetap) → 6 Prize → kartu dibuka.<br>
-<b>Giliran:</b> ambil 1 kartu → 1 Energi → evolusi → Item, Tool, Supporter (1) → mundur (1) → serang (mengakhiri giliran). Pemain pertama tidak boleh menyerang/Supporter di giliran pertamanya; tak ada yang boleh evolusi di giliran pertamanya.<br>
-<b>Damage:</b> dasar + efek penyerang → Weakness ×2 → Resistance −30 → efek bertahan. Bench tidak terkena Weakness/Resistance.<br>
-<b>Kondisi khusus &amp; Pokémon Checkup:</b> Asleep/Confused/Paralyzed saling menggantikan; Poison dan Burn bisa menyertai. Berpindah ke Bench atau berevolusi menghapus semuanya.<br>
-<b>KO:</b> lawan memilih sendiri kartu Prize (1; ex 2; Mega ex 3). Menang: ambil semua Prize, lawan tak punya Pokémon, atau lawan tak bisa draw. Seri → Sudden Death.<br>
-<b>Kontrol:</b> seret kartu dari tangan ke arena (tap hanya untuk melihat). Tap Active-mu (atau ${ic('swords')}) untuk menu serangan, Ability, dan mundur; tap Pokémon lain untuk zoom.<br><br>
-<b>Catatan jujur:</b> kartu yang tersedia baru 43 (deck "wishlist deck 2", archetype Terapagos ex & Dragapult ex, Obat Luka, Lumiose Galette), semuanya dibaca dari gambar dan efeknya ditulis. Pokémon Terastal di Bench tidak menerima damage serangan; Gua Besar Zero membuat Bench jadi 8. Legalitas Standard 2026-27 memakai mark H/I/J (atau reprint). Pilihan Expanded muncul bila ada kartu di luar H/I/J.</div>`,[['Tutup',1,'ghost']]);$('m-rules').onclick=showRules;
-/* ----- pilih deck sebelum battle ----- */
+addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
+ if($('menu').classList.contains('on')&&!document.querySelector('.ov.on')){const b={1:'m-battle',2:'m-deck',3:'m-rules'}[e.key];if(b){e.preventDefault();$(b).click()}}
+ else if(e.key==='Escape'&&!document.querySelector('.ov.on')&&($('pre').classList.contains('on')||$('db').classList.contains('on')))showScr('menu')});
+const showRules=()=>dlg(`<h2>Aturan main</h2><div class="rules">
+<p><b>Persiapan.</b> Lempar koin atau dadu: pemenangnya memilih jalan duluan atau kedua. Masing-masing mengambil 7 kartu. Pemain yang punya Pokémon Basic menaruh Pokémon Bertarung dan Cadangan secara tertutup lebih dulu. Pemain tanpa Basic melakukan mulligan (memperlihatkan kartu, mengocok, mengambil 7 lagi) sampai dapat Basic, lalu menaruh. Sesudahnya lawan boleh mengambil kartu ekstra sebanyak selisih mulligan, dan Basic yang terambil boleh ke Cadangan. Lalu masing-masing menaruh 6 Kartu Point dan semua kartu dibuka.</p>
+<p><b>Giliran.</b> Ambil 1 kartu. Lalu dalam urutan bebas: taruh Pokémon Basic ke Cadangan, pasang 1 Energi, evolusi, mainkan Item dan Pokémon Tool, 1 Supporter, 1 Stadium, mundur sekali, pakai Ability. Serangan mengakhiri giliran. Pemain pertama tidak boleh menyerang atau memakai Supporter di giliran pertamanya. Tidak ada yang boleh evolusi di giliran pertamanya, atau pada Pokémon yang baru masuk giliran itu.</p>
+<p><b>Kerusakan.</b> Damage dasar dan efek penyerang, lalu Kelemahan ×2, Resistansi −30, lalu efek pertahanan. Pokémon Cadangan tidak terkena Kelemahan dan Resistansi.</p>
+<p><b>Kondisi Khusus.</b> Tidur, Pusing, dan Lumpuh saling menggantikan. Racun dan Luka Bakar bisa menyertai. Pindah ke Cadangan atau berevolusi memulihkan semuanya. Pemeriksaan Pokémon (Checkup) terjadi di antara giliran.</p>
+<p><b>KO dan menang.</b> Pemain yang membuat KO memilih sendiri Kartu Point-nya: 1 lembar, 2 untuk Pokémon ex, 3 untuk Mega ex. Menang bila Kartu Point habis, lawan tak punya Pokémon di Arena, atau Deck lawan habis saat ia harus mengambil kartu. Bila keduanya menang bersamaan: Sudden Death dengan 1 Kartu Point.</p>
+<p><b>Kontrol.</b> Seret kartu dari tangan ke arena; ketuk hanya untuk melihat. Ketuk Pokémon-mu untuk serangan, Ability, dan mundur.</p>
+<table class="gl"><thead><tr><th>Di kartu Indonesia</th><th>Di TCG Live</th></tr></thead><tbody>
+<tr><td>Pokémon Bertarung</td><td>Active Pokémon</td></tr><tr><td>Pokémon Cadangan</td><td>Bench</td></tr><tr><td>Kartu Point</td><td>Prize cards</td></tr><tr><td>Kartu Pegangan</td><td>Hand</td></tr>
+<tr><td>Trash</td><td>Discard pile</td></tr><tr><td>Token Kerusakan</td><td>Damage counter</td></tr><tr><td>Sisi depan / belakang</td><td>Heads / Tails</td></tr>
+<tr><td>Tidur, Pusing, Lumpuh, Racun, Luka Bakar</td><td>Asleep, Confused, Paralyzed, Poisoned, Burned</td></tr></tbody></table></div>`,[['Tutup',1,'ghost']]);$('m-rules').onclick=showRules;
+/* ----- pilih deck sebelum bertanding ----- */
 const PRE={fmt:'std'};
 function renderPre(){
  seg($('pre-fmt'),Object.entries(FORMATS).map(([k,v])=>[k,k==='std'?'Standard H-I-J':'Expanded']),PRE.fmt,k=>{PRE.fmt=k;renderPre()});$('pre-fmt').style.display=$('pre-fmt-l').style.display=FORMATS.exp?'':'none';
- const box=$('pre-decks');box.innerHTML='';const saved=store.get();
+ const box=$('pre-decks');box.innerHTML='';const saved=store.get(),lbl=t=>{const h=document.createElement('div');h.className='lbl';h.textContent=t;box.append(h)};
  const item=(d,tag)=>{const lg=legal(d.list,PRE.fmt),b=document.createElement('button');b.className='dk';b.disabled=!lg.ok;
-  b.innerHTML=`<div style="flex:1"><div>${esc(d.name)}</div><small>${tag?tag+' • ':''}${lg.n} kartu • ${lg.ok?`<span class="ok">${ic('check')} layak ${FORMATS[PRE.fmt].n}</span>`:`<span class="no">${ic('x')} ${lg.issues[0]}</span>`}</small></div>${lg.ok?ic('play'):''}`;
+  b.innerHTML=`<span style="flex:1;min-width:0">${esc(d.name)}<small>${tag?tag+' · ':''}${lg.n} kartu · ${lg.ok?`<span class="ok">${ic('check')} Sah ${FORMATS[PRE.fmt].n}</span>`:`<span class="no">${ic('x')} ${lg.issues[0]}</span>`}</small></span>${lg.ok?`<span class="go1">MAIN ${ic('play')}</span>`:''}`;
   b.onclick=()=>startBattle(d.list,PRE.fmt);box.append(b)};
- if(saved.length){const h=document.createElement('div');h.className='lbl';h.textContent='Deck tersimpan';box.append(h);saved.forEach(d=>item(d,''))}
- else{const p=document.createElement('p');p.className='note';p.innerHTML='Belum ada deck pribadi yang tersimpan. Mau membuat deck dulu, atau langsung pakai deck acak?';box.append(p);
-  const r=document.createElement('div');r.className='row';
-  const a=document.createElement('button');a.className='b go';a.innerHTML=ic('deck')+' Buat deck dulu';a.onclick=()=>{DB.list={};DB.id=null;renderDB();showScr('db')};
-  const c=document.createElement('button');c.className='b atk';c.innerHTML=ic('dice')+' Deck acak';c.onclick=()=>startBattle(randomDeck(),PRE.fmt);r.append(a,c);box.append(r)}
- const h2=document.createElement('div');h2.className='lbl';h2.textContent='Deck bawaan';box.append(h2);item(BUILTIN,'dari screenshot-mu');item(BUILTIN_TERA,'archetype Tera');item(BUILTIN_DRAGA,'archetype Dragapult');
- if(saved.length){const c=document.createElement('button');c.className='b atk';c.innerHTML=ic('dice')+' Deck acak';c.onclick=()=>startBattle(randomDeck(),PRE.fmt);box.append(c)}}
+ lbl('Deck tersimpan');
+ if(saved.length)saved.forEach(d=>item(d,''));
+ else{const e=document.createElement('div');e.className='empty-st';e.innerHTML='<p class="note">Belum ada deck tersimpan. Susun deck sendiri, atau main dulu dengan deck bawaan di bawah.</p>';
+  const a=document.createElement('button');a.className='b go';a.innerHTML=ic('deck')+' Susun deck';a.onclick=()=>{DB.list={};DB.id=null;DB.name='';renderDB();showScr('db')};e.append(a);box.append(e)}
+ lbl('Deck bawaan');item(BUILTIN,'Mega Sharpedo ex');item(BUILTIN_TERA,'Archetype Tera');item(BUILTIN_DRAGA,'Archetype Dragapult');
+ lbl('Deck acak');const r=document.createElement('button');r.className='dk';r.innerHTML=`${ic('dice')}<span style="flex:1;min-width:0">Deck acak<small>Disusun dari semua kartu, selalu sah</small></span><span class="go1">MAIN ${ic('play')}</span>`;r.onclick=()=>startBattle(randomDeck(),PRE.fmt);box.append(r)}
 $('pre-back').onclick=()=>showScr('menu');
-/* ----- deck builder ----- */
+/* ----- susun deck ----- */
 const DB={list:{},id:null,fmt:'std'};
 const copiesByName=(n)=>Object.entries(DB.list).filter(([k])=>CARDS[k].n===n).reduce((a,[,v])=>a+v,0);
 const total=()=>countDeck(DB.list);
 function maxFor(k){const c=CARDS[k];if(c.k==='energy')return 60;if(c.ace){const other=Object.keys(DB.list).some(x=>DB.list[x]&&CARDS[x].ace&&x!==k);return other?0:1}return 4}
 function renderDB(){
  const g=$('db-grid');g.innerHTML='';
- for(const[name,fn]of CLUSTERS){const keys=Object.keys(CARDS).filter(k=>fn(CARDS[k]));if(!keys.length)continue;
+ for(const[name,fn]of CLUSTERS){const keys=Object.keys(CARDS).filter(k=>!CARDS[k].hide&&fn(CARDS[k]));if(!keys.length)continue;
   const h=document.createElement('h3');h.innerHTML=`<span>${name}</span><span id="cc-${name}"></span>`;g.append(h);
   const t=document.createElement('div');t.className='tiles';
-  keys.forEach(k=>{const c=CARDS[k],d=document.createElement('div');d.className='tile';d.id='t-'+k;d.innerHTML=`<img src="${IMG[c.img]}" alt="${cname(c)}" loading="lazy"><div class="ctl"><button aria-label="Kurangi ${cname(c)}">${ic('minus')}</button><span>0</span><button aria-label="Tambah ${cname(c)}">${ic('plus')}</button></div>`;
+  keys.forEach(k=>{const c=CARDS[k],d=document.createElement('div');d.className='tile';d.id='t-'+k;d.innerHTML=`<img src="${IMG[c.img]}" alt="${cname(c)}" loading="lazy" width="250" height="350"><div class="ctl"><button aria-label="Kurangi ${cname(c)}">${ic('minus')}</button><span aria-live="polite">0</span><button aria-label="Tambah ${cname(c)}">${ic('plus')}</button></div>`;
    d.querySelector('img').onclick=()=>zoomCard(c);const[bm,,bp]=d.querySelectorAll('.ctl button, .ctl span');
    bm.onclick=()=>{if(DB.list[k]){DB.list[k]--;if(!DB.list[k])delete DB.list[k];updDB()}};
    bp.onclick=()=>{if(total()<60&&(DB.list[k]||0)<maxFor(k)&&(c.k==='energy'||copiesByName(c.n)<4)){DB.list[k]=(DB.list[k]||0)+1;updDB()}};t.append(d)});g.append(t)}
- seg($('db-fmt'),[['std','Standard'],['exp','Expanded']],DB.fmt,k=>{DB.fmt=k;updDB()});$('db-fmt').style.display=FORMATS.exp?'':'none';
- const sel=$('db-load');sel.innerHTML='<option value="">— Muat deck —</option>';[...BUILTINS,...store.get()].forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;sel.append(o)});sel.value=DB.id||'';
+ seg($('db-fmt'),[['std','Standard'],['exp','Expanded']],DB.fmt,k=>{DB.fmt=k;renderDB()});$('db-fmt').style.display=FORMATS.exp?'':'none';
+ const sel=$('db-load');sel.innerHTML='<option value="">Pilih deck…</option>';[...BUILTINS,...store.get()].forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name+(isBuiltin(d.id)?' (bawaan)':'');sel.append(o)});sel.value=DB.id||'';
  $('db-name').value=DB.name||'';updDB()}
 function updDB(){
  for(const k of Object.keys(CARDS)){const t=$('t-'+k);if(!t)continue;const n=DB.list[k]||0;t.querySelector('span').textContent=n;t.classList.toggle('on',n>0);const[bm,bp]=t.querySelectorAll('button');bm.disabled=!n;bp.disabled=total()>=60||n>=maxFor(k)||(CARDS[k].k!=='energy'&&copiesByName(CARDS[k].n)>=4)}
  for(const[name,fn]of CLUSTERS){const e=$('cc-'+name);if(e)e.textContent=Object.entries(DB.list).filter(([k])=>fn(CARDS[k])).reduce((a,[,v])=>a+v,0)}
- const n=total();let sum=`<div><b>${n}/60 kartu</b></div><div class="bar"><i style="width:${n/60*100}%"></i></div>`;
- for(const[name,fn]of CLUSTERS){const v=Object.entries(DB.list).filter(([k])=>fn(CARDS[k])).reduce((a,[,q])=>a+q,0);sum+=`<div class="chk">${name}: <b>${v}</b></div>`}
- $('db-sum').innerHTML=sum;
- let chk='';for(const f of Object.keys(FORMATS)){const l=legal(DB.list,f);chk+=`<div class="chk"><div class="${l.ok?'ok':'no'}">${ic(l.ok?'check':'x')} ${FORMATS[f].n}${l.ok?' — layak':''}</div>${l.issues.map(i=>`<div class="no">• ${i}</div>`).join('')}${f===DB.fmt?l.warn.map(i=>`<div class="wn">${ic('alert')} ${i}</div>`).join(''):''}</div>`}
- $('db-chk').innerHTML=chk}
+ const n=total();let sum=`<div class="dcount"><b>${n}/60</b><span>kartu di deck</span></div><div class="bar${n===60?' full':''}"><i style="width:${n/60*100}%"></i></div><div class="kinds">`;
+ for(const[name,fn]of CLUSTERS){const v=Object.entries(DB.list).filter(([k])=>fn(CARDS[k])).reduce((a,[,q])=>a+q,0);sum+=`<span>${name}</span><b>${v}</b>`}
+ $('db-sum').innerHTML=sum+'</div>';
+ let chk='';for(const f of Object.keys(FORMATS)){const l=legal(DB.list,f);chk+=`<div class="chk"><div class="${l.ok?'ok':'no'}">${ic(l.ok?'check':'x')} ${l.ok?'Sah':'Belum sah'}: ${FORMATS[f].n}</div>${l.issues.map(i=>`<div class="no">· ${i}</div>`).join('')}${f===DB.fmt?l.warn.map(i=>`<div class="wn">${ic('alert')} ${i}</div>`).join(''):''}</div>`}
+ $('db-chk').innerHTML=chk;
+ $('db-rec').innerHTML=ic('spark')+(n?' Lengkapi otomatis':' Deck rekomendasi');$('db-rec').disabled=n>=60;
+ $('db-del').disabled=!DB.id||isBuiltin(DB.id);$('db-clear').disabled=!n}
 $('db-back').onclick=()=>showScr('menu');
-$('db-rec').onclick=()=>{const before=total();DB.list=recommend(DB.list);updDB();$('db-chk').insertAdjacentHTML('afterbegin',`<div class="chk ok">${ic('spark')} ${before?'Deck dilengkapi sampai 60 kartu (staple Trainer + Energi).':'Memakai deck rekomendasi: Darkness Mega Sharpedo ex.'}</div>`)};
+$('db-rec').onclick=()=>{const before=total();DB.list=recommend(DB.list);updDB();$('db-chk').insertAdjacentHTML('afterbegin',`<div class="chk ok">${ic('spark')} ${before?'Dilengkapi jadi 60 kartu: Trainer staple dan Energi.':'Deck rekomendasi dimuat: Mega Sharpedo ex.'}</div>`)};
 $('db-clear').onclick=()=>{DB.list={};DB.id=null;DB.name='';$('db-name').value='';$('db-load').value='';updDB()};
 $('db-save').onclick=()=>{const name=$('db-name').value.trim();if(!name){$('db-name').focus();$('db-chk').insertAdjacentHTML('afterbegin','<div class="chk no">Isi nama deck dulu.</div>');return}
  const a=store.get();let id=DB.id&&!isBuiltin(DB.id)?DB.id:null;const rec={id:id||('d'+Date.now()),name,list:{...DB.list}};const i=a.findIndex(x=>x.id===rec.id);if(i>=0)a[i]=rec;else a.push(rec);store.set(a);DB.id=rec.id;DB.name=name;renderDB();
- $('db-chk').insertAdjacentHTML('afterbegin',`<div class="chk ok">${ic('save')} Tersimpan permanen di perangkat ini: ${esc(name)}</div>`)};
-$('db-del').onclick=()=>{if(!DB.id||isBuiltin(DB.id))return;store.set(store.get().filter(x=>x.id!==DB.id));DB.id=null;renderDB()};
+ $('db-chk').insertAdjacentHTML('afterbegin',`<div class="chk ok">${ic('save')} Tersimpan di perangkat ini: ${esc(name)}</div>`)};
+$('db-del').onclick=async()=>{if(!DB.id||isBuiltin(DB.id))return;const d=store.get().find(x=>x.id===DB.id);if(!d)return;
+ if(await dlg(`<h2>Hapus deck?</h2><p>Deck <b>${esc(d.name)}</b> dihapus dari perangkat ini dan tidak bisa dikembalikan.</p>`,[['Hapus deck','y','atk'],['Batal','n','ghost']])!=='y')return;
+ store.set(store.get().filter(x=>x.id!==DB.id));DB.id=null;DB.name='';renderDB();$('db-chk').insertAdjacentHTML('afterbegin',`<div class="chk ok">${ic('check')} Deck dihapus: ${esc(d.name)}</div>`)};
 $('db-load').onchange=e=>{const v=e.target.value;const d=[...BUILTINS,...store.get()].find(x=>x.id===v);if(d){DB.list={...d.list};DB.id=d.id;DB.name=isBuiltin(d.id)?'':d.name;$('db-name').value=DB.name;updDB()}};
+renderMenu();

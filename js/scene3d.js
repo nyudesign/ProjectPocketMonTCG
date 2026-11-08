@@ -97,7 +97,8 @@ function fit(){const w=innerWidth,h=innerHeight,a=w/h,land=a>=1.15;
  const f=Math.tan(cam.fov*Math.PI/360),sE=Math.sin(ELEV),cE=Math.cos(ELEV);ren.setPixelRatio(Math.min(devicePixelRatio||1,3));ren.setSize(w,h,false);cam.aspect=a;cam.updateProjectionMatrix();
  const hh=1.4*LAY.hs,oh=1.4*LAY.ohs,bb=Math.abs(LAY.ben(0,1)[1])+.7*LAY.ben(0,1)[2],cs=getComputedStyle(document.documentElement),sb=land?0:parseFloat(cs.paddingBottom)||0;   // HP: tanpa strip HUD bawah (info & tombol pindah ke kanan garis tengah), hanya safe-area
  cdT=Math.max(LAY.W/(2*f*a),LAY.Hg*sE/(2*f),land?0:(2*bb+LAY.hvis*hh)/(1-(sb+10)/h)*sE/(2*f));ctT=LAY.zc;   // HP: papan + tangan menyembul di tepi bawah harus muat (10px cadangan atas)
- if(land){LAY.handZ=Math.max(ctT+f*cdT/sE-LAY.hvis*hh+hh/2,bb+.18+hh/2);LAY.handW=LAY.W-1.3}
+ if(land){LAY.handZ=Math.max(ctT+f*cdT/sE-LAY.hvis*hh+hh/2,bb+.18+hh/2);LAY.handW=LAY.W-1.3;
+  const ry=-sE*cdT,rz=-cE*cdT-ctT;document.documentElement.style.setProperty('--mid',Math.round((1-(ry*cE-rz*sE)/((-ry*sE-rz*cE)*f))*h/2)+'px')}   // desktop juga: pita giliran & pil HUD menempel di garis tengah
  else{/* HP ala Pocket: tangan menyembul hvis di atas strip HUD bawah, baris muat selebar layar; bila sempit, papan naik sampai Bench Bot mepet pil Bot */
   const cy=sE*cdT,ndc=(y,z)=>{const ry=y-cy,rz=z-cE*cdT-ctT;return(ry*cE-rz*sE)/((-ry*sE-rz*cE)*f)},zAt=(n,y)=>cE*cdT+ctT+(y-cy)/(cE*f*n-sE)*(-cE-sE*f*n);   // NDC-y titik (0,y,z) & kebalikannya
   const zs=zAt(2*sb/h-1,1),zc=zAt(ndc(0,bb)-12/h,1),sh=Math.max(0,Math.min(zc-zs+LAY.hvis*hh,((1-ndc(0,-bb))*h/2-10)*2*f*cdT/(sE*h)));   // zs: tepi bawah layar, zc: 6px di bawah Bench (tinggi kartu tangan y≈1)
@@ -200,7 +201,7 @@ const orbGlowT=(fall,top)=>ctex(128,128,(x,w)=>{const d=x.createImageData(w,w),c
 function glowUpd(s){for(const k in GLOW_M){const m=GLOW_M[k],f=.8+.2*Math.sin(s*2.4+k.charCodeAt(0));m.forEach((x,i)=>x.opacity=GLA[i]*f*(GLK[k]||1));if(k==='prism'){m[0].color.setHSL(s*.1%1,.95,.62);m[1].color.copy(m[0].color)}}}
 const cntTex=n=>NT[n]||(NT[n]=ctex(128,128,(x)=>{x.beginPath();x.arc(64,64,58,0,7);x.fillStyle='#0f2a43';x.fill();x.lineWidth=8;x.strokeStyle='#fff';x.stroke();x.font=`900 ${n>9?68:90}px `+FONT;x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.fillText(String(n),64,70)}));   // jumlah Energi sejenis (badge)
 /* kondisi khusus: [ikon, warna, nama]. Badge = pil berwarna berikon + nama di sisi kiri kartu; saat baru didapat muncul label besar (statusPop) */
-const BADGE={asleep:['zzz','#2563eb','ASLEEP'],confused:['dizzy','#db2777','CONFUSED'],paralyzed:['zap','#ca8a04','PARALYZED'],poison:['skull','#7e22ce','POISONED'],burn:['flame','#dc2626','BURNED']},BDT={};
+const BADGE={asleep:['zzz','#2563eb','TIDUR'],confused:['dizzy','#db2777','PUSING'],paralyzed:['zap','#ca8a04','LUMPUH'],poison:['skull','#7e22ce','RACUN'],burn:['flame','#dc2626','LUKA BAKAR']},BDT={};   // nama resmi kartu Indonesia
 const badgeT=k=>BDT[k]||(BDT[k]=ctex(320,100,x=>{const[n,c,t]=BADGE[k];x.shadowColor='#0008';x.shadowBlur=8;x.shadowOffsetY=3;rr(x,6,6,308,84,42);x.fillStyle=c;x.fill();x.shadowColor='transparent';x.lineWidth=6;x.strokeStyle='#fff';x.stroke();
  x.fillStyle='#ffffff30';x.beginPath();x.arc(48,48,30,0,7);x.fill();icDraw(x,n,48,48,42,'#fff');x.fillStyle='#fff';x.font='900 34px '+FONT;x.textBaseline='middle';x.fillText(t,90,50,214)}));
 /* kondisi khusus hilang (Checkup, mundur, evolusi, item): label hijau "PULIH" berikon kondisi + cleanseFx */
