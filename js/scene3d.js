@@ -128,6 +128,7 @@ const coinTex={};const coinT=v=>coinTex[v]||(coinTex[v]=ctex(128,128,(x,w,h)=>{c
  x.fillStyle='#fff';x.strokeStyle='#0009';x.lineWidth=7;x.lineJoin='round';x.font='900 '+(v>=100?50:62)+'px '+FONT;x.textAlign='center';x.textBaseline='middle';x.strokeText(v,64,66);x.fillText(v,64,66)}));
 const CG=new THREE.CircleGeometry(.5,28),PG=new THREE.PlaneGeometry(1,1),COINR={10:.17,50:.21,100:.25};
 const coinsFor=d=>{const r=[];while(d>=100){r.push(100);d-=100}while(d>=50){r.push(50);d-=50}while(d>=10){r.push(10);d-=10}return r};
+const tokXY=(i,nb)=>{const r=(i/5)|0;return[-.36+i%5*.18+(r%2?.09:0),(nb?.42-nb*.22:.12)-r*.17]};   // posisi lokal token damage ke-i di kartu: baris berisi 5, di bawah nb badge kondisi
 /* panel HP di pojok kanan atas kartu: angka besar menyembul di atas kartu, bar tebal, ikon tipe; latar = warna bingkai kartu.
    HP berubah: angka menghitung naik/turun dgn ▲ hijau / ▼ merah, jejak merah muda menyusul bar yang turun, hijau muda mendahului saat pulih */
 const ICT={},TYC2={G:'#22c55e',W:'#0ea5e9',F:'#b45309',L:'#facc15',M:'#9ca3af',N:'#7c3aed',D:'#3b2f5c',P:'#a855f7',R:'#ef4444',C:'#e5e7eb'};
@@ -224,8 +225,7 @@ function ovBuild(o,mon){
  o.bset=bd;
  bd.forEach((k,i)=>{const b=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:badgeT(k),transparent:true,depthWrite:false})),W=.6,H=.1875;b.scale.set(W,H,1);b.position.set(-.18,.42-i*.22,.035);o.sub.add(b);
   if(bp[k]&&now-bp[k]<900){b.scale.set(.001,.001,1);FXL.push({o:new THREE.Object3D(),t0:bp[k]+500,dur:700,upd(p){if(p<0)return;const f=p<.55?1.35*Math.sin(p/.55*Math.PI/2):1.35-.35*(p-.55)/.45;b.scale.set(W*f,H*f,1)}})}});   // badge timbul sesudah label besar
- const y0=bd.length?.42-bd.length*.22:.12;
- coinsFor(cd).forEach((v,i)=>{const c=new THREE.Mesh(CG,new THREE.MeshBasicMaterial({map:coinT(v),transparent:true,depthWrite:false}));const r=(i/5)|0,cc=i%5;c.scale.setScalar(COINR[v]);c.position.set(-.36+cc*.18+(r%2?.09:0),y0-r*.17,.03+i*.001);o.sub.add(c)});   // baris berisi 5, di bawah badge kondisi
+ coinsFor(cd).forEach((v,i)=>{const c=new THREE.Mesh(CG,new THREE.MeshBasicMaterial({map:coinT(v),transparent:true,depthWrite:false})),[tx,ty]=tokXY(i,bd.length);c.scale.setScalar(COINR[v]);c.position.set(tx,ty,.03+i*.001);o.sub.add(c)});   // baris berisi 5, di bawah badge kondisi
  orbList(mon).forEach(([k,n],i)=>{const px=-.375+i*.25,sg=orbMesh(k);sg.userData.slot=i;sg.position.set(px,-.55,0);o.sub.add(sg);
   if(n>1){const q=new THREE.Sprite(new THREE.SpriteMaterial({map:cntTex(n),depthWrite:false}));q.scale.setScalar(.18);q.position.set(.105,.1,.3);sg.add(q)}})}
 /* satu bola Energi di titik 0,0; dipakai overlay & animasi pasang Energi. Di kartu: bayangan kontak + aura halus (di bawah permukaan bola,
@@ -277,11 +277,11 @@ function lay(){
   const S=G[sd],m=sd==='p'?1:-1,hid=G.phase==='setup';
   const mons=[];if(S.active)mons.push([S.active,Z.act(m),'act']);S.bench.forEach((b,i)=>mons.push([b,Z.ben(i,m),'ben']));
   for(const[mon,[x0,z0,s0],zone]of mons){
-   let x=x0,z=z0,s=s0,y=.12,tilt=0;const stg=UI.stage&&UI.stage.mon===mon;if(stg){x=1.1;z=(LAY.handZ||5)-1.4;s=1.5;y=1.4;tilt=.2}
-   add(mon.id,mon.card,{sd,zone,mon,x,z,s,y,tilt,up:!hid,rz:stg?0:spin(mon)});
-   const n=mon.en.length,st=Math.min(.2,.5/Math.max(n,1))*s;   // saat dipanggungkan (stg) Energi/Tool tetap ada tapi tersembunyi, agar tak hilang lalu muncul lagi dari deck
-   mon.en.forEach((e,i)=>add(e.id,e,{sd,zone:'att',par:mon,x,z:z-m*(i+1)*st,s,y:stg?y-.03:.09-i*.011,up:!hid,hide:stg}));
-   if(mon.tool)add(mon.tool.id,mon.tool,{sd,zone:'att',par:mon,x:x+.14*s,z:z+m*.22*s,s,y:stg?y-.03:.08,up:!hid,hide:stg,lab:cname(mon.tool),labi:'tool',labc:'#0f766e',laby:-m*.63})}
+   const x=x0,z=z0,s=s0,y=.12;   // kartu sumber damage counter tetap di slotnya (koinnya melayang di atasnya, lihat trayPos di ui.js)
+   add(mon.id,mon.card,{sd,zone,mon,x,z,s,y,up:!hid,rz:spin(mon)});
+   const n=mon.en.length,st=Math.min(.2,.5/Math.max(n,1))*s;
+   mon.en.forEach((e,i)=>add(e.id,e,{sd,zone:'att',par:mon,x,z:z-m*(i+1)*st,s,y:.09-i*.011,up:!hid}));
+   if(mon.tool)add(mon.tool.id,mon.tool,{sd,zone:'att',par:mon,x:x+.14*s,z:z+m*.22*s,s,y:.08,up:!hid,lab:cname(mon.tool),labi:'tool',labc:'#0f766e',laby:-m*.63})}
   S.prizes.forEach((c,i)=>add(c.id,c,{sd,zone:'pz',x:Z.pri(i,m)[0],z:Z.pri(i,m)[1],s:Z.pri(i,m)[2],up:0}));   // Prize di meja selalu tertutup
   for(let i=0;i<Math.min(4,Math.ceil(S.deck.length/12));i++){const[x,z,s]=Z.dk(m);add('dk'+sd+i,null,{sd,zone:'dk',x,z,s,up:0,y:.06+i*.05})}
   const t=S.discard[S.discard.length-1];if(t){const[x,z,s]=Z.dis(m);add(t.id,t,{sd,zone:'dis',x,z,s})}
@@ -300,8 +300,8 @@ const FXL=[],shufT={p:0,o:0};
 function burst(x,z,col,n=40,up=2.2,sz=.16){const geo=new THREE.BufferGeometry(),pos=new Float32Array(n*3),vel=[];for(let i=0;i<n;i++){pos[i*3]=x;pos[i*3+1]=.5;pos[i*3+2]=z;const a=Math.random()*6.28,r=Math.random()*1.6;vel.push([Math.cos(a)*r,Math.random()*up+.6,Math.sin(a)*r])}
  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));const mt=new THREE.PointsMaterial({size:sz,color:col,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}),o=new THREE.Points(geo,mt);scene.add(o);
  FXL.push({o,t0:performance.now(),dur:1100,upd(p){const q=geo.attributes.position;for(let i=0;i<n;i++){q.array[i*3]+=vel[i][0]*.016;q.array[i*3+1]+=vel[i][1]*.016-.02*p;q.array[i*3+2]+=vel[i][2]*.016}q.needsUpdate=true;mt.opacity=1-p}})}
-function ring(x,z,col){const r=new THREE.Mesh(new THREE.RingGeometry(.55,.7,40),new THREE.MeshBasicMaterial({color:col,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));r.rotation.x=-Math.PI/2;r.position.set(x,.2,z);scene.add(r);
- FXL.push({o:r,t0:performance.now(),dur:900,upd(p){r.scale.setScalar(.6+p*3.2);r.material.opacity=1-p}})}
+function ring(x,z,col,k=1){const r=new THREE.Mesh(new THREE.RingGeometry(.55,.7,40),new THREE.MeshBasicMaterial({color:col,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));r.rotation.x=-Math.PI/2;r.position.set(x,.2,z);scene.add(r);
+ FXL.push({o:r,t0:performance.now(),dur:900,upd(p){r.scale.setScalar((.6+p*3.2)*k);r.material.opacity=1-p}})}
 const RG=(()=>{const t=ctex(128,180,(x)=>{x.shadowColor='#fff';x.shadowBlur=14;rr(x,12,12,104,156,12);x.lineWidth=9;x.strokeStyle='#fff';x.stroke()});
  return Array.from({length:14},()=>{const m=new THREE.Mesh(GEO,new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,color:0xfcd34d}));m.rotation.x=-Math.PI/2;m.visible=false;scene.add(m);return m})})();
 /* muka koin (koin 3D penentu giliran & koin overlay ala Pocket): Kepala = bingkai emas, cincin gelap, muka krem + petir; Ekor = koin arang dgn lambang bola timbul */
@@ -405,7 +405,12 @@ setTheme(0);fit();
 const DZ=new THREE.Mesh(new THREE.PlaneGeometry(4.6,1.3),new THREE.MeshBasicMaterial({map:ctex(512,144,(x,w,h)=>{x.fillStyle='#ffffff26';rr(x,6,6,w-12,h-12,28);x.fill();x.setLineDash([22,14]);x.lineWidth=7;x.strokeStyle='#fff';rr(x,6,6,w-12,h-12,28);x.stroke();x.setLineDash([]);x.fillStyle='#fff';x.font='900 34px '+FONT;x.textAlign='center';x.textBaseline='middle';x.shadowColor='#000a';x.shadowBlur=6;x.fillText('LEPAS DI SINI UNTUK MEMAINKAN KARTU',w/2,h/2,w-40)}),transparent:true,depthWrite:false,color:0x4dff88}));
 DZ.rotation.x=-Math.PI/2;DZ.position.set(0,.24,0);DZ.visible=false;scene.add(DZ);
 const dcTex=v=>ctex(256,256,(x)=>{const g=x.createRadialGradient(128,128,10,128,128,120);g.addColorStop(0,'#fef08a');g.addColorStop(1,'#ca8a04');x.fillStyle=g;x.beginPath();x.arc(128,128,120,0,7);x.fill();x.lineWidth=12;x.strokeStyle='#fff';x.stroke();x.fillStyle='#fff';x.strokeStyle='#0008';x.lineWidth=10;x.font='900 120px '+FONT;x.textAlign='center';x.textBaseline='middle';x.strokeText(String(v),128,134);x.fillText(String(v),128,134)});
-const DCS=[10,10,10].map(v=>{const m=new THREE.Mesh(new THREE.CircleGeometry(.32,36),new THREE.MeshBasicMaterial({map:dcTex(v),transparent:true}));m.rotation.x=-Math.PI/2;m.visible=false;scene.add(m);return m});
+/* koin damage counter 3D (tebal, tepi emas) untuk diseret & dilempar. Tiap koin punya bayangan di meja dan jejak emas saat terbang; geraknya di coinsUpd (ui.js) */
+const DQ=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI/2),TRN=8,DCF=new THREE.MeshBasicMaterial({map:dcTex(10),transparent:true}),DCE=new THREE.MeshBasicMaterial({color:0xa16207}),DDOT=ctex(32,32,(x,w)=>{const g=x.createRadialGradient(16,16,0,16,16,16);g.addColorStop(0,'#fff');g.addColorStop(.35,'#ffffffb0');g.addColorStop(1,'#fff0');x.fillStyle=g;x.fillRect(0,0,w,w)});   // DDOT: titik jejak bulat lembut. DQ: angka "10" di tutup silinder tegak menghadap kamera
+const DCS=Array.from({length:6},()=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(.32,.32,.06,40),[DCE,DCF,DCF]),u=m.userData,tg=new THREE.BufferGeometry(),c=new Float32Array(TRN*3);m.quaternion.copy(DQ);m.visible=false;u.k=1;
+ u.shd=new THREE.Mesh(SHG,new THREE.MeshBasicMaterial({map:SHAD_M.map,transparent:true,depthWrite:false}));u.shd.rotation.x=-Math.PI/2;u.shd.visible=false;
+ for(let j=0;j<TRN;j++){const f=(1-j/TRN)**1.5;c.set([f,.82*f,.3*f],j*3)}tg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(TRN*3),3));tg.setAttribute('color',new THREE.BufferAttribute(c,3));
+ u.trl=new THREE.Points(tg,new THREE.PointsMaterial({map:DDOT,size:.3,vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));u.trl.visible=false;u.trl.frustumCulled=false;scene.add(m,u.shd,u.trl);return m});
 
 const ZH=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:ctex(256,256,(x,w,h)=>{x.fillStyle='#ffffff55';rr(x,6,6,w-12,h-12,34);x.fill();x.lineWidth=9;x.strokeStyle='#ffffffe0';x.stroke()}),transparent:true,depthWrite:false,color:0x4dff88}));
 ZH.rotation.x=-Math.PI/2;ZH.position.y=.22;ZH.visible=false;scene.add(ZH);

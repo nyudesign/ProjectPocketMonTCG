@@ -113,7 +113,7 @@ function panelPay(o){return new Promise(res=>{
 /* --- Pickbar (petunjuk + tombol Batal di dalam pop-up, bukan di arena) --- */
 function pickShow(t,cb,st){$('pk-ok').style.display='none';$('pk-t').textContent=t;$('pickbar').classList.add('on');$('pk-x').style.display=cb?'':'none';UI.pkcb=cb;const s=$('pk-st');
  if(st){s.style.display='inline-flex';let k=st.k;const upd=()=>{$('pk-k').textContent='×'+k;st.onK&&st.onK(k)};$('pk-m').onclick=()=>{if(k>1){k--;upd()}};$('pk-p').onclick=()=>{if(k<st.max){k++;upd()}};upd()}else s.style.display='none'}
-function pickHide(){$('pickbar').classList.remove('on');$('pk-ok').style.display='none';UI.pkcb=null}
+function pickHide(){const pb=$('pickbar');pb.classList.remove('on','near');pb.style.left=pb.style.top='';$('pk-ok').style.display='none';UI.pkcb=null}
 $('pk-x').onclick=()=>{const cb=UI.pkcb;pickHide();if(cb)cb()};
 /* --- Keputusan pemain (dipanggil mesin) --- */
 function wantStart(o,drag){return new Promise(res=>{UI.want={mons:o.mons,drag,sd:o.sd,ctx:o.ctx,cancel:o.cancel,res};
@@ -129,8 +129,9 @@ const UIDEC={
  moveDmg:async o=>{
   const src=await wantStart({title:'Pilih Pokémonmu yang damage counter-nya mau dipindah',mons:o.srcs,sd:'p',ctx:'target',cancel:true},false);
   if(!src)return null;
-  return new Promise(res=>{const mx=Math.min(o.max,src.dmg/10);UI.stage={mon:src,max:mx,tgts:o.tgts,res,moved:0,tgt:null,apply:o.apply};DCS.forEach((m,i)=>m.visible=i<mx);
-   pickShow(`Kartu dan damage counter-nya naik ke area tangan. Ada ${mx} koin (1 koin = 10 damage). Seret koin ke Pokémon lawan, boleh sampai ${mx} koin ke Pokémon yang sama.`,()=>{UI.stage=null;DCS.forEach(m=>m.visible=false);sync();res(null)});sync()})},
+  return new Promise(res=>{const mx=Math.min(o.max,src.dmg/10);
+   coinStage({mon:src,at:src,max:mx,tgts:o.tgts,res,moved:0,tgt:null,apply:o.apply},`Seret koin ke Pokémon lawan yang menyala (0/${mx})`,()=>{UI.stage=null;DCS.forEach(m=>m.visible=false);sync();res(null)})})},
+ placeDmg:o=>new Promise(res=>coinStage({mon:null,at:o.from,max:o.n,tgts:o.tgts,res,moved:0,tgt:null,apply:o.apply,spread:1},`Seret koin ke Pokémon Bench lawan yang menyala (0/${o.n})`,null)),   // spread: koin boleh dibagi ke beberapa Pokémon
  attachEnergies:o=>new Promise(res=>{UI.attach={list:[...o.energies],tgts:o.targets,apply:o.apply,res};pickShow(`Pasang Energi Dasar ke Pokémon Bench, sesuai teks ${cname(o.card)}. Seret tiap kartu Energi ke Pokémon tujuan. Tiap Energi bebas ke Pokémon mana pun.`,null);sync()}),
  mullDraw:o=>new Promise(res=>{const b=$('dlg-b');let v=o.max;   // ala PTCGL "Pick a number"
   b.innerHTML=`<div class="mlh p"><b>PILIH ANGKA</b></div><p>Bot mulligan ${o.theirs} kali${o.mine?`, kamu ${o.mine} kali`:''}. Mau ambil berapa kartu ekstra? Pokémon Basic yang terambil boleh ditaruh ke Bench.</p><div class="pkn">${Array.from({length:o.max+1},(_,i)=>`<button class="${i===v?'on':''}" data-v="${i}">${i}</button>`).join('')}</div>`;
@@ -168,11 +169,14 @@ Object.assign(FX,{
    FXL.push({o:c,t0,dur:D,upd(p){const u=p<.3?p/.3:p>.7?(1-p)/.3:1,e=u*u*(3-2*u),a=a0+sw*p*2.4;c.position.set(x+Math.cos(a)*r*e,.1+h*e,z+Math.sin(a)*r*e*.8);c.rotation.z=rz*e+sw*p*1.5;c.scale.setScalar(s0*(1+.06*e))}})}
   await sleep(D+40)},
  /* kena serangan ala Pocket: kilatan & semburan warna tipe, angka damage besar diam di tengah kartu ±0,7 dtk, baru sesudahnya HP menghitung turun (o.hold) */
- hit:(id,d,type)=>{const o=OV.get(id);if(o)o.hold=performance.now()+(RMO?0:720);sync();const g=M.get(id);if(!g)return;
-  g.userData.sh=1.2;g.userData.fl=1;shake(Math.min(.28,.05+d/500));const T=g.userData.t,p=T?new THREE.Vector3(T.x,T.y,T.z):g.position.clone(),col=ATK.hc||type&&VC(type);   // posisi slot, bukan kartu yang masih menerjang: damage ke diri sendiri tampil di penyerang
+ hit:(id,d,type,ctr)=>{const o=OV.get(id);if(o)o.hold=performance.now()+(RMO?0:720);sync();const g=M.get(id);if(!g)return;   // ctr: damage counter dari koin (efek mendaratnya di coinsUpd): getaran ringan, tanpa kilat layar
+  g.userData.sh=ctr?.6:1.2;g.userData.fl=ctr?.45:1;shake(ctr?.04:Math.min(.28,.05+d/500));const T=g.userData.t,p=T?new THREE.Vector3(T.x,T.y,T.z):g.position.clone(),col=!ctr&&(ATK.hc||type&&VC(type));   // posisi slot, bukan kartu yang masih menerjang: damage ke diri sendiri tampil di penyerang
   if(col){ring(p.x,p.z,col);burst(p.x,p.z,col,60,2.6);impact(p.clone().setY(p.y+.4),col,Math.min(1.5,.85+d/260)*g.scale.x);const f=$('flash');f.style.setProperty('--fc','#'+col.toString(16).padStart(6,'0'));f.classList.remove('on');void f.offsetWidth;f.classList.add('on')}
   const[cx,cy]=px2(p.x,p.y,p.z),w=Math.abs(px2(p.x+.5*g.scale.x,p.y,p.z)[0]-px2(p.x-.5*g.scale.x,p.y,p.z)[0]),e=document.createElement('div');e.className='dmg';e.textContent=d;
   e.style.cssText=`left:${cx}px;top:${cy}px;--fs:${Math.round(Math.max(30,Math.min(110,w*.42)))}px`;document.body.append(e);setTimeout(()=>e.remove(),1150)},
+ /* Bot menaruh/memindahkan damage counter: koin melompat dari kartu sumber lalu dilempar ke slot token sasaran (coinThrow); selesai saat mendarat */
+ dmgThrow:(from,to)=>new Promise(res=>{const m=DCS.find(c=>!c.visible),g=from&&M.get(from.id);if(!m||!g||!OV.get(to.id))return res();
+  const P=g.position.clone();P.y+=.35;if(!RMO)burst(P.x,P.z,0xffd54a,10,.9,.08);coinThrow(m,to,res,P)}),
  /* heal ala Pocket: angka hijau besar di tengah kartu ±0,65 dtk + healFx, baru HP menghitung naik (o.hold) */
  heal:(id,n)=>{const o=OV.get(id);if(o)o.hold=performance.now()+(RMO?0:650);sync();const g=M.get(id);if(!g)return;if(!RMO)healFx(g);
   const T=g.userData.t,p=T?new THREE.Vector3(T.x,T.y,T.z):g.position,[cx,cy]=px2(p.x,p.y,p.z),w=Math.abs(px2(p.x+.5*g.scale.x,p.y,p.z)[0]-px2(p.x-.5*g.scale.x,p.y,p.z)[0]),e=document.createElement('div');
@@ -262,7 +266,7 @@ const tossCoin=heads=>new Promise(res=>{const S=simCoin(),C=COIN,top=S.up===head
 const rollDice=v=>new Promise(res=>{const F=simDie(v),D=DIE;diePose(F[0]);D.m.visible=D.sh.visible=true;DS={t0:performance.now(),F,res:()=>{showRes(String(v));setTimeout(()=>{D.m.visible=D.sh.visible=false;DS=null;res()},1500)},done:0}});
 function showEnd(r){const b=$('end-b');b.innerHTML=`<h2>${r==='p'?ic('win')+' Kamu menang!':r==='o'?(G.why==='menyerah'?ic('flag')+' Kamu menyerah':ic('skull')+' Bot menang'):ic('tie')+' Seri'}</h2><p>${G.log.slice(-3).map(iconize).join('<br>')}</p>`;
  const add=(l,cls,f)=>{const e=document.createElement('button');e.className='b '+cls;e.textContent=l;e.onclick=()=>{$('end').classList.remove('on');f()};b.append(e)};
- if(r==='tie')add('Sudden Death (1 Prize)','atk',()=>startBattle(UI.last.list,UI.last.fmt,{prizes:1}));
+ if(r==='tie')add('Sudden Death (1 Prize)','atk',()=>startBattle(UI.last.list,UI.last.fmt,{prizes:1,bot:UI.last.bot}));
  add('Main lagi','go',()=>startBattle(UI.last.list,UI.last.fmt));add('Menu utama','ghost',()=>toMenu());$('end').classList.add('on')}
 /* --- Lempar koin dalam permainan ala TCG Pocket: layar meredup, teks aturan di atas, pil jumlah Kepala/Ekor + jumlah lemparan.
    Koin pertama dilempar dari bawah ke tengah lalu pindah ke slotnya; koin berikutnya dilempar langsung di slotnya (3 per baris); hasil ditahan sebentar lalu tutup (tanpa layar biru muda: permintaan user) --- */
@@ -308,7 +312,7 @@ const closeAm=()=>{$('am').classList.remove('on');UI.am=0};
 const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),PL=new THREE.Plane(new THREE.Vector3(0,1,0),-.9),PT=new THREE.Vector3();
 const aim=e=>{ndc.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(ndc,cam)};
 function hitId(e){aim(e);const h=ray.intersectObjects([...PX.values()],false)[0];return h?h.object.userData.id:null}
-const hitCoin=e=>{if(!UI.stage)return -1;aim(e);const h=ray.intersectObjects(DCS.filter(m=>m.visible),false)[0];return h?DCS.indexOf(h.object):-1};
+const hitCoin=e=>{if(!UI.stage||UI.stage.end)return -1;aim(e);const h=ray.intersectObjects(DCS.filter(m=>m.visible&&!m.userData.fl&&!m.userData.st),false)[0];return h?DCS.indexOf(h.object):-1};   // koin yang sedang terbang/menempel tak bisa diambil
 const ownMons=()=>[...LI.values()].filter(it=>it.sd==='p'&&(it.zone==='act'||it.zone==='ben'));
 const overMon=(x,z,list)=>list.find(it=>Math.abs(x-it.x)<.5*it.s+.12&&Math.abs(z-it.z)<.7*it.s+.12);
 function showHv(c){$('hv-i').src=imgOf(c);$('hv').classList.add('on')}const hideHv=()=>$('hv').classList.remove('on');
@@ -320,7 +324,7 @@ function startDrag(it){
  if(UI.drag){cvs.style.cursor='grabbing';hideHv();UI.hp=null;UI.handUp=false;$('tip').style.display='none'}}
 function moveDrag(e){
  aim(e);const p=ray.ray.intersectPlane(PL,PT);if(!p)return;const d=UI.drag;d.x=p.x;d.z=p.z-(e.pointerType==='touch'?1.1:.2);d.hi=null;d.zone=null;let txt='';
- if(d.coin){const opp=[...LI.values()].filter(it=>it.sd==='o'&&(it.zone==='act'||it.zone==='ben')&&UI.stage.tgts.includes(it.mon)&&(!UI.stage.tgt||it.mon===UI.stage.tgt)),ov=overMon(d.x,d.z,opp);d.tgt=ov?ov.mon:null;d.hi=ov?{x:ov.x,z:ov.z,s:ov.s,ok:1}:null;txt=ov?`Lepas untuk memindahkan 10 damage ke ${cname(ov.mon.card)}`:'Seret koin ke Pokémon lawan yang bercahaya'}
+ if(d.coin){const opp=[...LI.values()].filter(it=>it.sd==='o'&&(it.zone==='act'||it.zone==='ben')&&UI.stage.tgts.includes(it.mon)&&(!UI.stage.tgt||it.mon===UI.stage.tgt)),ov=overMon(d.x,d.z,opp);d.tgt=ov?ov.mon:null;d.hi=ov?{x:ov.x,z:ov.z,s:ov.s,ok:1}:null;txt=ov?`Lepas untuk ${UI.stage.spread?'menaruh':'memindahkan'} 10 damage ke ${cname(ov.mon.card)}`:'Seret koin ke Pokémon lawan yang bercahaya'}
  else if(d.pend){const tg=[...LI.values()].filter(q=>q.sd==='p'&&q.zone==='ben'&&UI.attach.tgts.includes(q.mon)),ov=overMon(d.x,d.z,tg);d.ov=ov;d.hi=ov?{x:ov.x,z:ov.z,s:ov.s,ok:1}:null;txt=ov?`Lepas untuk memasang ${cname(d.card)} ke ${cname(ov.mon.card)}`:'Seret kartu Energi ke Pokémon Bench tujuan'}
  else if(d.candy){const tg=ownMons().filter(q=>UI.candy.mons.includes(q.mon)&&UI.candy.ok(d.card,q.mon)),ov=overMon(d.x,d.z,tg);d.ov=ov;d.hi=ov?{x:ov.x,z:ov.z,s:ov.s,ok:1}:null;
   txt=ov?`Lepas untuk mengevolusikan ${cname(ov.mon.card)} menjadi ${cname(d.card)}`:`Seret ${cname(d.card)} ke Pokémon Basic yang bercahaya`}
@@ -339,11 +343,13 @@ function moveDrag(e){
  if(txt!==d.txt){d.txt=txt;say(txt,6000)}}
 function drop(){
  const d=UI.drag;UI.drag=null;cvs.style.cursor='';
- if(d.coin){const st=UI.stage;
-  if(d.tgt&&st.tgt&&st.tgt!==d.tgt){say('⛔ Semua damage counter harus dipindah ke Pokémon lawan yang sama',2600);return}
-  if(d.tgt){st.tgt=d.tgt;st.moved++;DCS[d.ci].visible=false;fxCoin(d.tgt);st.apply(st.mon,d.tgt,1);
-   if(st.moved>=st.max)finishStage();else{pickShow(`${st.moved} koin dipindah ke ${cname(st.tgt.card)}. Seret koin lain ke Pokémon yang sama, atau tekan Selesai.`,null);$('pk-ok').style.display='';$('pk-ok').onclick=finishStage}}
-  else say('Koin kembali ke posisi semula',1500);return}
+ if(d.coin){const st=UI.stage,m=DCS[d.ci];
+  st.ht=performance.now()+3000;   // isyarat seret muncul lagi bila 3 dtk tanpa aksi (hanya selama belum ada koin dilempar)
+  if(d.tgt&&st.tgt&&st.tgt!==d.tgt){say('⛔ Semua damage counter harus dipindah ke Pokémon lawan yang sama',2600);coinBack(m);return}
+  if(d.tgt){const t=d.tgt;if(!st.spread)st.tgt=t;st.moved++;st.fly=(st.fly||0)+1;
+   coinThrow(m,t,()=>{st.apply(st.mon,t,1);st.fly--;if(!st.fly&&(st.end||st.moved>=st.max))finishStage()});   // damage diterapkan saat koin mendarat
+   if(st.moved>=st.max)pickHide();else if(st.spread)pickShow(`Seret koin ke Pokémon Bench lawan yang menyala (${st.moved}/${st.max})`,null);else{pickShow(`Seret koin lagi ke ${cname(st.tgt.card)}, atau tekan Selesai (${st.moved}/${st.max})`,null);$('pk-ok').style.display='';$('pk-ok').onclick=finishStage}}
+  else{say('Koin kembali ke posisi semula',1500);coinBack(m)}return}
  if(d.pend){if(d.ov){const a=UI.attach;a.list.splice(a.list.indexOf(d.card),1);a.apply(d.card,d.ov.mon);fxCoin(d.ov.mon);if(!a.list.length){UI.attach=null;pickHide();sync();a.res()}else sync()}else say('Kartu Energi kembali. Seret ke Pokémon Bench yang bercahaya.');return}
  if(d.mon){if(d.over)wantEnd(d.mon);else say('Kartu kembali. Seret tepat ke kotak ACTIVE yang menyala.');return}
  if(d.candy){const k=UI.candy;if(d.ov&&k){UI.candy=null;pickHide();k.res({card:d.card,mon:d.ov.mon})}else say('Kartu kembali. Seret ke Pokémon Basic yang bercahaya.',2600);sync();return}
@@ -354,8 +360,64 @@ function drop(){
  else if(isEn(c))run(()=>actEnergy('p',c,d.ov.mon));
  else if(c.k==='tool')run(()=>actTool('p',c,d.ov.mon));
  else run(()=>actTrainer('p',c))}
-function finishStage(){const st=UI.stage;if(!st)return;UI.stage=null;DCS.forEach(m=>m.visible=false);pickHide();sync();st.res({src:st.mon,tgt:st.tgt,k:st.moved,applied:true})}
+/* selesai: koin di baki disembunyikan; bila masih ada koin di udara, tunggu semuanya mendarat (damage-nya diterapkan saat mendarat) baru lanjut */
+function finishStage(){const st=UI.stage;if(!st)return;st.end=1;pickHide();DCS.forEach(m=>{const u=m.userData;if(!u.st&&!(u.fl&&!u.fl.back))m.visible=false});if(st.fly)return;
+ UI.stage=null;sync();st.res({src:st.mon,tgt:st.tgt,k:st.moved,applied:true})}
 function fxCoin(m){const it=LI.get(m.id);if(it){ring(it.x,it.z,0xfcd34d);burst(it.x,it.z,0xffe27a,24,1.6)}}
+/* --- damage counter dilempar ala koin ---
+   baki: melayang & bergoyang pelan. Diseret: membesar, miring mengikuti arah seret. Dilempar (coinThrow): lintasan balistik melengkung sambil berputar (topspin),
+   mengecil ke ukuran token lalu mendarat tepat di slot token kartu sasaran: stempel memantul, percikan & gelombang emas; koin menempel di kartu sampai token
+   aslinya muncul saat HP mulai turun (o.hold). Lepas di luar sasaran: kembali melengkung ke baki. Bayangan di meja menunjukkan tinggi koin, jejak emas saat terbang */
+const RES={},CV=new THREE.Vector3(),CA=new THREE.Vector3(),bkOut=x=>1+2.7*(x-1)**3+1.7*(x-1)**2;   // RES: damage yang masih di udara per Pokémon, agar koin berikutnya menuju slot token berikutnya
+function coinThrow(m,mon,land,from){const u=m.userData;RES[mon.id]=(RES[mon.id]||0)+10;u.st=null;m.visible=true;
+ u.fl={t0:performance.now(),D:RMO?1:from?520:420,P:(from||m.position).clone(),k:from?0:u.k,pop:!!from,mon,land,L:tokXY(coinsFor(mon.dmg+RES[mon.id]).length-1,conds(mon).length)}}   // from: Bot, koin melompat keluar dari kartu sumber
+const coinBack=m=>{const u=m.userData;u.fl={t0:performance.now(),D:RMO?1:300,P:m.position.clone(),k:u.k,back:1}};
+/* posisi melayang koin ke-i: di atas kartu asalnya (UI.stage.at), 1 baris (≤3 koin) atau 2 baris; tanpa kartu asal: baki lama di dekat tangan */
+function trayPos(i,s,v){const st=UI.stage,it=st&&st.at&&LI.get(st.at.id),b=1.6+Math.sin(s*3+i)*.07;if(!it)return v.set(-(LAY.W/2-.9)+i*.75,b,(LAY.handZ||5)-1.4);
+ const n=st.max,c=n>3?Math.ceil(n/2):n,r=(i/c)|0,w=(c-1)*.35,cx=Math.max(-LAY.W/2+.75+w,Math.min(LAY.W/2-.75-w,it.x));
+ return v.set(cx+(i%c-(c-1)/2)*.7,b,it.z+(n>3?(r-.5)*.7:-.15))}
+/* mulai langkah koin: koin melompat dari token damage kartu asal (Adrenaline Brain) atau dari tengah kartu (Phantom Dive) lalu melayang di atasnya.
+   Petunjuk singkat menempel di bawah koin (#pickbar.near), kartu tangan turun selama langkah ini (loop), isyarat seret menyusul (stageUI) */
+function coinStage(st,txt,cancel){const a=st.at,o=a&&OV.get(a.id),g=a&&M.get(a.id),nt=a?coinsFor(a.dmg).length:0,now=performance.now();UI.stage=st;
+ DCS.forEach((m,i)=>{const u=m.userData;u.st=null;m.visible=i<st.max;if(!m.visible)return;
+  const P=o&&nt?o.g.localToWorld(new THREE.Vector3(...tokXY(Math.min(i,nt-1),conds(a).length),.07)):g?g.position.clone().setY(.4):trayPos(i,0,new THREE.Vector3());
+  u.fl={t0:now+i*80,D:RMO?1:360,P,k:.2,back:1}});
+ st.ht=now+(RMO?0:700+st.max*80);$('pickbar').classList.add('near');pickShow(txt,cancel);stageUI(now);sync()}
+/* langkah koin: petunjuk menempel tepat di bawah kumpulan koin. Isyarat seret (garis putus-putus + tangan) dari koin ke sasaran pertama
+   selama belum ada koin dilempar: tampil 1,8 dtk lalu diulang tiap 3 dtk tanpa aksi (st.ht) */
+const DH=(()=>{const NS='http://www.w3.org/2000/svg',sv=document.createElementNS(NS,'svg'),p=document.createElementNS(NS,'path'),h=document.createElement('div');
+ sv.id='dhint';sv.setAttribute('aria-hidden','true');sv.append(p);h.id='dhand';h.setAttribute('aria-hidden','true');h.innerHTML=ic('pointer');document.body.append(sv,h);return{sv,p,h}})(),V1=new THREE.Vector3(),V2=new THREE.Vector3();
+function stageUI(now){const st=UI.stage,pb=$('pickbar'),ab=$('abt');
+ if(st&&!st.end&&st.at&&pb.classList.contains('near')){trayPos(0,0,V1);trayPos(st.max-1,0,V2);const[x,y]=px2((V1.x+V2.x)/2,1.6,V2.z+.45),w=pb.offsetWidth,h=pb.offsetHeight;
+  pb.style.left=Math.min(innerWidth-w/2-8,Math.max(w/2+8,x))+'px';pb.style.top=Math.min(innerHeight-h-8,Math.max(8,y))+'px';
+  const r1=pb.getBoundingClientRect(),r2=ab.getBoundingClientRect();ab.style.visibility=r1.left<r2.right&&r2.left<r1.right&&r1.top<r2.bottom&&r2.top<r1.bottom?'hidden':''}   // label Ability yang tertimpa petunjuk (HP) disembunyikan
+ else if(ab.style.visibility)ab.style.visibility='';
+ const p=st?now-st.ht:-1,show=st&&!st.end&&!st.moved&&!UI.drag&&p>=0&&p%4800<1800,m=show&&DCS.find(c=>c.visible&&!c.userData.fl&&!c.userData.st),t=show&&st.tgts.map(x=>LI.get(x.id)).find(Boolean);
+ DH.sv.classList.toggle('on',!!(m&&t));DH.h.classList.toggle('on',!!(m&&t));if(!(m&&t))return;
+ const f=p%4800,[x0,y0]=px2(m.position.x,m.position.y,m.position.z),[x1,y1]=px2(t.x,.12,t.z),cx=(x0+x1)/2+(y1-y0)*.2,cy=(y0+y1)/2-(x1-x0)*.2,
+  e=RMO?.5:Math.min(1,Math.max(0,(f-300)/1000)),q=e*e*(3-2*e),u=1-q,a=Math.min(1,f/200,(1800-f)/300);
+ DH.p.setAttribute('d',`M${x0} ${y0}Q${cx} ${cy} ${x1} ${y1}`);DH.sv.style.opacity=DH.h.style.opacity=a;
+ DH.h.style.transform=`translate(${u*u*x0+2*u*q*cx+q*q*x1-15}px,${u*u*y0+2*u*q*cy+q*q*y1-4}px) scale(${f<300||f>1300?.85:1})`}
+function coinsUpd(s,now){DCS.forEach((m,i)=>{const u=m.userData,P=m.position;
+ if(!m.visible){u.shd.visible=u.trl.visible=false;u.st=u.fl=null;return}
+ const tray=()=>trayPos(i,s,CV),dr=UI.drag&&UI.drag.coin&&UI.drag.ci===i;let k=1,an=0;CA.set(1,0,0);
+ if(u.st){const o=OV.get(u.st.mon.id);if(!o||now>Math.max(u.st.until,o.hold||0)){m.visible=false;return}   // token asli sudah tampil: koin lenyap
+  const t=Math.min(1,(now-u.st.t0)/260);P.copy(o.g.localToWorld(CV.set(u.st.L[0],u.st.L[1],.07)));k=u.st.k*(1+.55*(1-t)**2*Math.cos(t*7))}   // stempel: memantul lalu diam, ikut kartu yang bergetar
+ else if(u.fl){const f=u.fl,q=Math.max(0,Math.min(1,(now-f.t0)/f.D)),o=!f.back&&OV.get(f.mon.id),W=f.back?tray():o?o.g.localToWorld(CV.set(f.L[0],f.L[1],.07)):P.clone(),
+   dx=W.x-f.P.x,dz=W.z-f.P.z,dd=Math.hypot(dx,dz),ks=f.back?1:o?.5*COINR[10]*o.g.scale.x/.32:.3,h=f.back?.35:Math.min(1.6,.95+dd*.14);
+  P.set(f.P.x+dx*q,f.P.y+(W.y-f.P.y)*q+4*h*q*(1-q),f.P.z+dz*q);   // maju rata, tinggi parabola
+  k=f.pop?(q<.2?bkOut(q/.2):1+(ks-1)*((q-.2)/.8)**1.3):f.k+(ks-f.k)*q**1.3;
+  if(!f.back){an=4*Math.PI*(1-(1-q)**2);if(dd>1e-3)CA.set(dz/dd,0,-dx/dd)}   // 2 putaran topspin yang melambat, berakhir telentang
+  if(q>=1){u.fl=null;if(!f.back){RES[f.mon.id]-=10;u.st={mon:f.mon,L:f.L,k:ks,t0:RMO?now-260:now,until:now+800};if(!RMO){burst(W.x,W.z,0xffd54a,16,1.1,.1);ring(W.x,W.z,0xfde047,.22)}if(f.land)f.land()}}}
+ else if(dr){const d=UI.drag,vx=u.px==null?0:d.x-u.px,vz=u.px==null?0:d.z-u.pz,sp=Math.hypot(u.vx=(u.vx||0)*.7+vx*.3,u.vz=(u.vz||0)*.7+vz*.3);u.px=d.x;u.pz=d.z;
+  P.set(d.x,1.8,d.z);k=1.22;if(sp>1e-4){an=-Math.min(.65,sp*6);CA.set(u.vz/sp,0,-u.vx/sp)}}   // miring mengikuti arah seret
+ else{P.copy(tray());an=Math.sin(s*2.2+i*1.3)*.14}
+ if(!dr)u.px=u.pz=u.vx=u.vz=null;
+ u.k=u.fl||u.st?k:u.k+(k-u.k)*.25;m.scale.setScalar(Math.max(.001,u.k));
+ if(an)m.quaternion.setFromAxisAngle(CA,an).multiply(DQ);else m.quaternion.copy(DQ);
+ u.shd.visible=!u.st;if(!u.st){const hg=Math.max(0,P.y-.17);u.shd.position.set(P.x,.17,P.z+hg*.08);u.shd.scale.setScalar(Math.max(.001,u.k)*(2+hg*.45));u.shd.material.opacity=Math.max(.12,.6-hg*.18)}
+ if(u.fl&&!u.fl.back&&!RMO){const a=u.trl.geometry.attributes.position;if(!u.trl.visible){for(let j=0;j<TRN;j++)a.array.set([P.x,P.y,P.z],j*3);u.trl.visible=true}
+  a.array.copyWithin(3,0,(TRN-1)*3);a.array.set([P.x,P.y,P.z],0);a.needsUpdate=true}else u.trl.visible=false})}
 function tap(id){
  const it=LI.get(id);if(!it||!G)return;
  if(UI.want){const m=it.mon||it.par;if(!UI.want.drag&&m&&UI.want.mons.includes(m))wantEnd(m);else say(UI.want.drag?'Seret Pokémon yang bercahaya ke kotak ACTIVE':'Tap Pokémon yang bercahaya');return}
@@ -398,14 +460,14 @@ cvs.addEventListener('pointermove',e=>{
   if(mv>9){clearTimeout(dn.lp);if(dn.lpOn){hideHv();dn.lpOn=0}}
   if(mv>9&&dn.i!==null&&!dn.pan){const it=LI.get(dn.i);if(it&&G){startDrag(it);if(UI.drag)return moveDrag(e)}dn.pan=1}
   if(mv>9)dn.pan=1;return}
- if(e.pointerType==='mouse'&&G&&G.p){const i=hitId(e),it=i!==null&&LI.get(i);hov=it&&it.zone==='hand'?i:null;
+ if(e.pointerType==='mouse'&&G&&G.p){const onCoin=hitCoin(e)>=0,i=onCoin?null:hitId(e),it=i!==null&&LI.get(i);hov=it&&it.zone==='hand'?i:null;cvs.style.cursor=onCoin?'grab':'';   // koin damage counter ada di atas kartu: tanpa pratinjau/tooltip kartu di bawahnya
   let overHand=false;
   if(LAYMODE&&!UI.drag&&!UI.stage&&!UI.attach&&!UI.panel){const bz=Z.ben(2,1),by=px2(0,.06,bz[1]+.7*bz[2])[1],sh=(1-LAY.hvis)*1.4*LAY.hs+.3,topY=px2(0,.95,(LAY.handZ||5)-sh-.7*LAY.hs)[1];
    if(!UI.handUp&&e.clientY>by+2)UI.handUp=true;else if(UI.handUp&&e.clientY<topY-6)UI.handUp=false;overHand=UI.handUp&&e.clientY>topY}else UI.handUp=false;
   if(canPrev(it)&&!UI.panel&&!$('zoom').classList.contains('on'))showHv(it.c);else hideHv();
   const tip=$('tip');let tt='',rg=null;
   if(it&&it.zone==='ohand'){tt=`Tangan musuh (${G.o.hand.length} kartu)`}
-  else if(!(it&&it.zone==='hand')&&!overHand){aim(e);const gp=ray.ray.intersectPlane(PL0,PT),sl=gp&&slotAt(gp.x,gp.z);if(sl){tt=sl.t;rg={x:sl.p[0],z:sl.p[1],s:sl.p[2],ok:3};if(sl.mon&&UI.abl&&UI.abl.includes(sl.mon.id))tt+=`\n✨ Ability siap dipakai: ${sl.mon.card.ab.n}`}}
+  else if(!(it&&it.zone==='hand')&&!overHand&&!onCoin){aim(e);const gp=ray.ray.intersectPlane(PL0,PT),sl=gp&&slotAt(gp.x,gp.z);if(sl){tt=sl.t;rg={x:sl.p[0],z:sl.p[1],s:sl.p[2],ok:3};if(sl.mon&&UI.abl&&UI.abl.includes(sl.mon.id))tt+=`\n✨ Ability siap dipakai: ${sl.mon.card.ab.n}`}}
   if(tt){tip.innerHTML=iconize(tt);tip.style.display='block';tip.style.left=Math.min(e.clientX+14,innerWidth-270)+'px';tip.style.top=e.clientY+16+'px';UI.hp=rg}else{tip.style.display='none';UI.hp=null}}});
 const endDn=()=>{const dn=UI.dn;if(dn){clearTimeout(dn.lp);if(dn.lpOn){hideHv();if(hov===dn.i||dn.br)hov=null}}};
 cvs.addEventListener('pointerup',e=>{
@@ -417,7 +479,8 @@ cvs.addEventListener('pointerleave',()=>{UI.handUp=false;$('tip').style.display=
 function glows(){const L=[];if(!G||!G.p)return L;
  if(UI.drag&&UI.drag.hi)L.push(UI.drag.hi);
  if(UI.want)for(const m of UI.want.mons){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}
- if(UI.stage&&!UI.drag)for(const m of (UI.stage.tgt?[UI.stage.tgt]:UI.stage.tgts)){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}
+ if(UI.stage&&!UI.stage.end&&!UI.drag)for(const m of (UI.stage.tgt?[UI.stage.tgt]:UI.stage.tgts)){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}
+ if(UI.stage&&!UI.stage.end&&UI.stage.at){const it=LI.get(UI.stage.at.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:3})}   // kartu asal koin: cahaya biru muda (sasaran tetap kuning)
  if(UI.candy&&!UI.drag)for(const m of UI.candy.mons){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}   // Permen Langka: Basic sasaran
  if(!UI.drag)for(const id of UI.abl||[]){const it=LI.get(id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}   // Ability siap: cahaya tepi kuning ala Pocket (tak saat drag, agar tak tertukar dgn sasaran)
  if(UI.hp)L.push(UI.hp);
@@ -437,7 +500,7 @@ function loop(t){
    continue}
   if(d.fly){if(now>=d.fly.t0&&flyStep(g,d.fly,now,T.x,T.y,T.z,T.s,1))d.fly=null;continue}   // sedang terbang melengkung ke discard
   const dr=UI.drag&&UI.drag.id===id,hv=hov===id&&T.zone==='hand',ev=d.evo&&evoCurve((now-d.evo.t0)/1000),k=dr?.4:d.dash?.32:T.dl?.22:.17,ky=ev?1:k,lf=ev?ev[0]:d.lift||0;   // ev: timeline evolusi (tanpa lerp = tanpa jeda)
-  let tx=T.x+d.off.x,tz=T.z+d.off.z-(hv?(T.s*.55):0)-((UI.handUp&&!UI.drag&&T.zone==='hand')?((1-LAY.hvis)*1.4*LAY.hs+.3):0),ty=T.y+(hv?.9:0)+lf*1.1,ts=T.s*(1+d.pop*.25+lf*.12+(ev?ev[1]:d.big||0)),rx=T.up?-Math.PI/2+(T.tilt||0)+(hv?.1:0):Math.PI/2;
+  let tx=T.x+d.off.x,tz=T.z+d.off.z-(hv?(T.s*.55):0)-((UI.handUp&&!UI.drag&&T.zone==='hand')?((1-LAY.hvis)*1.4*LAY.hs+.3):0)+(UI.stage&&T.zone==='hand'?1.7*LAY.hs:0)/* langkah koin: tangan turun keluar layar */,ty=T.y+(hv?.9:0)+lf*1.1,ts=T.s*(1+d.pop*.25+lf*.12+(ev?ev[1]:d.big||0)),rx=T.up?-Math.PI/2+(T.tilt||0)+(hv?.1:0):Math.PI/2;
   if(T.zone==='dk'&&shufT[T.sd]>t){const i=+id.slice(3);tx+=Math.sin(t/60+i*2)*.5;tz+=Math.cos(t/55+i)*.18;ty+=.12*Math.abs(Math.sin(t/90+i))}
   if(UI.candy&&T.zone==='hand'&&!dr&&UI.candy.cards.includes(T.c)){ty+=.35;tz-=.3;ts*=1.04+Math.sin(s*6)*.025}   // Permen Langka: kartu Stage 2 yang bisa dipakai terangkat & berdenyut
   if(T.dl&&!dr&&now<T.dl.t1){const P=Z.dk(T.sd==='p'?1:-1);tx=P[0];tz=P[1];ty=.14;ts=P[2];rx=Math.PI/2}   // bagi kartu awal: tunggu di deck
@@ -448,12 +511,12 @@ function loop(t){
   g.scale.x+=(ts-g.scale.x)*ky;g.scale.y=g.scale.z=g.scale.x;g.rotation.x+=(rx-g.rotation.x)*(dr?.3:.14);d.rzb=(d.rzb??g.rotation.z)+((T.rz||0)-(d.rzb??g.rotation.z))*.12;d.st=(d.st||0)+((d.stz||0)-(d.st||0))*.12;g.rotation.z=d.rzb+d.st;
   d.sh*=.9;d.fl*=.92;d.pop*=.9;const c=d.fl>.02?1-d.fl*.7:1;if(d.fl>.02||d.glow){d.f.material.color.setRGB(1,d.glow?1:c,d.glow?Math.min(1,c+.2):c);if(d.fl<=.02)d.glow=0}else if(d.ko)d.f.material.color.setRGB(.6,.52,.56);else d.f.material.color.setRGB(1,1,1);   // KO: meredup
   const o=OV.get(id);if(o){o.g.position.set(g.position.x,g.position.y+.045*g.scale.x,g.position.z);o.g.scale.setScalar(g.scale.x);o.g.rotation.x=g.rotation.x;o.g.rotation.z=d.st||0}   // ikut miring & skala kartu (stage ×1.5), kalau tidak panel HP tertutup kartu
-  if(T.zone==='hand'){const q=PX.get(id);if(q){q.position.z=T.z-((UI.handUp&&!UI.drag)?((1-LAY.hvis)*1.4*LAY.hs+.3):0);q.updateMatrixWorld()}}}
+  if(T.zone==='hand'){const q=PX.get(id);if(q){q.position.z=T.z-((UI.handUp&&!UI.drag)?((1-LAY.hvis)*1.4*LAY.hs+.3):0)+(UI.stage?1.7*LAY.hs:0);q.updateMatrixWorld()}}}
  updHp();cfUpdate(s);
  for(const k in AURA_M)AURA_M[k].opacity=.55+Math.sin(s*3)*.2;glowUpd(s);
  ZH.visible=false;
  const dzv=!!(UI.drag&&UI.drag.dz);DZ.visible=dzv;if(dzv){DZ.material.color.setHex(UI.drag.dzc||0x4dff88);DZ.material.opacity=.75+Math.sin(s*7)*.25}
- if(UI.stage){DCS.forEach((m,i)=>{if(!m.visible)return;const dc=UI.drag&&UI.drag.coin&&UI.drag.ci===i;if(dc)m.position.set(UI.drag.x,1.8,UI.drag.z);else m.position.set(-(LAY.W/2-.9)+i*.75,1.6+Math.sin(s*3+i)*.07,(LAY.handZ||5)-1.4)})}
+ coinsUpd(s,now);stageUI(now);
  const gl=glows();RG.forEach((m,i)=>{const g=gl[i];if(!g){m.visible=false;return}m.visible=true;m.position.set(g.x,.2,g.z);m.scale.setScalar(g.s*1.14);m.material.color.setHex(g.ok===3?0x9bdcff:g.ok?0xfcd34d:0xfb7185);m.material.opacity=.7+Math.sin(s*9)*.3});
  if(CS){const i=Math.min(CS.F.length-1,((now-CS.t0)*.12)|0);coinPose(CS.F[i]);if(i>=CS.F.length-1&&!CS.done){CS.done=1;CS.res()}}   // simulasi 120 langkah/dtk
  if(DS){const i=Math.min(DS.F.length-1,((now-DS.t0)*.12)|0);diePose(DS.F[i]);if(i>=DS.F.length-1&&!DS.done){DS.done=1;DS.res()}}
@@ -469,6 +532,6 @@ async function startBattle(list,fmt,opt){
  document.body.classList.add('bt');$('log-b').innerHTML='';
  UI.themeI=(UI.themeI+1+rnd(2))%THEMES.length;const tn=setTheme(UI.themeI);
  DEC.p=UIDEC;DEC.o={...BOT,turn:s=>botTurn(s)};
- const bd=buildDeck(fmt);say(`Arena: ${tn} • Deck Bot: ${bd.name}`,3400);   // Bot menyusun deck kustomnya sendiri
+ const bd=opt?.bot||buildDeck(fmt);UI.last.bot=bd;say(`Arena: ${tn} • Deck Bot: ${bd.name}`,3400);   // Bot menyusun deck kustomnya sendiri; Sudden Death memakai deck yang sama
  try{await setup(list,bd.L,opt)}catch(e){console.error(e);say('Terjadi galat: '+e.message,8000)}}
 function toMenu(){closeAll();document.body.classList.remove('bt');resetScene();G=null;$('menu').classList.add('on')}

@@ -80,6 +80,7 @@ const TERA_DECK={terapagos:4,hoothoot:4,noctowl:4,fanrotom:2,fezan:1,poffin:4,ul
 const DRAGA_DECK={dreepy:4,drakloak:4,dragapult:3,fezan:1,candy:3,poffin:4,ultra:4,pad:3,stretcher:2,prime:1,pokegear:2,eretrieval:1,lillie:4,boss:2,hilda:2,iris:2,briar:2,balloon:2,zero:2,renergy:6,penergy:6};
 const FORMATS={std:{n:'Standard 2026-27 (H, I, J)',ok:c=>c.k==='energy'||!!c.std},exp:{n:'Expanded',ok:()=>true}};
 Object.values(CARDS).forEach(c=>{c.std=1});/* seluruh kartu pool sah di Standard 2026-27 (mark H/I/J atau reprint H+) dan Expanded */
+if(Object.values(CARDS).every(FORMATS.std.ok))delete FORMATS.exp;/* Expanded = Standard selama semua kartu sah di Standard: pilihannya disembunyikan, muncul lagi bila ada kartu tanpa std */
 
 /* gambar kartu: file asli dari ZIP (assets/cards/idXXXXXXXX.webp) */
 const IMG=Object.fromEntries(Object.values(CARDS).map(c=>[c.img,`assets/cards/id${String(c.img).padStart(8,'0')}.webp`]));

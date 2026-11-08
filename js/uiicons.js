@@ -2,7 +2,7 @@
    ic(n): <svg> berwarna currentColor untuk HTML; icDraw(): gambar ikon yang sama di kanvas (badge status & label Tool kartu 3D);
    iconize(t): escape HTML + ganti emoji di teks mesin (log, toast) dengan ikon; elemen [data-ic] di index.html diganti saat dimuat.
    Sumber: lucide:swords, playing-cards, book-open, arrow-left, sparkles, save, bot, user, scroll-text, menu, x, eye, undo-2, lightbulb, octagon-x, play,
-   square, timer, flag, trophy, skull, handshake, gift, dice-5, zap, flame, wrench, heart-crack, triangle-alert, check, minus, plus; tabler:coin, zzz, mood-sad-dizzy.
+   square, timer, flag, trophy, skull, handshake, gift, dice-5, zap, flame, wrench, heart-crack, triangle-alert, check, minus, plus, pointer; tabler:coin, zzz, mood-sad-dizzy.
 
    --- Lucide ---
    ISC License
@@ -78,7 +78,7 @@ const UIC={swords:'<path fill="none" stroke="currentColor" stroke-linecap="round
  alert:'<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21.73 18l-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3M12 9v4m0 4h.01"/>',
  check:'<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 6L9 17l-5-5"/>',
  minus:'<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/>',
- plus:'<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7v14"/>',
+ pointer:'<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 14a8 8 0 0 1-8 8m4-11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2m0 0V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1m0-.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',plus:'<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7v14"/>',
  coin:'<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0-18 0"/><path d="M14.8 9A2 2 0 0 0 13 8h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1-1.8-1M12 7v10"/></g>',
  zzz:'<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h6l-6 8h6m4-16h6l-6 8h6"/>',
  dizzy:'<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0-18 0"/><path d="M14.5 16.05a3.5 3.5 0 0 0-5 0M8 9l2 2m0-2l-2 2m6-2l2 2m0-2l-2 2"/></g>'};

@@ -107,9 +107,9 @@ const hasDark=m=>m.en.some(c=>c.t==='D')||(m.card.stage===0&&m.en.some(c=>c.key=
 const AB={
  adr:{why:(sd,m)=>m.used.adr?'Sudah dipakai giliran ini':!hasDark(m)?'Butuh Energi Kegelapan di Pokémon ini':!sideMons(sd).some(x=>x.dmg>0)?'Tidak ada damage counter untuk dipindah':'',
   async run(sd,m){
-   const apply=(src,tgt,n)=>{src.dmg-=10*n;tgt.dmg+=10*n;fx('hit',tgt.id,10*n);log(`${who(sd)} memindahkan ${n} damage counter dari ${cname(src.card)} ke ${cname(tgt.card)}`);fx('sync')};
+   const apply=(src,tgt,n)=>{src.dmg-=10*n;tgt.dmg+=10*n;fx('hit',tgt.id,10*n,null,1);log(`${who(sd)} memindahkan ${n} damage counter dari ${cname(src.card)} ke ${cname(tgt.card)}`);fx('sync')};
    const r=await ask(sd,'moveDmg',{srcs:sideMons(sd).filter(x=>x.dmg>0),tgts:sideMons(opp(sd)),max:3,card:m.card,apply});
-   if(!r||!r.k)return'cancel';if(!r.applied)apply(r.src,r.tgt,r.k);
+   if(!r||!r.k)return'cancel';if(!r.applied)for(let i=0;i<r.k;i++){await fx('dmgThrow',r.src,r.tgt);apply(r.src,r.tgt,1)}   // Bot: tiap counter dilempar dari Pokémon sumber
    m.used.adr=1;await resolveKO()}},
  chance:{why:(sd,m)=>G[sd].used.chance?'Ability ini sudah dipakai giliran ini':!G[sd].koFlag?'Tidak ada Pokémonmu yang KO di giliran lawan sebelumnya':'',
   async run(sd,m){G[sd].used.chance=1;m.used.chance=1;const n=await drawShow(sd,3);log(`${who(sd)} mengambil ${n} kartu (Kesempatan dalam Kesempitan)`)}},
@@ -208,7 +208,7 @@ async function actAttack(sd,k){const w=whyAttack(sd,k);if(w)return w;
   case'conf':if(E.active&&hp(E.active)>0)setSp(E.active,o,'confused');break;
   case'self10':await fx('settle');a.dmg+=10;fx('hit',a.id,10);break;   // damage ke diri sendiri sesudah damage ke lawan selesai tampil
   case'opal':a.opal=G[o].tn+1;log(`${cname(a.card)} terlindung dari Pokémon Basic di giliran lawan berikutnya`);break;
-  case'dive':for(let i=0;i<6&&E.bench.length;i++){const t=await ask(sd,'mon',{title:`Phantom Dive: taruh damage counter ke Pokémon Bench lawan (${6-i} lagi)`,mons:E.bench,ctx:'target',sd:o,pref:x=>hp(x)<=0?-999:(hp(x)<=10*(6-i)?1000:0)+(x.card.prize||1)*20-hp(x)/10});t.dmg+=10;fx('hit',t.id,10);log(`${cname(t.card)} menerima 1 damage counter`)}break;
+  case'dive':if(E.bench.length)await ask(sd,'placeDmg',{tgts:E.bench,n:6,card:a.card,from:a,apply:(_,t,n)=>{t.dmg+=10*n;fx('hit',t.id,10*n,null,1);log(`${cname(t.card)} menerima ${n} damage counter`)}});break;
   case'draw2':{const n=await drawShow(sd,2);log(`${who(sd)} mengambil ${n} kartu`);break}
   case'call':{const r=await pickDeck(sd,a.card,{title:'Pilih s/d 2 Pokémon Basic untuk Bench',pred:isBasic,max:Math.min(2,bmax(sd)-S.bench.length),pref:x=>x.hp});r.forEach(x=>S.bench.push(mkMon(x,sd)));log(`${who(sd)} memanggil ${r.length} Pokémon ke Bench`);await shuffleDeck(sd);break}
   case'turbo':{let r=await pickDeck(sd,a.card,{title:'Ambil s/d 3 Energi Dasar dari Deck',pred:x=>x.k==='energy',max:S.bench.length?3:0,pref:()=>1});
@@ -229,6 +229,7 @@ const BOT={bot:true,
  async confirm(){return true},
  async attachEnergies({energies,targets,apply}){for(const en of energies){const t=[...targets].sort((a,b)=>(b.card.hp/100-b.en.length)-(a.card.hp/100-a.en.length))[0];apply(en,t)}},
  async moveDmg({srcs,tgts,max}){const src=[...srcs].sort((a,b)=>b.dmg-a.dmg)[0],k=Math.min(max,src.dmg/10),tgt=[...tgts].sort((a,b)=>(hp(a)<=k*10?1000:(a.card.prize||1)*20-hp(a)/10)<(hp(b)<=k*10?1000:(b.card.prize||1)*20-hp(b)/10)?1:-1)[0];return{src,tgt,k}},
+ async placeDmg({tgts,n,apply,from}){for(let i=n;i>0;i--){const p=x=>hp(x)<=0?-999:(hp(x)<=10*i?1000:0)+(x.card.prize||1)*20-hp(x)/10,t=[...tgts].sort((a,b)=>p(b)-p(a))[0];await fx('dmgThrow',from,t);apply(null,t,1)}},
  async mullDraw({max}){return max},
  async cond({conds}){return['paralyzed','asleep','confused','burn','poison'].find(k=>conds.includes(k))},
  async benchExtra({cards,sd}){for(const c of cards)if(G[sd].bench.length<bmax(sd))setupPlace(sd,c,'bench')},

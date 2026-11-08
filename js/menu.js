@@ -12,11 +12,11 @@ const showRules=()=>dlg(`<h2>Aturan & catatan</h2><div class="rules" style="font
 <b>Kondisi khusus &amp; Pokémon Checkup:</b> Asleep/Confused/Paralyzed saling menggantikan; Poison dan Burn bisa menyertai. Berpindah ke Bench atau berevolusi menghapus semuanya.<br>
 <b>KO:</b> lawan memilih sendiri kartu Prize (1; ex 2; Mega ex 3). Menang: ambil semua Prize, lawan tak punya Pokémon, atau lawan tak bisa draw. Seri → Sudden Death.<br>
 <b>Kontrol:</b> seret kartu dari tangan ke arena (tap hanya untuk melihat). Tap Active-mu (atau ${ic('swords')}) untuk menu serangan, Ability, dan mundur; tap Pokémon lain untuk zoom.<br><br>
-<b>Catatan jujur:</b> kartu yang tersedia baru 43 (deck "wishlist deck 2", archetype Terapagos ex & Dragapult ex, Obat Luka, Lumiose Galette), semuanya dibaca dari gambar dan efeknya ditulis. Pokémon Terastal di Bench tidak menerima damage serangan; Gua Besar Zero membuat Bench jadi 8. Legalitas Standard 2026-27 memakai mark H/I/J (atau reprint); Expanded memakai semua kartu paket.</div>`,[['Tutup',1,'ghost']]);$('m-rules').onclick=showRules;
+<b>Catatan jujur:</b> kartu yang tersedia baru 43 (deck "wishlist deck 2", archetype Terapagos ex & Dragapult ex, Obat Luka, Lumiose Galette), semuanya dibaca dari gambar dan efeknya ditulis. Pokémon Terastal di Bench tidak menerima damage serangan; Gua Besar Zero membuat Bench jadi 8. Legalitas Standard 2026-27 memakai mark H/I/J (atau reprint). Pilihan Expanded muncul bila ada kartu di luar H/I/J.</div>`,[['Tutup',1,'ghost']]);$('m-rules').onclick=showRules;
 /* ----- pilih deck sebelum battle ----- */
 const PRE={fmt:'std'};
 function renderPre(){
- seg($('pre-fmt'),Object.entries(FORMATS).map(([k,v])=>[k,k==='std'?'Standard H-I-J':'Expanded']),PRE.fmt,k=>{PRE.fmt=k;renderPre()});
+ seg($('pre-fmt'),Object.entries(FORMATS).map(([k,v])=>[k,k==='std'?'Standard H-I-J':'Expanded']),PRE.fmt,k=>{PRE.fmt=k;renderPre()});$('pre-fmt').style.display=$('pre-fmt-l').style.display=FORMATS.exp?'':'none';
  const box=$('pre-decks');box.innerHTML='';const saved=store.get();
  const item=(d,tag)=>{const lg=legal(d.list,PRE.fmt),b=document.createElement('button');b.className='dk';b.disabled=!lg.ok;
   b.innerHTML=`<div style="flex:1"><div>${esc(d.name)}</div><small>${tag?tag+' • ':''}${lg.n} kartu • ${lg.ok?`<span class="ok">${ic('check')} layak ${FORMATS[PRE.fmt].n}</span>`:`<span class="no">${ic('x')} ${lg.issues[0]}</span>`}</small></div>${lg.ok?ic('play'):''}`;
@@ -43,7 +43,7 @@ function renderDB(){
    d.querySelector('img').onclick=()=>zoomCard(c);const[bm,,bp]=d.querySelectorAll('.ctl button, .ctl span');
    bm.onclick=()=>{if(DB.list[k]){DB.list[k]--;if(!DB.list[k])delete DB.list[k];updDB()}};
    bp.onclick=()=>{if(total()<60&&(DB.list[k]||0)<maxFor(k)&&(c.k==='energy'||copiesByName(c.n)<4)){DB.list[k]=(DB.list[k]||0)+1;updDB()}};t.append(d)});g.append(t)}
- seg($('db-fmt'),[['std','Standard'],['exp','Expanded']],DB.fmt,k=>{DB.fmt=k;updDB()});
+ seg($('db-fmt'),[['std','Standard'],['exp','Expanded']],DB.fmt,k=>{DB.fmt=k;updDB()});$('db-fmt').style.display=FORMATS.exp?'':'none';
  const sel=$('db-load');sel.innerHTML='<option value="">— Muat deck —</option>';[...BUILTINS,...store.get()].forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;sel.append(o)});sel.value=DB.id||'';
  $('db-name').value=DB.name||'';updDB()}
 function updDB(){
@@ -52,7 +52,7 @@ function updDB(){
  const n=total();let sum=`<div><b>${n}/60 kartu</b></div><div class="bar"><i style="width:${n/60*100}%"></i></div>`;
  for(const[name,fn]of CLUSTERS){const v=Object.entries(DB.list).filter(([k])=>fn(CARDS[k])).reduce((a,[,q])=>a+q,0);sum+=`<div class="chk">${name}: <b>${v}</b></div>`}
  $('db-sum').innerHTML=sum;
- let chk='';for(const f of['std','exp']){const l=legal(DB.list,f);chk+=`<div class="chk"><div class="${l.ok?'ok':'no'}">${ic(l.ok?'check':'x')} ${FORMATS[f].n}${l.ok?' — layak':''}</div>${l.issues.map(i=>`<div class="no">• ${i}</div>`).join('')}${f===DB.fmt?l.warn.map(i=>`<div class="wn">${ic('alert')} ${i}</div>`).join(''):''}</div>`}
+ let chk='';for(const f of Object.keys(FORMATS)){const l=legal(DB.list,f);chk+=`<div class="chk"><div class="${l.ok?'ok':'no'}">${ic(l.ok?'check':'x')} ${FORMATS[f].n}${l.ok?' — layak':''}</div>${l.issues.map(i=>`<div class="no">• ${i}</div>`).join('')}${f===DB.fmt?l.warn.map(i=>`<div class="wn">${ic('alert')} ${i}</div>`).join(''):''}</div>`}
  $('db-chk').innerHTML=chk}
 $('db-back').onclick=()=>showScr('menu');
 $('db-rec').onclick=()=>{const before=total();DB.list=recommend(DB.list);updDB();$('db-chk').insertAdjacentHTML('afterbegin',`<div class="chk ok">${ic('spark')} ${before?'Deck dilengkapi sampai 60 kartu (staple Trainer + Energi).':'Memakai deck rekomendasi: Darkness Mega Sharpedo ex.'}</div>`)};

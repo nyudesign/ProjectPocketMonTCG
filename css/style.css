@@ -259,3 +259,12 @@ body.bt .hud{display:flex}#hudt{top:calc(6px + env(safe-area-inset-top,0px));rig
 /* heal: angka hijau (ala Pocket) & label PULIH saat Kondisi Khusus hilang */
 .dmg.heal{color:#dcfce7;-webkit-text-stroke-color:#14532d;text-shadow:0 0 18px #4ade80,0 calc(var(--fs,56px)*.07) 0 #0006}
 .stp.cure{background:#16a34a;box-shadow:0 0 0 4px #0003,0 0 28px #4ade80,0 10px 26px #0008}.stp.cure i{background:var(--c)}
+/* langkah koin damage counter: petunjuk menempel di bawah koin (left/top diatur stageUI di ui.js), isyarat seret garis putus-putus + tangan */
+#pickbar.near{left:0;top:0;right:auto;transform:translateX(-50%);width:max-content;max-width:min(92vw,380px)}
+#dhint{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:8;display:none;overflow:visible}
+#dhint path{fill:none;stroke:#fde047;stroke-width:4;stroke-linecap:round;stroke-dasharray:1 13;animation:dhm .7s linear infinite;filter:drop-shadow(0 0 3px #000c)}
+@keyframes dhm{to{stroke-dashoffset:-14}}
+#dhand{position:fixed;left:0;top:0;width:46px;height:46px;color:#fff;pointer-events:none;z-index:8;display:none;filter:drop-shadow(0 0 1.2px #000) drop-shadow(0 0 1.2px #000) drop-shadow(0 3px 4px #000a)}
+#dhand .ic{width:100%;height:100%;vertical-align:top}#dhand .ic path{stroke-width:2.5}
+#dhint.on,#dhand.on{display:block}
+@media (prefers-reduced-motion:reduce){#dhint path{animation:none}}
