@@ -106,7 +106,7 @@ $('p-look').onclick=()=>{$('panel').classList.add('look');$('pback').style.displ
 function panelPick(o){return new Promise(res=>{
  const{cards,min=0,max,card,title,cost}=o,can=o.pick||(()=>true),nPick=cards.filter(can).length,sel=new Set(),valid=new Set(cards.filter(can)),all=o.all&&o.all.length>cards.length?[...o.all].sort(byKind):null;panelOpen(card,title+(max>1?` (maks ${max})`:''));
  const car=$('pcar'),fl=$('pflt');
- const done=$('p-done'),cancel=$('p-cancel');done.style.display='';const upd=()=>{const ok=sel.size>=min&&sel.size<=max;done.disabled=!ok;done.textContent=cost?`Buang ${sel.size}/${min}`:(sel.size?`Ambil ${sel.size} kartu`:(min?'Pilih kartu':'Selesai tanpa memilih'))};
+ const done=$('p-done'),cancel=$('p-cancel');done.style.display='';const upd=()=>{const ok=sel.size>=min&&sel.size<=max;done.disabled=!ok;done.textContent=o.okTx?`${o.okTx} (${sel.size})`:cost?`Buang ${sel.size}/${min}`:(sel.size?`Ambil ${sel.size} kartu`:(min?'Pilih kartu':'Selesai tanpa memilih'))};
  /* filter ala PTCGL: "Sesuai" = kartu yang boleh dipilih, "Semua" = seluruh isi Deck/discard (yang tak sesuai diredupkan, tak bisa dipilih) */
  const render=all_=>{car.innerHTML='';const list=all_?all:cards;if(!list.length){car.innerHTML='<div class="empty">Tidak ada kartu yang cocok.</div>';return}
   list.forEach(c=>{const d=document.createElement('div');d.className='cc'+(sel.has(c)?' sel':'');d.innerHTML=`<img src="${imgOf(c)}" alt="${cname(c)}">`;if(!valid.has(c)){d.classList.add('no');d.title='Tidak bisa dipilih';d.setAttribute('aria-disabled','true');car.append(d);return}d.onclick=()=>{if(sel.has(c)){sel.delete(c);d.classList.remove('sel')}else if(sel.size<max){sel.add(c);d.classList.add('sel')}else if(max===1){car.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));sel.clear();sel.add(c);d.classList.add('sel')}upd()};car.append(d)})};
@@ -114,7 +114,7 @@ function panelPick(o){return new Promise(res=>{
  render(false);
  if(cost){cancel.style.display='';cancel.onclick=()=>{panelClose();res(null)}}
  done.onclick=async()=>{
-  if(!cost&&sel.size<max&&nPick>sel.size){const v=await dlg(`<h2>Ambil lebih sedikit?</h2><p>Kamu memilih <b>${sel.size}</b> dari maksimal <b>${max}</b>, dan masih ada kartu yang cocok.</p>`,[[`Lanjut dengan ${sel.size} kartu`,'y','go'],['Pilih lagi','n','ghost',1]]);if(v!=='y')return}
+  if(!cost&&!o.okTx&&sel.size<max&&nPick>sel.size){const v=await dlg(`<h2>Ambil lebih sedikit?</h2><p>Kamu memilih <b>${sel.size}</b> dari maksimal <b>${max}</b>, dan masih ada kartu yang cocok.</p>`,[[`Lanjut dengan ${sel.size} kartu`,'y','go'],['Pilih lagi','n','ghost',1]]);if(v!=='y')return}
   panelClose();res([...sel])};upd()})}
 const KORD={pokemon:0,supporter:1,item:2,tool:3,stadium:4,senergy:5,energy:6},byKind=(a,b)=>(KORD[a.k]-KORD[b.k])||(a.stage||0)-(b.stage||0)||cname(a).localeCompare(cname(b));
 function panelPay(o){return new Promise(res=>{
@@ -138,6 +138,7 @@ const UIDEC={
  pay:o=>panelPay(o),
  cond:o=>dlg(`<h2>Pulihkan kondisi mana?</h2><p>${cname(o.mon.card)} sedang ${o.conds.map(k=>CONDN[k]).join(' dan ')}.</p>`,o.conds.map(k=>[`${ic(BADGE[k][0])} ${CONDN[k]}`,k,'go'])),   // Lumiose Galette
  confirm:o=>dlg(`<h2>${o.title}</h2><p>${o.tx}</p>`,[['Pakai',true,'go'],['Lewati',false,'ghost',1]]),
+ choice:o=>dlg(`<h2>${o.title}</h2>${o.tx?`<p>${o.tx}</p>`:''}`,o.opts.map((t,i)=>[t,i,i?'ghost':'go'])),   // kartu "pilih salah satu efek"
  num:async o=>dlg(`<h2>${o.title}</h2>`,Array.from({length:o.max-o.min+1},(_,i)=>[String(o.min+i),o.min+i])),
  moveDmg:async o=>{
   const src=await wantStart({title:'Pilih Pokémon-mu yang Token Kerusakan-nya mau dipindah',mons:o.srcs,sd:'p',ctx:'target',cancel:true},false);

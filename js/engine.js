@@ -111,7 +111,7 @@ const setSp=(m,sd,s)=>{if(condBlocked(m)){log(`${cname(m.card)} tidak bisa terke
 /* ---------- aturan boleh/tidak ---------- */
 function whyTrainer(sd,c){const S=G[sd],E=G[opp(sd)];if(c.k==='item'&&S.noItem===S.tn)return'Efek serangan lawan: tidak bisa memainkan Item giliran ini';
  if(c.k==='stadium'){if(S.stad)return'Sudah memainkan Stadium giliran ini';if(G.stadium&&G.stadium.card.n===c.n)return'Stadium dengan nama yang sama sedang aktif'}
- if(c.k==='supporter'){if(firstTurn(sd))return'Pemain pertama tidak boleh memakai Supporter di giliran pertama';if(S.sup)return'Sudah memakai Supporter giliran ini'}
+ if(c.k==='supporter'){if(firstTurn(sd)&&!(c.g&&c.g.some(s=>s.op==='firstOk')))return'Pemain pertama tidak boleh memakai Supporter di giliran pertama';if(S.sup)return'Sudah memakai Supporter giliran ini'}
  switch(c.key){
   case'poffin':if(S.bench.length>=bmax(sd))return'Cadangan penuh';break;
   case'eretrieval':if(!S.discard.some(x=>x.k==='energy'))return'Tidak ada Energi Dasar di Trash';break;
@@ -132,7 +132,7 @@ const whyEvolve=(sd,c,m)=>{const S=G[sd];if(c.from!==m.card.n)return`Hanya bisa 
 const whyEnergy=sd=>G[sd].en?'Sudah memasang Energi giliran ini':'';
 const whyTool=(sd,c,m)=>m.tool?'Pokémon ini sudah memakai Pokémon Tool':'';
 const whyBasic=sd=>G[sd].bench.length>=bmax(sd)?`Cadangan penuh (maks ${bmax(sd)})`:'';
-const whyRetreat=sd=>{const S=G[sd],a=S.active;if(!a)return'Tidak ada Pokémon Bertarung';if(S.ret)return'Sudah mundur giliran ini';if(a.sp==='asleep'||a.sp==='paralyzed')return`Pokémon yang ${CONDN[a.sp]} tidak bisa mundur`;if(a.x&&a.x.noRet===S.tn)return'Efek serangan lawan: tidak bisa mundur giliran ini';if(!S.bench.length)return'Cadangan kosong';if(a.en.length<rcost(a))return`Butuh ${rcost(a)} Energi untuk mundur`;return''};
+const whyRetreat=sd=>{const S=G[sd],a=S.active;if(!a)return'Tidak ada Pokémon Bertarung';if(S.ret)return'Sudah mundur giliran ini';if(a.sp==='asleep'||a.sp==='paralyzed')return`Pokémon yang ${CONDN[a.sp]} tidak bisa mundur`;if(a.x&&a.x.noRet===S.tn)return'Efek serangan lawan: tidak bisa mundur giliran ini';if(a.poison&&S.noRetP===S.tn)return'Pokémon yang Racun tidak bisa mundur giliran ini';if(!S.bench.length)return'Cadangan kosong';if(a.en.length<rcost(a))return`Butuh ${rcost(a)} Energi untuk mundur`;return''};
 const whyAttack=(sd,k)=>{const S=G[sd],a=S.active;if(!a)return'Tidak ada Pokémon Bertarung';if(firstTurn(sd))return'Pemain pertama tidak boleh menyerang di giliran pertama';if(a.sp==='asleep')return'Pokémon yang Tidur tidak bisa menyerang';if(a.sp==='paralyzed')return'Pokémon yang Lumpuh tidak bisa menyerang';const at=a.card.atk[k];if((at.fx==='union'||at.g&&at.g.some(s=>s.op==='notFirst2'))&&G.first!==sd&&S.tn===1)return'Tidak bisa di giliran pertama Pemain Kedua';
  if(a.x&&a.x.noAtk===S.tn)return'Pokémon ini tidak bisa menyerang giliran ini';if(a.x&&a.x.noAtkN&&a.x.noAtkN.tn===S.tn&&a.x.noAtkN.n===at.n)return`${at.n} tidak bisa dipakai giliran ini`;if(!afford(a,at.cost))return'Energi belum cukup';return''};
 const hasDark=m=>m.en.some(c=>c.t==='D')||(m.card.stage===0&&m.en.some(c=>c.key==='prism'));
@@ -215,7 +215,9 @@ async function actTrainer(sd,c){const w=whyTrainer(sd,c);if(w)return w;const S=G
  log(`${who(sd)} memakai ${cname(c)}`);await fx('playcard',c,sd);
  const r=await(EFF[c.key]||(c.g&&c.k!=='stadium'?genTrainer:EFF[c.k]))(sd,c);G.limbo=null;
  if(r==='cancel'){S.hand.push(c);log('Dibatalkan');await fx('endcard',c,sd,true);return}
- if(c.k==='supporter')S.sup=1;if(c.k!=='stadium')S.discard.push(c);await fx('endcard',c,sd,false);if(c.k==='stadium'){await enforceBoth(G.stadOld);await resolveKO()}}   // HP maksimum bisa turun karena Stadium
+ if(c.k==='supporter')S.sup=1;const back=c.g&&c.g.find(s=>s.op==='selfDeckIf');   // "tidak dibuang, dikocok kembali ke Deck" bila Stadium tertentu ada
+ if(back&&G.stadium&&cname(G.stadium.card)===back.name){S.deck.push(c);shuf(S.deck);log(`${cname(c)} dikocok kembali ke Deck`)}else if(c.k!=='stadium')S.discard.push(c);await fx('endcard',c,sd,false);
+ if(S.endNow&&!DEC[sd].bot){log('Giliran berakhir karena efek kartu');finishTurn()}if(c.k==='stadium'){await enforceBoth(G.stadOld);await resolveKO()}}   // HP maksimum bisa turun karena Stadium
 async function actAbility(sd,m){const w=abWhy(sd,m);if(w)return w;log(`${who(sd)} memakai Ability ${m.card.ab.n} (${cname(m.card)})`);await fx('announce',{mon:m,name:m.card.ab.n,tx:m.card.ab.tx,sd,kind:'Ability'});const rr_=await AB[m.card.ab.key].run(sd,m);fx('abend');if(rr_==='cancel')log('Ability dibatalkan')}
 async function actRetreat(sd){const w=whyRetreat(sd);if(w)return w;const S=G[sd],a=S.active;
  const m=await ask(sd,'mon',{title:'Mundur: pilih Pokémon Cadangan yang maju',mons:S.bench,ctx:'retreat',sd,cancel:true,pref:x=>afford(x,x.card.atk[0].cost)?100+hp(x):hp(x)});if(!m)return;
@@ -264,6 +266,7 @@ const BOT={bot:true,
  async prizes({prizes,n}){return shuf([...prizes]).slice(0,n)},
  async num({max}){return max},
  async confirm(){return true},
+ async choice({pref}){return pref?pref():0},
  async attachEnergies({energies,targets,apply}){for(const en of energies){const t=[...targets].sort((a,b)=>(b.card.hp/100-b.en.length)-(a.card.hp/100-a.en.length))[0];apply(en,t)}},
  async moveDmg({srcs,tgts,max}){const src=[...srcs].sort((a,b)=>b.dmg-a.dmg)[0],k=Math.min(max,src.dmg/10),tgt=[...tgts].sort((a,b)=>(hp(a)<=k*10?1000:(a.card.prize||1)*20-hp(a)/10)<(hp(b)<=k*10?1000:(b.card.prize||1)*20-hp(b)/10)?1:-1)[0];return{src,tgt,k}},
  async placeDmg({tgts,n,apply,from}){for(let i=n;i>0;i--){const p=x=>hp(x)<=0?-999:(hp(x)<=10*i?1000:0)+(x.card.prize||1)*20-hp(x)/10,t=[...tgts].sort((a,b)=>p(b)-p(a))[0];await fx('dmgThrow',from,t);apply(null,t,1)}},
@@ -362,6 +365,7 @@ async function setup(deckP,deckO,opt={}){
   if(!S.deck.length){endGame(opp(sd));break}
   S.hand.push(S.deck.pop());log(`Giliran ${S.tn} · ${who(sd)}`);fx('sync');await sleep(0);   // format ini dikenali catatan di UI (TURNHDR)
   await new Promise(async res=>{G.turnResolve=res;try{await DEC[sd].turn(sd);if(DEC[sd].bot)finishTurn()}catch(e){console.error(e);res()}});
+  if(S.endHand&&S.endHand.tn===S.tn&&S.hand.length>=S.endHand.n){S.discard.push(...S.hand.splice(0));log(`${who(sd)} membuang semua Kartu Pegangan (efek Supporter)`);fx('sync')}
   for(const m of inPlay(S))for(const e of[...m.en])if(e.g&&e.g.some(s=>s.op==='endDisc')){m.en.splice(m.en.indexOf(e),1);S.discard.push(e);log(`${cname(e)} dibuang di akhir giliran`);fx('sync')}   // Energi Penyulut
   if(G.over)break;await fx('settle');await checkup();if(G.over)break;S.koFlag=0;G.cur=opp(sd)}   // efek serangan selesai dulu, lalu Checkup, baru giliran berikutnya (turnstart menunggu lagi)
  return G.over}
