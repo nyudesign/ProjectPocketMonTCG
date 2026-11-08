@@ -46,7 +46,7 @@ function hud(){
  pips('op',o.prizes.length);pips('pp',p.prizes.length);for(const[id,S,w]of[['hudt',o,'Bot'],['hudb',p,'Kamu']])$(id).setAttribute('aria-label',`${w}: ${S.prizes.length} Kartu Point tersisa`);
  const setup=G.phase==='setup',be=$('b-end');if(be.dataset.s!==String(setup)){be.dataset.s=setup;be.innerHTML=setup?`Siap ${ic('play')}`:`Akhiri<span class="lg"> giliran</span>`}$('b-end').disabled=setup?(!p.active||!!UI.panel||!UI.placing):!canAct();$('b-atk').disabled=setup||!canAct()||!p.active;
  be.classList.toggle('ready',setup&&!be.disabled);   // Siap menyala kuning begitu Pokémon Bertarung sudah ditaruh
- UI.abl=canAct()?ownMons().filter(it=>it.mon.card.ab&&!it.mon.card.ab.passive&&!it.mon.card.ab.setup&&!abWhy('p',it.mon)).map(it=>it.id):[]}
+ UI.abl=canAct()?ownMons().filter(it=>it.mon.card.ab&&!it.mon.card.ab.passive&&!it.mon.card.ab.setup&&!abWhy('p',it.mon)).map(it=>it.id):[];UI.stl=canAct()&&stUseOf()&&!whyStadium('p')?G.stadium.card.id:null}   // stl: Stadium yang efeknya bisa dipakai ikut menyala
 $('b-end').onclick=()=>{if(G.phase==='setup'){if(UI.placing&&G.p.active){const r=UI.placing;UI.placing=null;r()}}else if(canAct())confirmEnd()};
 $('b-atk').onclick=()=>{if(canAct()&&G.p.active)monMenu(G.p.active,'p')};
 $('b-log').onclick=()=>$('log').classList.toggle('on');$('log-x').onclick=()=>$('log').classList.remove('on');
@@ -327,14 +327,14 @@ function monMenu(mon,sd,pick){const c=mon.card,el=$('am'),me=sd==='p',my=me&&can
  ${c.ab?(abw===null?`<div class="amr ab info"><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p>${c.ab.tx}</p></div>`:`<button class="amr ab${abw?' off':''}" data-a="ab"${abw?' disabled':''}><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p>${c.ab.tx}</p>${abw?`<small>${abw}</small>`:''}</button>`):''}
  ${c.atk.map(row).join('')}
  <div class="amf"><span>Kelemahan ${c.weak?costIcons(c.weak)+' ×2':'–'}</span><span>Resistansi ${c.res?costIcons(c.res)+' −30':'–'}</span>${rw===null?`<span class="amri">Mundur ${rc?costIcons('C'.repeat(rc)):'0'}</span>`:`<button class="amret" data-a="ret"${rw?` disabled title="${rw}"`:''}>Mundur ${rc?costIcons('C'.repeat(rc)):'0'}</button>`}</div>${rw?`<small class="amri" style="padding:0 2px;font-size:12.5px">Mundur: ${rw}</small>`:''}
- ${setup?`<button class="b ghost" data-a="back">${ic('undo')} Kembalikan ke tangan</button>`:''}</div></div>`;
+ ${setup?`<button class="b ghost" data-a="back">${ic('undo')} Kembalikan ke tangan</button>`:''}${my&&c.fossil?`<button class="b ghost" data-a="fout"${whyFossilOut('p',mon)?' disabled':''}>${ic('x')} Buang fosil ke Trash</button>`:''}</div></div>`;
  el.classList.add('on');UI.am=1;hideHv();
  const w=el.firstChild,q=w.querySelector('.amc'),it=LI.get(mon.id);
  if(LAYMODE){w.style.left=Math.max(6,(innerWidth-w.offsetWidth)/2)+'px';w.style.top=Math.max(6,(innerHeight-w.offsetHeight)/2)+'px'}   // desktop: tengah layar
  else{const[ax,ay]=it?px2(it.x,.12,it.z):[innerWidth/2,innerHeight/2];w.style.left=Math.max(6,Math.min(innerWidth-w.offsetWidth-6,ax-q.offsetLeft-q.offsetWidth/2))+'px';w.style.top=Math.max(6,Math.min(innerHeight-w.offsetHeight-6,ay-q.offsetTop-q.offsetHeight/2))+'px'}
  el.onclick=e=>{const t=e.target.closest('.zt');if(t){const i=+t.dataset.i;q.firstChild.src=imgOf(st[i][0]);q.querySelectorAll('.zt').forEach(z=>z.classList.toggle('on',z===t));return}
   const b=e.target.closest('[data-a]');if(!b){if(!e.target.closest('.amp,.amc'))closeAm();return}if(b.disabled)return;const a=b.dataset.a;closeAm();
-  if(a==='back')setupRemove('p',mon);else if(a==='ab')run(()=>actAbility('p',mon));else if(a==='ret')run(()=>actRetreat('p'));else run(()=>actAttack('p',+a))}}
+  if(a==='back')setupRemove('p',mon);else if(a==='fout')run(()=>actFossilOut('p',mon));else if(a==='ab')run(()=>actAbility('p',mon));else if(a==='ret')run(()=>actRetreat('p'));else run(()=>actAttack('p',+a))}}
 const closeAm=()=>{$('am').classList.remove('on');UI.am=0};
 /* --- Drag & drop + tap + pratinjau --- */
 const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),PL=new THREE.Plane(new THREE.Vector3(0,1,0),-.9),PT=new THREE.Vector3();
@@ -366,7 +366,7 @@ function moveDrag(e){
   else if(c.k==='pokemon'&&c.stage>0||isEn(c)||c.k==='tool'){
    if(ov){const w=c.k==='pokemon'?whyEvolve('p',c,ov.mon):isEn(c)?whyEnergy('p'):whyTool('p',c,ov.mon);d.act=w?0:1;d.hi={x:ov.x,z:ov.z,s:ov.s,ok:!w};txt=w?'⛔ '+w:'Lepas: '+(c.k==='pokemon'?'evolusikan':isEn(c)?'pasang Energi ke':'pasang Tool ke')+' '+cname(ov.mon.card)}
    else txt=c.k==='pokemon'?`Seret ke ${c.from} untuk berevolusi`:'Seret ke Pokémon tujuan'}
-  else if(c.k==='pokemon'){const w=whyBasic('p');d.act=!w&&benZone?1:0;d.hi={x:slotBen[0],z:slotBen[1],s:slotBen[2],ok:!w};txt=w?'⛔ '+w:benZone?'Lepas di Cadangan':'Seret ke Cadangan yang menyala'}
+  else if(c.k==='pokemon'||c.fossil){const w=c.fossil?whyFossil('p',c):whyBasic('p');d.act=!w&&benZone?1:0;d.hi={x:slotBen[0],z:slotBen[1],s:slotBen[2],ok:!w};txt=w?'⛔ '+w:benZone?'Lepas di Cadangan':'Seret ke Cadangan yang menyala'}
   else{const w=whyTrainer('p',c),inZ=Math.abs(d.x)<2.3&&Math.abs(d.z)<.65;d.dz=1;d.act=!w&&inZ?1:0;d.dzc=w?0xff5a5a:inZ?0x4dff88:0xb6ffcc;txt=w?'⛔ '+w:inZ?'Lepas untuk memainkan kartu':'Seret ke kotak di tengah arena'}}
  if(txt!==d.txt){d.txt=txt;say(txt,6000)}}
 function drop(){
@@ -384,7 +384,7 @@ function drop(){
  const c=d.card;if(!d.act){say(d.txt&&d.txt.startsWith('⛔')?d.txt:'Kartu kembali ke tangan. Lepas di tempat yang menyala.',2600);sync();return}
  if(G.phase==='setup'){const r=setupPlace('p',c,!G.p.active?'active':'bench');if(r)say('⛔ '+r);return}
  if(c.k==='pokemon'&&c.stage>0)run(()=>actEvolve('p',c,d.ov.mon));
- else if(c.k==='pokemon')run(()=>actBasic('p',c));
+ else if(c.k==='pokemon'||c.fossil)run(()=>c.fossil?actFossil('p',c):actBasic('p',c));
  else if(isEn(c))run(()=>actEnergy('p',c,d.ov.mon));
  else if(c.k==='tool')run(()=>actTool('p',c,d.ov.mon));
  else run(()=>actTrainer('p',c))}
@@ -456,7 +456,7 @@ function tap(id){
  if(it.zone==='hand')return zoomCard(it.c);
  if(it.mon)return monMenu(it.mon,it.sd);
  if(it.zone==='att'&&it.par)return monMenu(it.par,it.sd,it.c);   // Energi/Tool yang menempel: menu Pokémon-nya, kartu itu terpilih
- if(it.zone==='stad')return zoomCard(it.c);
+ if(it.zone==='stad'){zoomCard(it.c);if(canAct()&&stUseOf()){const w=whyStadium('p');$('zbtn').innerHTML=`<button class="b go"${w?' disabled':''}>${ic('play')} Pakai efek Stadium</button>${w?`<small>${w}</small>`:''}`;if(!w)$('zbtn').querySelector('button').onclick=()=>{closeZoom();run(()=>actStadium('p'))}}return}   // Stadium yang bisa dipakai
  if(it.zone==='dis')return openDisc(it.sd);
  if(it.zone==='ohand')return say(`Kartu Pegangan Bot: ${G.o.hand.length}`,1500);
  if(it.zone==='dk')return say(`Deck ${it.sd==='p'?'kamu':'Bot'}: ${G[it.sd].deck.length} kartu`,1500);
@@ -511,7 +511,7 @@ function glows(){const L=[];if(!G||!G.p)return L;
  if(UI.stage&&!UI.stage.end&&UI.stage.at){const it=LI.get(UI.stage.at.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:3})}   // kartu asal koin: cahaya biru muda (sasaran tetap kuning)
  if(UI.attach&&!UI.drag)for(const m of UI.attach.tgts){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}   // pasang Energi dari efek: sasaran menyala
  if(UI.candy&&!UI.drag)for(const m of UI.candy.mons){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}   // Permen Langka: Basic sasaran
- if(!UI.drag)for(const id of UI.abl||[]){const it=LI.get(id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}   // Ability siap: cahaya tepi kuning ala Pocket (tak saat drag, agar tak tertukar dgn sasaran)
+ if(!UI.drag)for(const id of[...(UI.abl||[]),...(UI.stl?[UI.stl]:[])]){const it=LI.get(id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}   // Ability siap: cahaya tepi kuning ala Pocket (tak saat drag, agar tak tertukar dgn sasaran)
  if(UI.hp)L.push(UI.hp);
  return L}
 /* lift & skala tambahan kartu yang berevolusi menurut waktu t (dtk): diam saat kartu baru menumpuk, naik (ease-out-back), melayang, turun (ease-in-out) */
