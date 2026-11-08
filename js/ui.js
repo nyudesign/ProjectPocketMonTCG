@@ -125,7 +125,9 @@ function panelPay(o){return new Promise(res=>{
  m.en.forEach(c=>{const d=document.createElement('div');d.className='cc';d.innerHTML=`<img src="${imgOf(c)}" alt="${cname(c)}">`;d.onclick=()=>{if(sel.has(c)){sel.delete(c);d.classList.remove('sel')}else if(sel.size<o.cost){sel.add(c);d.classList.add('sel')}upd()};car.append(d)});
  cancel.onclick=()=>{panelClose();res(null)};done.onclick=()=>{panelClose();res([...sel])};upd()})}
 /* --- Pickbar (petunjuk + tombol Batal di dalam pop-up, bukan di arena) --- */
-function pickShow(t,cb,st){$('pk-ok').style.display='none';$('pk-t').textContent=t;$('pickbar').classList.add('on');document.documentElement.style.setProperty('--pkh',$('pickbar').offsetHeight+'px');/* HP: toast turun ke bawah petunjuk */$('pk-x').style.display=cb?'':'none';UI.pkcb=cb;const s=$('pk-st');
+const attachTxt=()=>{const a=UI.attach;if(a)pickShow(`${cname(a.card)}: seret Energi ke Pokémon yang menyala (${a.total-a.list.length}/${a.total})`,null)};   // penghitung pasang Energi dari efek
+function pickShow(t,cb,st){const mg=$('msg');if(!mg.classList.contains('warn'))mg.classList.remove('on');   // prompt jadi satu-satunya petunjuk; peringatan tetap tampil
+ $('pk-ok').style.display='none';$('pk-t').textContent=t;$('pickbar').classList.add('on');document.documentElement.style.setProperty('--pkh',$('pickbar').offsetHeight+'px');/* HP: toast turun ke bawah petunjuk */$('pk-x').style.display=cb?'':'none';UI.pkcb=cb;const s=$('pk-st');
  if(st){s.style.display='inline-flex';let k=st.k;const upd=()=>{$('pk-k').textContent='×'+k;st.onK&&st.onK(k)};$('pk-m').onclick=()=>{if(k>1){k--;upd()}};$('pk-p').onclick=()=>{if(k<st.max){k++;upd()}};upd()}else s.style.display='none'}
 function pickHide(){const pb=$('pickbar');pb.classList.remove('on','near');pb.style.left=pb.style.top='';$('pk-ok').style.display='none';UI.pkcb=null}
 $('pk-x').onclick=()=>{const cb=UI.pkcb;pickHide();if(cb)cb()};
@@ -147,7 +149,7 @@ const UIDEC={
   return new Promise(res=>{const mx=Math.min(o.max,src.dmg/10);
    coinStage({mon:src,at:src,max:mx,tgts:o.tgts,res,moved:0,tgt:null,apply:o.apply},`Seret token ke Pokémon lawan yang menyala (0/${mx})`,()=>{UI.stage=null;DCS.forEach(m=>m.visible=false);sync();res(null)})})},
  placeDmg:o=>new Promise(res=>coinStage({mon:null,at:o.from,max:o.n,tgts:o.tgts,res,moved:0,tgt:null,apply:o.apply,spread:1},`Seret token ke Pokémon Cadangan lawan yang menyala (0/${o.n})`,null)),   // spread: token boleh dibagi ke beberapa Pokémon
- attachEnergies:o=>new Promise(res=>{UI.attach={list:[...o.energies],tgts:o.targets,apply:o.apply,res};pickShow(`${cname(o.card)}: seret tiap Energi ke Pokémon yang menyala.`,null);sync()}),
+ attachEnergies:o=>new Promise(res=>{UI.attach={list:[...o.energies],tgts:o.targets,apply:o.apply,res,card:o.card,total:o.energies.length};attachTxt();sync()}),
  mullDraw:o=>new Promise(res=>{let v=o.max;   // ala PTCGL "Pick a number"
   const p=dlg(`<div class="mlh p"><small>Mulligan lawan</small><b>Kartu ekstra</b></div><p>Bot mulligan ${o.theirs} kali${o.mine?`, kamu ${o.mine} kali`:''}. Kamu boleh mengambil sampai <b>${o.max}</b> kartu. Pokémon Basic yang terambil boleh ditaruh ke Cadangan.</p><div class="pkn" role="radiogroup" aria-label="Jumlah kartu">${Array.from({length:o.max+1},(_,i)=>`<button role="radio" aria-checked="${i===v}" class="${i===v?'on':''}" data-v="${i}">${i}</button>`).join('')}</div>`,[[`Ambil ${v} kartu`,1,'sel']]);
   const b=$('dlg-b'),ok=b.querySelector('.b.sel');b.querySelectorAll('.pkn button').forEach(e=>e.onclick=()=>{v=+e.dataset.v;b.querySelectorAll('.pkn button').forEach(q=>{q.classList.toggle('on',q===e);q.setAttribute('aria-checked',q===e)});ok.textContent=v?`Ambil ${v} kartu`:'Tidak mengambil'});
@@ -376,7 +378,7 @@ function drop(){
    coinThrow(m,t,()=>{st.apply(st.mon,t,1);st.fly--;if(!st.fly&&(st.end||st.moved>=st.max))finishStage()});   // damage diterapkan saat koin mendarat
    if(st.moved>=st.max)pickHide();else if(st.spread)pickShow(`Seret token ke Pokémon Cadangan lawan yang menyala (${st.moved}/${st.max})`,null);else{pickShow(`Seret token lagi ke ${cname(st.tgt.card)}, atau tekan Selesai (${st.moved}/${st.max})`,null);$('pk-ok').style.display='';$('pk-ok').onclick=finishStage}}
   else{say('Token kembali',1500);coinBack(m)}return}
- if(d.pend){if(d.ov){const a=UI.attach;a.list.splice(a.list.indexOf(d.card),1);a.apply(d.card,d.ov.mon);fxCoin(d.ov.mon);if(!a.list.length){UI.attach=null;pickHide();sync();a.res()}else sync()}else say('Energi kembali. Seret ke Pokémon Cadangan yang menyala.');return}
+ if(d.pend){if(d.ov){const a=UI.attach;a.list.splice(a.list.indexOf(d.card),1);a.apply(d.card,d.ov.mon);fxCoin(d.ov.mon);if(!a.list.length){UI.attach=null;pickHide();sync();a.res()}else{attachTxt();sync()}}else say('Energi kembali. Seret ke Pokémon yang menyala.');return}
  if(d.mon){if(d.over)wantEnd(d.mon);else say('Kartu kembali. Seret tepat ke Arena Bertarung yang menyala.');return}
  if(d.candy){const k=UI.candy;if(d.ov&&k){UI.candy=null;pickHide();k.res({card:d.card,mon:d.ov.mon})}else say('Kartu kembali. Seret ke Pokémon Basic yang menyala.',2600);sync();return}
  const c=d.card;if(!d.act){say(d.txt&&d.txt.startsWith('⛔')?d.txt:'Kartu kembali ke tangan. Lepas di tempat yang menyala.',2600);sync();return}

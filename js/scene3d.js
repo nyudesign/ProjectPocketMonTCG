@@ -328,8 +328,8 @@ function lay(){
    else add(c.id,c,{sd,zone:'ohand',up:0,x:(i-(n-1)/2)*Math.min(.62,(LAY.W-2)/Math.max(n,1)),z:LAY.ohandZ||-5,s:LAY.ohs,y:.4+i*.02,dl,hide:MU})})}
  if(G.limbo&&UI.limbo&&UI.limbo.c===G.limbo){const l=UI.limbo,P=playSpot(l.sd);add(l.c.id,l.c,{sd:l.sd,zone:'limbo',x:P[0],y:P[1],z:P[2],s:P[3],up:1,hide:l.pos==='hidden'})}
  if(G.stadium){const[x,z,s]=LAY.stad;add(G.stadium.card.id,G.stadium.card,{sd:G.stadium.owner,zone:'stad',x,z,s,y:.1,up:1})}
- if(UI.attach){const ls=UI.attach.list,n=ls.length,P=LAYMODE?[-3.3,-.15,1,.95]:[-.8,0,.95,.84];   // Energi yang dibagi (Flare Turbo): di garis tengah sisi kiri (HP: kiri tombol), agar tak menutupi Bench tujuan
-  ls.forEach((c,i)=>add(c.id,c,{sd:'p',zone:'pend',idx:i,x:P[0]+(i-(n-1)/2)*P[2],z:P[1],s:P[3],y:1.5,up:1,lab:`Energi ${i+1}`,labc:ETC[c.t]||'#7c3aed',laby:.63}))}
+ if(UI.attach){const ls=UI.attach.list,n=ls.length,[cx,cz,s,w]=LAYMODE?[2.02,2.15,.74,2.4]:[0,4.88,.7,3.2],sp=Math.min(s+.1,w/Math.max(n-1,1));   // Energi dari efek: di separuh pemain dekat tujuan (desktop: kanan Pokémon Bertarung, dekat Deck/Trash; ponsel: di atas Kartu Pegangan)
+  ls.forEach((c,i)=>add(c.id,c,{sd:'p',zone:'pend',idx:i,x:cx+(i-(n-1)/2)*sp,z:cz,s,y:.9,up:1}))}
  return L}
 /* ---------- VFX ---------- */
 const FXL=[],shufT={p:0,o:0};
