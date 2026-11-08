@@ -68,7 +68,7 @@ addEventListener('keydown',e=>{if(e.key!=='Escape'||!G)return;
  if(UI.am)return closeAm();if($('log').classList.contains('on'))return $('log').classList.remove('on');
  if($('panel').classList.contains('on')&&$('p-cancel').style.display!=='none')return $('p-cancel').click();
  if(UI.pkcb&&$('pk-x').style.display!=='none')$('pk-x').click()});
-function closeAll(){UI.candy=null;UI.placeOnly=null;UI.handHide=null;closeAm();$('flp').className='';$('ban').className='';$('go').className='';$('dlg-b').classList.remove('mlw');UI.deal=null;UI.mull=null;UI.attach=null;$('cfx').style.display='none';UI.want=null;UI.stage=null;UI.limbo=null;UI.drag=null;DCS.forEach(m=>m.visible=false);pickHide();['panel','zoom','disc','dlg'].forEach(i=>$(i).classList.remove('on'));UI.panel=null;$('pback').style.display='none';$('ann').classList.remove('on');$('abt').classList.remove('on');$('turn').className=''}
+function closeAll(){UI.candy=null;UI.placeOnly=null;UI.handHide=null;closeAm();$('flp').className='';$('ban').className='';$('go').className='';$('dlg-b').classList.remove('mlw','skins');UI.deal=null;UI.mull=null;UI.attach=null;$('cfx').style.display='none';UI.want=null;UI.stage=null;UI.limbo=null;UI.drag=null;DCS.forEach(m=>m.visible=false);pickHide();['panel','zoom','disc','dlg'].forEach(i=>$(i).classList.remove('on'));UI.panel=null;$('pback').style.display='none';$('ann').classList.remove('on');$('abt').classList.remove('on');$('turn').className=''}
 /* --- Log --- */
 const TURNHDR=/^Giliran \d+ · /;   // baris judul giliran di catatan (dari mesin)
 FX.log=t=>{const d=document.createElement('div'),h=TURNHDR.test(t);if(h)d.className='t';d.innerHTML=iconize(t);const b=$('log-b');b.append(d);b.scrollTop=1e9;if(!h&&!t.startsWith('Kamu'))say(t,2400,'bot')};
@@ -294,8 +294,8 @@ function endWhy(r){if(G.why==='menyerah')return r==='p'?'Bot menyerah':'Kamu men
 function showEnd(r){const b=$('end-b'),t=r==='p'?'Kamu menang':r==='o'?(G.why==='menyerah'?'Kamu menyerah':'Bot menang'):'Seri';
  b.innerHTML=`<div class="endh ${r==='tie'?'':r}"><small>Hasil pertandingan</small><b>${t}</b></div><p>${endWhy(r)}.</p><ul class="endl"><li>Kartu Point tersisa: kamu ${G.p.prizes.length}, Bot ${G.o.prizes.length}</li><li>Giliran dimainkan: kamu ${G.p.tn}, Bot ${G.o.tn}</li></ul>`;
  const add=(l,cls,f)=>{const e=document.createElement('button');e.className='b '+cls;e.textContent=l;e.onclick=()=>{$('end').classList.remove('on');f()};b.append(e)};
- if(r==='tie')add('Sudden Death (1 Kartu Point)','atk',()=>startBattle(UI.last.list,UI.last.fmt,{prizes:1,bot:UI.last.bot}));
- add('Main lagi','go',()=>startBattle(UI.last.list,UI.last.fmt));add('Ganti deck','ghost',()=>{toMenu();renderPre();showScr('pre')});add('Menu utama','ghost',()=>toMenu());$('end').classList.add('on');b.querySelector('.b').focus({preventScroll:true})}
+ if(r==='tie')add('Sudden Death (1 Kartu Point)','atk',()=>startBattle(UI.last.list,UI.last.fmt,{prizes:1,bot:UI.last.bot,art:UI.last.art}));
+ add('Main lagi','go',()=>startBattle(UI.last.list,UI.last.fmt,{art:UI.last.art}));add('Ganti deck','ghost',()=>{toMenu();renderPre();showScr('pre')});add('Menu utama','ghost',()=>toMenu());$('end').classList.add('on');b.querySelector('.b').focus({preventScroll:true})}
 /* --- Lempar koin dalam permainan ala TCG Pocket: layar meredup, teks aturan di atas, pil jumlah Kepala/Ekor + jumlah lemparan.
    Koin pertama dilempar dari bawah ke tengah lalu pindah ke slotnya; koin berikutnya dilempar langsung di slotnya (3 per baris); hasil ditahan sebentar lalu tutup (tanpa layar biru muda: permintaan user) --- */
 const coinUrl=(()=>{const U={};return h=>U[h]||(U[h]=coinArt(h,256).toDataURL())})();
@@ -556,7 +556,7 @@ requestAnimationFrame(loop);
 /* --- mulai / akhir pertandingan --- */
 function resetScene(){for(const g of M.values())scene.remove(g);for(const g of PX.values())scene.remove(g);for(const o of OV.values())scene.remove(o.g);for(const id of [...CF.keys()])cfDrop(id);M.clear();PX.clear();OV.clear();LI=new Map();DCS.forEach(m=>m.visible=false);DZ.visible=false;$('tl').className='';COIN.g.visible=COIN.sh.visible=DIE.m.visible=DIE.sh.visible=false;CS=DS=null}
 async function startBattle(list,fmt,opt){
- UI.last={list,fmt};closeAll();resetScene();UI.placing=null;UI.si=UI.si||0;
+ UI.last={list,fmt,art:opt&&opt.art};closeAll();resetScene();UI.placing=null;UI.si=UI.si||0;
  ['menu','pre','db'].forEach(i=>$(i).classList.remove('on'));$('end').classList.remove('on');
  document.body.classList.add('bt');$('log-b').innerHTML='';
  UI.themeI=(UI.themeI+1+rnd(2))%THEMES.length;const tn=setTheme(UI.themeI);

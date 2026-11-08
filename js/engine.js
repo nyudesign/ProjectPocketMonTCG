@@ -9,7 +9,7 @@ const inPlay=S=>[S.active,...S.bench].filter(Boolean),hp=m=>maxHp(m)-m.dmg,cname
 const mkMon=(card,sd)=>({id:card.id,card,under:[],dmg:0,en:[],tool:null,sp:null,poison:0,burn:0,x:{},t:G[sd].tn,evo:-1,used:{},paraTn:0});
 const log=t=>{G.log.push(t);fx('log',t)};
 const who=sd=>sd==='p'?'Kamu':'Bot';
-function newSide(sd,list){/*S.stad: Stadium sudah dimainkan giliran ini*/const deck=shuf(Object.entries(list).flatMap(([k,q])=>Array.from({length:q},()=>mk(k))));
+function newSide(sd,list,art){/*S.stad: Stadium sudah dimainkan giliran ini; art: tema kartu pilihan (id gambar cetakan)*/const deck=shuf(Object.entries(list).flatMap(([k,q])=>Array.from({length:q},()=>{const c=mk(k);if(art&&art[k])c.img=art[k];return c})));
  return{sd,deck,hand:[],prizes:[],discard:[],active:null,bench:[],tn:0,en:0,sup:0,ret:0,used:{},koMark:0,koFlag:0,mull:0,ready:0,stad:0}}
 /* ---------- energi & biaya ---------- */
 /* token Energi: huruf tipe, '*' = semua tipe, 'P|D' = salah satu dari tipe itu (Energi Spesial umum: senProv di js/fx.js) */
@@ -342,7 +342,7 @@ function setupPlace(sd,c,spot){const S=G[sd];if(spot==='active'&&S.active)return
  if(!(isBasic(c)||(spot==='active'&&c.ab&&c.ab.setup)))return'Hanya Pokémon Basic';rmHand(S,c);const m=mkMon(c,sd);m.t=0;if(spot==='active')S.active=m;else S.bench.push(m);fx('sync')}
 function setupRemove(sd,m){const S=G[sd];if(S.active===m){S.bench.forEach(b=>S.hand.push(b.card));S.bench=[];S.active=null}else S.bench=S.bench.filter(x=>x!==m);S.hand.push(m.card);fx('sync')}
 async function setup(deckP,deckO,opt={}){
- G={p:newSide('p',deckP),o:newSide('o',deckO),cur:null,first:null,phase:'setup',over:0,log:[],limbo:null,stadium:null,busy:0,prizeN:opt.prizes||6,hidden:1};fx('sync');
+ G={p:newSide('p',deckP,opt.art),o:newSide('o',deckO),cur:null,first:null,phase:'setup',over:0,log:[],limbo:null,stadium:null,busy:0,prizeN:opt.prizes||6,hidden:1};fx('sync');
  const d=await fx('decideFirst')||{first:Math.random()<.5?'p':'o'};G.first=d.first;log(d.msg||`${who(G.first)} jalan duluan`);
  const mull={p:0,o:0},mh={p:[],o:[]},hasB=sd=>G[sd].hand.some(isBasic);
  for(const sd of['p','o'])for(let i=0;i<7;i++)G[sd].hand.push(G[sd].deck.pop());
