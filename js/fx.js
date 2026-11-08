@@ -83,7 +83,7 @@ async function genStep(sd,a,at,X,s){const S=G[sd],o=opp(sd),E=G[o],d=X.tgt&&X.tg
   case'noAtkDef':if(d&&!effBlocked(d))mx(d).noAtk=E.tn+1;break;
   case'weakNext':if(d&&!effBlocked(d))mx(d).weak={n:s.n,tn:E.tn+1};break;
   case'redNext':mx(a).red={n:s.n,tn:E.tn+1};break;
-  case'shield':mx(a).shield={tn:E.tn+1,all:!!s.all,upto:s.upto};log(`${cname(a.card)} terlindung di giliran lawan berikutnya`);break;
+  case'shield':mx(a).shield={tn:E.tn+1,all:!!s.all,basic:!!s.basic,upto:s.upto};   // basic: hanya dari Pokémon Basic (Golbat), dibaca hitMonlog(`${cname(a.card)} terlindung di giliran lawan berikutnya`);break;
   case'benchDmg':for(let i=0;i<s.k;i++){const ms=E.bench.filter(t=>!s.dmgd||t.dmg>0);if(!ms.length)break;const t=await ask(sd,'mon',{title:`Pilih Pokémon Cadangan lawan yang terkena ${s.n} kerusakan`,mons:ms,ctx:'target',sd:o,pref:x=>hp(x)<=s.n?1000+(x.card.prize||1)*10:-hp(x)});await hitMon(a,t,o,s.n)}break;
   case'benchDmgAll':for(const t of[...E.bench])if(!s.ex||rule(t.card))await hitMon(a,t,o,s.n);break;
   case'benchSelfAll':for(const t of[...S.bench])await hitMon(a,t,sd,s.n);break;
