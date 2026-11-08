@@ -248,7 +248,7 @@ function statusPop(k,P){if(RMO)return;const[n,c,t]=BADGE[k],v=P.clone().project(
 function orbList(mon){if(mon.en.length<=4)return mon.en.map(e=>[e.key==='prism'?'prism':e.t,0]);const c=new Map();for(const e of mon.en){const k=e.key==='prism'?'prism':e.t;c.set(k,(c.get(k)||0)+1)}return[...c]}
 function ovBuild(o,mon){
  if(!o.pill){const c=document.createElement('canvas');c.width=HPW;c.height=HPH;o.cx=c.getContext('2d');o.tex=new THREE.CanvasTexture(c);o.tex.anisotropy=4;o.pill=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:o.tex,transparent:true,depthWrite:false}));o.pill.scale.set(HPW*HPK/1024,HPH*HPK/1024,1);o.pill.position.set(.5+(HPW/2-416)*HPK/1024,.7+(102+HPT-HPH/2)*HPK/1024,-.03);o.g.add(o.pill);o.sub=new THREE.Group();o.g.add(o.sub)}   // panel .015 di atas kartu: di kamera miring (desktop) tak bergeser dari HP cetak kartu
- const v=Math.max(0,hp(mon)),mx=mon.card.hp;o.ty=mon.card.type;o.img=mon.card.img;
+ const v=Math.max(0,hp(mon)),mx=maxHp(mon);o.ty=mon.card.type;o.img=mon.card.img;
  if(o.hp===undefined){o.hp=o.n=v;o.mx=mx;o.f=o.gf=v/mx}
  else if(v!==o.hp||mx!==o.mx){o.a={t0:Math.max(performance.now(),o.hold||0),n0:o.n,f0:o.f,g0:o.gf,z0:o.z||0,D:RMO?0:500+Math.min(700,Math.abs(v-o.n)*3),dir:Math.sign(v-o.hp)};o.hp=v;o.mx=mx}
  drawHp(o);
@@ -296,7 +296,7 @@ function sync(){
   let px=PX.get(it.id);if(!px){px=new THREE.Mesh(GEO,PXM);px.userData.id=it.id;PX.set(it.id,px);scene.add(px)}
   px.position.set(it.x,it.y,it.z);px.rotation.x=it.up?-Math.PI/2+(it.tilt||0):Math.PI/2;px.scale.setScalar(it.s);px.updateMatrixWorld();
   if(it.mon&&(it.zone==='act'||it.zone==='ben')&&it.up){let o=OV.get(it.id);if(!o){o={g:new THREE.Group(),key:''};o.g.rotation.x=-Math.PI/2;scene.add(o.g);OV.set(it.id,o)}
-   o.g.visible=true;const m=it.mon,k=[m.card.type,hp(m),m.card.hp,m.sp,m.poison,m.burn,m.en.length,m.tool?1:0].join('|');if(o.key!==k){o.key=k;ovBuild(o,m)}}
+   o.g.visible=true;const m=it.mon,k=[m.card.type,hp(m),maxHp(m),m.sp,m.poison,m.burn,m.en.length,m.tool?1:0].join('|');if(o.key!==k){o.key=k;ovBuild(o,m)}}
   else{const o=OV.get(it.id);if(o)o.g.visible=false}
   cfSync(it.id,it.mon,!!(it.mon&&it.zone==='act'&&it.up))}
  const dest=new Map();for(const sd of['p','o']){const m=sd==='p'?1:-1;for(const c of G[sd].discard)dest.set(c.id,[...Z.dis(m),1]);for(const c of G[sd].deck)dest.set(c.id,[...Z.dk(m),0])}
