@@ -9,7 +9,7 @@ const inPlay=S=>[S.active,...S.bench].filter(Boolean),hp=m=>maxHp(m)-m.dmg,cname
 const mkMon=(card,sd)=>({id:card.id,card,under:[],dmg:0,en:[],tool:null,sp:null,poison:0,burn:0,x:{},t:G[sd].tn,evo:-1,used:{},paraTn:0});
 const log=t=>{G.log.push(t);fx('log',t)};
 const who=sd=>sd==='p'?'Kamu':'Bot';
-function newSide(sd,list,art){/*S.stad: Stadium sudah dimainkan giliran ini; art: tema kartu pilihan (id gambar cetakan)*/const deck=shuf(Object.entries(list).flatMap(([k,q])=>Array.from({length:q},()=>{const c=mk(k);if(art&&art[k])c.img=art[k];return c})));
+function newSide(sd,list,art){/*S.stad: Stadium sudah dimainkan giliran ini; art: kunci kartu -> {id gambar varian: jumlah salinan}, sisa salinan memakai cetakan utama*/const deck=shuf(Object.entries(list).flatMap(([k,q])=>{const im=Object.entries((art||{})[k]||{}).flatMap(([id,n])=>Array(n).fill(+id));return Array.from({length:q},(_,i)=>{const c=mk(k);if(im[i])c.img=im[i];return c})}));
  return{sd,deck,hand:[],prizes:[],discard:[],active:null,bench:[],tn:0,en:0,sup:0,ret:0,used:{},koMark:0,koFlag:0,mull:0,ready:0,stad:0}}
 /* ---------- energi & biaya ---------- */
 /* token Energi: huruf tipe, '*' = semua tipe, 'P|D' = salah satu dari tipe itu (Energi Spesial umum: senProv di js/fx.js) */

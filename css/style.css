@@ -132,6 +132,27 @@ body.bt .hud{display:flex}
 .chip{display:inline-block;margin:1px 3px 1px 0;padding:2px 7px;background:var(--paper2);color:var(--tx);font:700 11px var(--fd);letter-spacing:.04em}
 #zbtn{display:flex;flex-direction:column;gap:6px}#zbtn .b{width:100%;justify-content:flex-start}
 @media (max-width:760px){.zbox{flex-direction:column;overflow:auto}#zimg{height:44dvh;max-width:70vw}#zside{width:min(92vw,420px);max-height:44dvh}}
+/* zoom susun deck (#zoom.db): tombol ‹ › di tepi kartu, info efek muncul di atas kartu lewat scroll/geser, baris varian + jumlah per varian di bawah */
+.znav,#zdb{display:none}
+#zoom.db .zbox{--zw:min(514px,calc((100dvh - 150px)*5/7),calc(100vw - 80px));display:grid;grid-template-columns:var(--zw);gap:12px;max-width:none;max-height:none;overflow:visible}
+#zoom.db #zleft,#zoom.db #zside,#zoom.db .znav{grid-area:1/1}#zoom.db #zleft{touch-action:none}
+#zoom.db #zimg{display:block;width:var(--zw);height:auto;max-width:none;transition:filter .18s}
+#zoom.db #zside{z-index:1;align-self:center;justify-self:center;width:min(340px,calc(var(--zw) - 56px));max-height:calc(var(--zw)*1.4 - 64px);visibility:hidden;opacity:0;transform:translateY(10px);transition:opacity .18s,transform .18s,visibility .18s}
+#zoom.db.info #zside{visibility:visible;opacity:1;transform:none}#zoom.db.info #zimg{filter:brightness(.42)}#zoom.db #zbtn{display:none}
+#zoom.db .znav{display:grid;place-items:center;align-self:center;z-index:2;width:48px;height:48px;border:0;border-radius:50%;background:var(--paper);color:var(--ink);box-shadow:0 6px 18px rgb(0 0 0/.45)}
+#zoom.db #zprev{justify-self:start;transform:translateX(-50%)}#zoom.db #znext{justify-self:end;transform:translateX(50%)}
+#zoom.db .znav:hover:not(:disabled){background:var(--yel)}#zoom.db .znav:disabled{opacity:.35}#zoom.db .znav .ic{width:24px;height:24px}
+#zoom.db #zdb{display:flex;align-items:center;gap:10px;min-width:0}
+#zvar{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}#zvar:empty{display:none}
+#zvar button{flex:none;display:flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:0;background:var(--paper);color:var(--tx);font:700 12px var(--fd);letter-spacing:.03em;white-space:nowrap}
+#zvar button:hover{background:#fff}#zvar button.on{box-shadow:inset 0 0 0 3px var(--yel)}
+#zvar b{min-width:18px;padding:1px 5px;background:var(--ink);color:var(--paper);text-align:center}
+.zctl{flex:none;display:flex;gap:4px;margin-left:auto}
+.zctl button{display:grid;place-items:center;width:44px;height:40px;border:0;background:var(--paper);color:var(--ink)}
+.zctl button:hover:not(:disabled){background:var(--yel)}.zctl button:disabled{background:var(--ink3);color:#6e737d}
+.zctl span{display:grid;place-items:center;min-width:44px;height:40px;background:var(--ink);color:var(--paper);font:700 18px var(--fd);box-shadow:inset 0 0 0 1px var(--line)}
+#zoom.db .zbox .x{transform:translateX(calc(100% + 12px))}
+@media (max-width:760px){#zoom.db .zbox .x{transform:translateY(calc(-100% - 10px))}#zoom.db #zdb{flex-wrap:wrap}#zvar{flex-basis:100%}}
 /* panel pilih kartu (efek Trainer / mundur) */
 .pbox{width:min(1000px,100%);max-height:96dvh;overflow:auto;overflow-x:hidden;padding:14px;background:var(--ink2);clip-path:var(--notch);box-shadow:inset 0 0 0 1px var(--line),var(--shadow)}.ptop{display:flex;gap:14px;align-items:flex-start}
 #pimg{height:min(46dvh,420px);border-radius:4.5%/3.2%;flex:none;box-shadow:0 12px 26px rgb(0 0 0/.55)}.pmain{flex:1;min-width:0;width:100%;display:flex;flex-direction:column;gap:10px}
@@ -316,12 +337,8 @@ body.bt .hud{display:flex}
 .tile .ctl button{display:grid;place-items:center;border:0;width:36px;height:32px;background:var(--ink);color:var(--paper)}.tile .ctl button:hover:not(:disabled){background:var(--blued)}.tile .ctl button:disabled{background:var(--paper2);color:var(--paper3)}
 .tile .ctl span{font:700 16px var(--fd)}.tile.on{box-shadow:inset 0 0 0 3px var(--yel)}
 .tile .ctl button .ic{width:16px;height:16px}
-.tile .skb{position:absolute;top:9px;right:9px;display:flex;align-items:center;gap:3px;height:28px;padding:0 8px;border:0;background:rgb(13 14 18/.85);color:var(--paper);font:700 12px var(--fd);cursor:pointer}   /* tema kartu: jumlah cetakan */
+.tile .skb{position:absolute;top:9px;right:9px;display:flex;align-items:center;gap:3px;height:28px;padding:0 8px;border:0;background:rgb(13 14 18/.85);color:var(--paper);font:700 12px var(--fd);cursor:pointer}   /* jumlah varian kartu; kuning bila deck memakai varian selain cetakan utama */
 .tile .skb .ic{width:14px;height:14px}.tile .skb.on{background:var(--yel);color:var(--ink)}.tile .skb:hover{filter:brightness(1.15)}.tile .skb:focus-visible{outline:2px solid var(--yel);outline-offset:2px}
-.box.skins{max-width:min(780px,96vw);display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));align-items:start}.box.skins>h2,.box.skins>p,.box.skins>.b.close{grid-column:1/-1}.box.skins>.b.close{position:sticky;bottom:0;z-index:1}
-.box .b.skin{--fg:var(--tx);flex-direction:column;gap:6px;min-height:0;padding:6px 6px 8px;white-space:normal;text-transform:none;letter-spacing:0;font:600 13px/1.2 var(--fb)}
-.box .b.skin::before{background:#fff;clip-path:none;box-shadow:inset 0 0 0 1px var(--paper3)}.box .b.skin.sel::before{box-shadow:inset 0 0 0 3px var(--yel)}.box .b.skin:hover::before{filter:brightness(.97)}
-.box .b.skin img{width:100%;height:auto;aspect-ratio:5/7;display:block;border-radius:4.5%/3.2%}
 #db-side{flex:none;width:310px;display:flex;flex-direction:column;gap:10px;overflow:auto;padding:12px;margin-bottom:10px;background:var(--ink);color:var(--paper);clip-path:var(--notch)}
 .dcount{display:flex;align-items:baseline;justify-content:space-between}.dcount b{font:700 30px/1 var(--fd)}.dcount span{font:600 11px var(--fd);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
 .bar{height:8px;background:var(--ink3);overflow:hidden}.bar i{display:block;height:100%;background:var(--blue)}.bar.full i{background:var(--grnl)}
@@ -369,6 +386,7 @@ body.bt .hud{display:flex}
  body:has(#pickbar.on:not(.near)) #msg{top:calc(env(safe-area-inset-top,0px) + 48px + var(--pkh,80px))}}
 /* ---- gerak dikurangi ---- */
 @media (prefers-reduced-motion:reduce){
+ #zoom.db #zside{transform:none}
  #ann img,.box,#pickbar.on,.amw{animation-duration:.01s}#atkb.on,#abt.on,#tl.on,#tl.start::before,#tl.start::after,#ban .rb,#ban .rb::after,#dhint path{animation:none}
  .dmg{animation-duration:.01s;animation-delay:.7s;animation-fill-mode:both}#go b,#go::before,#go::after,.stp{animation-duration:.01s}
  #turn.on .tb,#turn.on::before{animation-duration:2.2s;animation-name:fadeio}@keyframes fadeio{0%,100%{opacity:0}10%,85%{opacity:1}}}

@@ -68,7 +68,7 @@ addEventListener('keydown',e=>{if(e.key!=='Escape'||!G)return;
  if(UI.am)return closeAm();if($('log').classList.contains('on'))return $('log').classList.remove('on');
  if($('panel').classList.contains('on')&&$('p-cancel').style.display!=='none')return $('p-cancel').click();
  if(UI.pkcb&&$('pk-x').style.display!=='none')$('pk-x').click()});
-function closeAll(){UI.candy=null;UI.placeOnly=null;UI.handHide=null;closeAm();$('flp').className='';$('ban').className='';$('go').className='';$('dlg-b').classList.remove('mlw','skins');UI.deal=null;UI.mull=null;UI.attach=null;$('cfx').style.display='none';UI.want=null;UI.stage=null;UI.limbo=null;UI.drag=null;DCS.forEach(m=>m.visible=false);pickHide();['panel','zoom','disc','dlg'].forEach(i=>$(i).classList.remove('on'));UI.panel=null;$('pback').style.display='none';$('ann').classList.remove('on');$('abt').classList.remove('on');$('turn').className=''}
+function closeAll(){UI.candy=null;UI.placeOnly=null;UI.handHide=null;closeAm();$('flp').className='';$('ban').className='';$('go').className='';$('dlg-b').classList.remove('mlw');UI.deal=null;UI.mull=null;UI.attach=null;$('cfx').style.display='none';UI.want=null;UI.stage=null;UI.limbo=null;UI.drag=null;DCS.forEach(m=>m.visible=false);pickHide();['panel','zoom','disc','dlg'].forEach(i=>$(i).classList.remove('on'));UI.panel=null;$('pback').style.display='none';$('ann').classList.remove('on');$('abt').classList.remove('on');$('turn').className=''}
 /* --- Log --- */
 const TURNHDR=/^Giliran \d+ · /;   // baris judul giliran di catatan (dari mesin)
 FX.log=t=>{const d=document.createElement('div'),h=TURNHDR.test(t);if(h)d.className='t';d.innerHTML=iconize(t);const b=$('log-b');b.append(d);b.scrollTop=1e9;if(!h&&!t.startsWith('Kamu'))say(t,2400,'bot')};
@@ -81,7 +81,7 @@ function cardText(c){if(c.k!=='pokemon')return`<div><span class="chip">${KIND[c.
  return`<div><span class="chip">${c.stage===0?'Basic':'Stage '+c.stage+(c.from?' dari '+c.from:'')}</span><span class="chip">${t[0]}</span><span class="chip">HP ${c.hp}</span>${c.mega?'<span class="chip">Mega ex · 3 Kartu Point</span>':c.prize>1?'<span class="chip">ex · 2 Kartu Point</span>':''}</div>`+
  (c.ab?`<div><b>Ability: ${c.ab.n}</b><br>${c.ab.tx}</div>`:'')+c.atk.map(a=>`<div><b>${a.n}</b> <span class="cost" style="display:inline-flex;vertical-align:middle">${costIcons(a.cost)}</span> ${a.dmg?a.dmg+(a.plus?'+':a.times?'×':''):''}<br>${a.tx}</div>`).join('')+
  `<div>Kelemahan: ${c.weak?TYPES[c.weak][0]+' ×2':'-'} · Resistansi: ${c.res?TYPES[c.res][0]+' −30':'-'} · Mundur: ${c.retreat}</div>`}
-function zoomCard(c){$('zimg').src=imgOf(c);$('zinfo').innerHTML=`<div><b>${cname(c)}</b></div>`+cardText(c);$('zbtn').innerHTML='';$('zoom').classList.add('on')}   // kartu tangan/discard/Stadium; Pokémon di arena: monMenu
+function zoomCard(c){$('zimg').src=imgOf(c);$('zimg').alt=cname(c);$('zinfo').innerHTML=`<div><b>${cname(c)}</b></div>`+cardText(c);$('zbtn').innerHTML='';$('zoom').classList.remove('db','info');$('zoom').classList.add('on')}   // kartu tangan/discard/Stadium; Pokémon di arena: monMenu
 const closeZoom=()=>$('zoom').classList.remove('on');
 $('zx').onclick=closeZoom;$('zoom').onclick=e=>{if(e.target.id==='zoom')closeZoom()};
 /* --- Discard --- */
