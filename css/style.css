@@ -139,6 +139,7 @@ body.bt .hud{display:flex}
 #pcar{display:flex;gap:10px;overflow-x:auto;padding:8px 2px;min-height:60px;max-width:100%}#pcar .cc{position:relative;flex:none;cursor:pointer;border-radius:6px;outline:3px solid transparent;outline-offset:2px;transition:transform .15s}#pcar img{height:min(30dvh,250px);display:block;border-radius:4.5%/3.2%}
 #pcar .cc.sel{outline-color:var(--yel);transform:translateY(-6px)}
 #pcar .cc.sel::after{content:"";position:absolute;top:6px;right:6px;width:24px;height:24px;background:var(--yel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%230d0e12' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' d='M20 6L9 17l-5-5'/%3E%3C/svg%3E") center/15px no-repeat}
+#pcar .cc.sel[data-n]::after{content:attr(data-n);background-image:none;color:#0d0e12;font-weight:700;font-size:14px;line-height:24px;text-align:center}   /* urutan pilihan (susun ulang Deck) */
 #pcar .cc[disabled]{opacity:.4;cursor:not-allowed}#pcar .cc.no{opacity:.35;cursor:not-allowed;filter:grayscale(.6)}
 .prow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.empty{color:var(--mute);font-size:14px;padding:14px}
 @media (max-width:760px){.ptop{flex-direction:column;align-items:center;width:100%}.pbox{padding:10px}#pimg{height:20dvh}#pcar img{height:23dvh}.prow .b{flex:1 1 auto}}
