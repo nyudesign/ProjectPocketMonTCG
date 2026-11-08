@@ -73,7 +73,7 @@ galette:{n:'Lumiose Galette',ni:'Lumiose Galette',k:'item',img:18383,mark:'J',tx
 renergy:{n:'Basic Fire Energy',ni:'Energi Dasar Api',k:'energy',t:'R',img:14667,tx:'Energi Dasar tipe Api.'},
 penergy:{n:'Basic Psychic Energy',ni:'Energi Dasar Psikis',k:'energy',t:'P',img:14670,tx:'Energi Dasar tipe Psikis.'}
 };
-const TYPES={D:['Kegelapan','#3b2f5c'],P:['Psikis','#a855f7'],R:['Api','#ef4444'],C:['Normal','#94a3b8'],G:['Rumput','#22c55e'],F:['Bertarung','#b45309'],W:['Air','#0ea5e9'],L:['Listrik','#eab308'],N:['Naga','#7c3aed']};
+const TYPES={D:['Kegelapan','#3b2f5c'],P:['Psikis','#a855f7'],R:['Api','#ef4444'],C:['Normal','#94a3b8'],G:['Rumput','#22c55e'],F:['Petarung','#b45309'],W:['Air','#0ea5e9'],L:['Listrik','#eab308'],N:['Naga','#7c3aed'],M:['Logam','#94a3b8']};
 const CLUSTERS=[['Pokémon',c=>c.k==='pokemon'],['Supporter',c=>c.k==='supporter'],['Item',c=>c.k==='item'&&!c.ace],['ACE SPEC',c=>!!c.ace],['Pokémon Tool',c=>c.k==='tool'],['Stadium',c=>c.k==='stadium'],['Energi',c=>c.k==='energy'||c.k==='senergy']];
 const USER_DECK={cinderace:2,munkidori:2,carvanha:4,sharpedo:3,fezan:1,pecharunt:1,toxel:3,toxtricity:3,minccino:1,cinccino:1,poffin:4,eretrieval:1,stretcher:2,pad:2,prime:1,redcard:1,ultra:4,boss:2,hilda:2,iris:2,lillie:4,balloon:2,helmet:2,prism:1,denergy:9};
 const TERA_DECK={terapagos:4,hoothoot:4,noctowl:4,fanrotom:2,fezan:1,poffin:4,ultra:4,pokegear:2,pad:2,stretcher:2,prime:1,boss:2,briar:2,lillie:4,hilda:2,iris:2,zero:3,balloon:2,genergy:4,wenergy:4,lenergy:4,prism:1};

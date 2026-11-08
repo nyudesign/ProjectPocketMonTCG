@@ -145,7 +145,7 @@ const UIDEC={
   return new Promise(res=>{const mx=Math.min(o.max,src.dmg/10);
    coinStage({mon:src,at:src,max:mx,tgts:o.tgts,res,moved:0,tgt:null,apply:o.apply},`Seret token ke Pokémon lawan yang menyala (0/${mx})`,()=>{UI.stage=null;DCS.forEach(m=>m.visible=false);sync();res(null)})})},
  placeDmg:o=>new Promise(res=>coinStage({mon:null,at:o.from,max:o.n,tgts:o.tgts,res,moved:0,tgt:null,apply:o.apply,spread:1},`Seret token ke Pokémon Cadangan lawan yang menyala (0/${o.n})`,null)),   // spread: token boleh dibagi ke beberapa Pokémon
- attachEnergies:o=>new Promise(res=>{UI.attach={list:[...o.energies],tgts:o.targets,apply:o.apply,res};pickShow(`${cname(o.card)}: seret tiap Energi ke Pokémon Cadangan mana pun.`,null);sync()}),
+ attachEnergies:o=>new Promise(res=>{UI.attach={list:[...o.energies],tgts:o.targets,apply:o.apply,res};pickShow(`${cname(o.card)}: seret tiap Energi ke Pokémon yang menyala.`,null);sync()}),
  mullDraw:o=>new Promise(res=>{let v=o.max;   // ala PTCGL "Pick a number"
   const p=dlg(`<div class="mlh p"><small>Mulligan lawan</small><b>Kartu ekstra</b></div><p>Bot mulligan ${o.theirs} kali${o.mine?`, kamu ${o.mine} kali`:''}. Kamu boleh mengambil sampai <b>${o.max}</b> kartu. Pokémon Basic yang terambil boleh ditaruh ke Cadangan.</p><div class="pkn" role="radiogroup" aria-label="Jumlah kartu">${Array.from({length:o.max+1},(_,i)=>`<button role="radio" aria-checked="${i===v}" class="${i===v?'on':''}" data-v="${i}">${i}</button>`).join('')}</div>`,[[`Ambil ${v} kartu`,1,'sel']]);
   const b=$('dlg-b'),ok=b.querySelector('.b.sel');b.querySelectorAll('.pkn button').forEach(e=>e.onclick=()=>{v=+e.dataset.v;b.querySelectorAll('.pkn button').forEach(q=>{q.classList.toggle('on',q===e);q.setAttribute('aria-checked',q===e)});ok.textContent=v?`Ambil ${v} kartu`:'Tidak mengambil'});
@@ -235,6 +235,8 @@ Object.assign(FX,{
  reveal:async(sd,cards,src)=>{if(sd==='p')return;const dk=Z.dk(-1);say(`Bot memperlihatkan ${cards.map(cname).join(', ')} (${cname(src)})`,3400,'bot');
   await cardShow(cards,px2(dk[0],.1,dk[1]),px2(0,.4,LAY.ohandZ||-5),Math.round((900+SPD[UI.si][1])*[1,.75,.45][UI.si]))},
  flips:(sd,rs,why,tx,slow)=>pocketFlips(sd,rs,why,tx,slow),
+ /* efek "Lihat Kartu Pegangan lawan": kartu Bot ditunjukkan menghadap layar lalu kembali */
+ lookHand:async cards=>{if(!cards.length){say('Kartu Pegangan Bot kosong',1800,'bot');return}say(`Kartu Pegangan Bot: ${cards.length} kartu`,2600,'bot');const P=px2(0,.4,LAY.ohandZ||-5);await cardShow(cards,P,P,2600)},
  /* kartu Trainer dimainkan: kartumu langsung ke tempat main di arena (tanpa pop-up; Bos/Prime Catcher langsung seret di arena), kartu Bot meluncur ala PTCGL */
  playcard:async(c,sd)=>{UI.limbo={c,sd,pos:sd==='p'?'side':'hidden'};sync();
   if(sd==='p'){playSplash(c,sd);await sleep(420)}
@@ -347,7 +349,7 @@ function startDrag(it){
 function moveDrag(e){
  aim(e);const p=ray.ray.intersectPlane(PL,PT);if(!p)return;const d=UI.drag;d.x=p.x;d.z=p.z-(e.pointerType==='touch'?1.1:.2);d.hi=null;d.zone=null;let txt='';
  if(d.coin){const opp=[...LI.values()].filter(it=>it.sd==='o'&&(it.zone==='act'||it.zone==='ben')&&UI.stage.tgts.includes(it.mon)&&(!UI.stage.tgt||it.mon===UI.stage.tgt)),ov=overMon(d.x,d.z,opp);d.tgt=ov?ov.mon:null;d.hi=ov?{x:ov.x,z:ov.z,s:ov.s,ok:1}:null;txt=ov?`Lepas: 1 Token Kerusakan ke ${cname(ov.mon.card)}`:'Seret token ke Pokémon lawan yang menyala'}
- else if(d.pend){const tg=[...LI.values()].filter(q=>q.sd==='p'&&q.zone==='ben'&&UI.attach.tgts.includes(q.mon)),ov=overMon(d.x,d.z,tg);d.ov=ov;d.hi=ov?{x:ov.x,z:ov.z,s:ov.s,ok:1}:null;txt=ov?`Lepas: pasang ${cname(d.card)} ke ${cname(ov.mon.card)}`:'Seret Energi ke Pokémon Cadangan tujuan'}
+ else if(d.pend){const tg=[...LI.values()].filter(q=>q.sd==='p'&&(q.zone==='ben'||q.zone==='act')&&UI.attach.tgts.includes(q.mon)),ov=overMon(d.x,d.z,tg);d.ov=ov;d.hi=ov?{x:ov.x,z:ov.z,s:ov.s,ok:1}:null;txt=ov?`Lepas: pasang ${cname(d.card)} ke ${cname(ov.mon.card)}`:'Seret Energi ke Pokémon yang menyala'}
  else if(d.candy){const tg=ownMons().filter(q=>UI.candy.mons.includes(q.mon)&&UI.candy.ok(d.card,q.mon)),ov=overMon(d.x,d.z,tg);d.ov=ov;d.hi=ov?{x:ov.x,z:ov.z,s:ov.s,ok:1}:null;
   txt=ov?`Lepas: ${cname(ov.mon.card)} berevolusi jadi ${cname(d.card)}`:`Seret ${cname(d.card)} ke Pokémon Basic yang menyala`}
  else if(d.mon){const w=UI.want,m=w.sd==='p'?1:-1,[ax,az]=Z.act(m);const over=Math.abs(d.x-ax)<1&&Math.abs(d.z-az)<1.2;d.over=over;d.hi={x:ax,z:az,s:Z.act(m)[2],ok:1};txt=over?`Lepas: ${cname(d.mon.card)} maju ke Arena Bertarung`:'Seret ke Arena Bertarung yang menyala'}
@@ -503,6 +505,7 @@ function glows(){const L=[];if(!G||!G.p)return L;
  if(UI.want)for(const m of UI.want.mons){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}
  if(UI.stage&&!UI.stage.end&&!UI.drag)for(const m of (UI.stage.tgt?[UI.stage.tgt]:UI.stage.tgts)){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}
  if(UI.stage&&!UI.stage.end&&UI.stage.at){const it=LI.get(UI.stage.at.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:3})}   // kartu asal koin: cahaya biru muda (sasaran tetap kuning)
+ if(UI.attach&&!UI.drag)for(const m of UI.attach.tgts){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}   // pasang Energi dari efek: sasaran menyala
  if(UI.candy&&!UI.drag)for(const m of UI.candy.mons){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}   // Permen Langka: Basic sasaran
  if(!UI.drag)for(const id of UI.abl||[]){const it=LI.get(id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}   // Ability siap: cahaya tepi kuning ala Pocket (tak saat drag, agar tak tertukar dgn sasaran)
  if(UI.hp)L.push(UI.hp);

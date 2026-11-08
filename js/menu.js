@@ -55,9 +55,20 @@ function renderDB(){
    d.querySelector('img').onclick=()=>zoomCard(c);const[bm,,bp]=d.querySelectorAll('.ctl button, .ctl span');
    bm.onclick=()=>{if(DB.list[k]){DB.list[k]--;if(!DB.list[k])delete DB.list[k];updDB()}};
    bp.onclick=()=>{if(total()<60&&(DB.list[k]||0)<maxFor(k)&&(c.k==='energy'||copiesByName(c.n)<4)){DB.list[k]=(DB.list[k]||0)+1;updDB()}};t.append(d)});g.append(t)}
+ g.insertAdjacentHTML('beforeend','<p class="note dbempty" hidden>Tidak ada kartu yang cocok. Ubah kata kunci atau filter.</p>');
+ if(!$('db-t').options.length)$('db-t').innerHTML='<option value="">Semua</option>'+Object.entries(TYPES).map(([k,v])=>`<option value="${k}">Pokémon ${v[0]}</option>`).join('')+'<option value="T">Trainer</option><option value="E">Energi</option>';
+ dbFilter();
  seg($('db-fmt'),[['std','Standard'],['exp','Expanded']],DB.fmt,k=>{DB.fmt=k;renderDB()});$('db-fmt').style.display=FORMATS.exp?'':'none';
  const sel=$('db-load');sel.innerHTML='<option value="">Pilih deck…</option>';[...BUILTINS,...store.get()].forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name+(isBuiltin(d.id)?' (bawaan)':'');sel.append(o)});sel.value=DB.id||'';
  $('db-name').value=DB.name||'';updDB()}
+/* saring tile tanpa membuat ulang (ribuan kartu): cari nama/serangan/Ability, tipe, atau hanya yang di deck */
+const SRCH={};const srch=k=>SRCH[k]||(SRCH[k]=(()=>{const c=CARDS[k];return[c.ni,c.n,...(c.atk||[]).map(a=>a.n),c.ab?c.ab.n:''].join(' ').toLowerCase()})());
+function dbFilter(){const q=$('db-q').value.trim().toLowerCase(),t=$('db-t').value,only=$('db-show').value==='deck';let n=0;
+ for(const h of $('db-grid').querySelectorAll('h3')){const box=h.nextElementSibling;let v=0;
+  for(const d of box.children){const k=d.id.slice(2),c=CARDS[k],ok=(!q||srch(k).includes(q))&&(!t||(t==='T'?isTrainer(c):t==='E'?isEn(c):c.k==='pokemon'&&c.type===t))&&(!only||DB.list[k]>0);d.hidden=!ok;if(ok)v++}
+  h.hidden=box.hidden=!v;n+=v}
+ $('db-n').textContent=`${n} kartu`;const e=$('db-grid').querySelector('.dbempty');if(e)e.hidden=n>0}
+['db-q','db-t','db-show'].forEach(i=>$(i).addEventListener('input',dbFilter));
 function updDB(){
  for(const k of Object.keys(CARDS)){const t=$('t-'+k);if(!t)continue;const n=DB.list[k]||0;t.querySelector('span').textContent=n;t.classList.toggle('on',n>0);const[bm,bp]=t.querySelectorAll('button');bm.disabled=!n;bp.disabled=total()>=60||n>=maxFor(k)||(CARDS[k].k!=='energy'&&copiesByName(CARDS[k].n)>=4)}
  for(const[name,fn]of CLUSTERS){const e=$('cc-'+name);if(e)e.textContent=Object.entries(DB.list).filter(([k])=>fn(CARDS[k])).reduce((a,[,v])=>a+v,0)}
@@ -67,7 +78,7 @@ function updDB(){
  let chk='';for(const f of Object.keys(FORMATS)){const l=legal(DB.list,f);chk+=`<div class="chk"><div class="${l.ok?'ok':'no'}">${ic(l.ok?'check':'x')} ${l.ok?'Sah':'Belum sah'}: ${FORMATS[f].n}</div>${l.issues.map(i=>`<div class="no">· ${i}</div>`).join('')}${f===DB.fmt?l.warn.map(i=>`<div class="wn">${ic('alert')} ${i}</div>`).join(''):''}</div>`}
  $('db-chk').innerHTML=chk;
  $('db-rec').innerHTML=ic('spark')+(n?' Lengkapi otomatis':' Deck rekomendasi');$('db-rec').disabled=n>=60;
- $('db-del').disabled=!DB.id||isBuiltin(DB.id);$('db-clear').disabled=!n}
+ $('db-del').disabled=!DB.id||isBuiltin(DB.id);$('db-clear').disabled=!n;if($('db-show').value==='deck')dbFilter()}
 $('db-back').onclick=()=>showScr('menu');
 $('db-side').addEventListener('click',e=>{const t=e.target.closest('.dtog');if(!t)return;t.setAttribute('aria-expanded',$('db-side').classList.toggle('open'))});   // HP: rincian jenis kartu dilipat agar grid kartu lebih lega
 $('db-rec').onclick=()=>{const before=total();DB.list=recommend(DB.list);updDB();$('db-chk').insertAdjacentHTML('afterbegin',`<div class="chk ok">${ic('spark')} ${before?'Dilengkapi jadi 60 kartu: Trainer staple dan Energi.':'Deck rekomendasi dimuat: Mega Sharpedo ex.'}</div>`)};

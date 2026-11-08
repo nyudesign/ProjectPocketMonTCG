@@ -31,6 +31,8 @@
  <label class="fld"><span>Nama deck</span><input id="db-name" placeholder="Contoh: Dragapult kantor" maxlength="30" autocomplete="off"></label>
  <label class="fld"><span>Buka deck</span><select id="db-load"></select></label>
  <div class="seg" id="db-fmt"></div></div>
+ <div class="dbflt"><label class="fld fs"><span>Cari kartu</span><input id="db-q" type="search" placeholder="Nama Pokémon, Trainer, atau serangan" autocomplete="off"></label>
+ <label class="fld"><span>Tipe</span><select id="db-t"></select></label><label class="fld"><span>Tampilkan</span><select id="db-show"><option value="">Semua kartu</option><option value="deck">Hanya yang di deck</option></select></label><span class="code" id="db-n" aria-live="polite"></span></div>
  <div class="dbmain"><div id="db-grid"></div><aside id="db-side" aria-label="Ringkasan deck"><div id="db-sum"></div><div id="db-chk" aria-live="polite"></div>
  <div class="row"><button class="b go" id="db-rec"><i data-ic="spark"></i> Lengkapi otomatis</button><button class="b atk" id="db-save"><i data-ic="save"></i> Simpan deck</button></div>
  <div class="row"><button class="b ghost" id="db-clear">Kosongkan</button><button class="b ghost" id="db-del">Hapus deck ini</button></div></aside></div></section>
@@ -50,7 +52,9 @@
 <script src="js/icons.js"></script>
 <script src="js/uiicons.js"></script>
 <script src="js/cards.js"></script>
+<script src="js/cards-hij.js"></script>
 <script src="js/engine.js"></script>
+<script src="js/fx.js"></script>
 <script src="js/scene3d.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/vfx.js"></script>
