@@ -32,34 +32,69 @@ function drawSlots(){
  const dashEdge=(x0,z0,x1,z1)=>{const L=Math.hypot(x1-x0,z1-z0),n=Math.max(1,Math.round((L+.18)/.46)),d=(L-(n-1)*.18)/n,ux=(x1-x0)/L,uz=(z1-z0)/L;for(let i=0;i<n;i++){const a=i*(d+.18),b=a+d;seg(x0+ux*a,z0+uz*a,x0+ux*b,z0+uz*b,.07)}};
  const R=([cx,cz,s])=>{const l=cx-s/2,r=cx+s/2,t=cz-.7*s,b=cz+.7*s;dashEdge(l,t,r,t);dashEdge(r,t,r,b);dashEdge(r,b,l,b);dashEdge(l,b,l,t)};
  const ring=(rad,w)=>{const i=rad-w/2,o=rad+w/2;for(let k=0;k<48;k++){const a=k*Math.PI/24,b=a+Math.PI/24,ca=Math.cos(a),sa=Math.sin(a),cb=Math.cos(b),sb=Math.sin(b);q(ca*i,sa*i,ca*o,sa*o,cb*o,sb*o,cb*i,sb*i)}};
- for(const m of[1,-1]){R(Z.act(m));for(let i=0;i<BENCHN;i++)R(Z.ben(i,m));R(Z.dk(m));R(Z.dis(m));for(let i=0;i<6;i++)R(Z.pri(i,m))}R(LAY.stad);
+ const F=m=>{const g=prizeBox(m);dashEdge(g.l,g.t,g.r,g.t);dashEdge(g.r,g.t,g.r,g.b);dashEdge(g.r,g.b,g.l,g.b);dashEdge(g.l,g.b,g.l,g.t)};   // 6 slot Kartu Point rapat: satu bingkai untuk kelompoknya (garis per slot terlihat patah)
+ for(const m of[1,-1]){R(Z.act(m));for(let i=0;i<BENCHN;i++)R(Z.ben(i,m));R(Z.dk(m));R(Z.dis(m));F(m)}R(LAY.stad);
  const hw=LAY.W/2+3;seg(-hw,0,-.8,0,.08);seg(.8,0,hw,0,.08);ring(.68,.08);ring(.2,.08);
- SLM.geometry.dispose();SLM.geometry=new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(P,3))}
+ SLM.geometry.dispose();SLM.geometry=new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(P,3));drawLabels()}
+/* nama slot kosong (istilah kartu Indonesia), rata di meja tepat di bawah posisi kartu: tertutup kartu begitu slot terisi.
+   Teks putih dengan garis gelap tipis agar terbaca di arena terang maupun gelap */
+const SLB=new THREE.Group();SLB.position.y=.005;scene.add(SLB);const SLT={};
+const slTex=t=>SLT[t]||(SLT[t]=ctex(512,128,(x,w,h)=>{x.font='700 76px "Chakra Petch",'+FONT;x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';x.lineWidth=12;x.strokeStyle='rgba(0,0,0,.3)';x.strokeText(t,w/2,h/2+4,w-28);x.fillStyle='rgba(255,255,255,.7)';x.fillText(t,w/2,h/2+4,w-28)}));
+/* kotak pembatas 6 slot Kartu Point sisi m (+ jarak kecil) */
+const prizeBox=m=>{let l=1e9,r=-1e9,t=1e9,b=-1e9;for(let i=0;i<6;i++){const[x,z,s]=Z.pri(i,m);l=Math.min(l,x-s/2);r=Math.max(r,x+s/2);t=Math.min(t,z-.7*s);b=Math.max(b,z+.7*s)}return{l:l-.1,r:r+.1,t:t-.1,b:b+.1}};
+function drawLabels(){for(const c of[...SLB.children]){c.geometry.dispose();c.material.dispose();SLB.remove(c)}
+ const L=(t,[cx,cz,s],k=.84)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(s*k,s*k/4),new THREE.MeshBasicMaterial({map:slTex(t),transparent:true,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.set(cx,0,cz);SLB.add(m)};
+ for(const m of[1,-1]){L('BERTARUNG',Z.act(m));for(let i=0;i<BENCHN;i++)L('CADANGAN',Z.ben(i,m));L('DECK',Z.dk(m));L('TRASH',Z.dis(m));
+  const g=prizeBox(m),w=g.r-g.l;L('KARTU POINT',[(g.l+g.r)/2,m>0?g.b+w*.13:g.t-w*.13,w],.8)}   // di luar bingkai: sisi luar meja, tak tertutup kartu
+ L('STADIUM',LAY.stad,.96)}
+if(document.fonts)document.fonts.load('700 50px "Chakra Petch"').then(()=>{for(const k in SLT){SLT[k].dispose();delete SLT[k]}if(LAYMODE!==null)drawLabels()});   // gambar ulang setelah font termuat
+/* ---- arena: tiap tema punya alas main yang tenang & cukup gelap (garis slot putih & kartu tetap kontras); ciri tema hanya di tepi.
+   Kanvas 1500×1200 = meja 30×24 satuan (50 px/satuan), pusat (750,600); papan ±5,3×±5,5 satuan, jadi alas ±345×±450 px ---- */
+const vign=(x,w,h,a)=>{const g=x.createRadialGradient(w/2,h/2,Math.min(w,h)*.34,w/2,h/2,Math.hypot(w,h)*.56);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,`rgba(0,0,0,${a})`);x.fillStyle=g;x.fillRect(0,0,w,h)};
+const glowC=(x,c,a,r=540)=>{const g=x.createRadialGradient(750,600,30,750,600,r);g.addColorStop(0,`rgba(${c},${a})`);g.addColorStop(1,`rgba(${c},0)`);x.fillStyle=g;x.fillRect(0,0,1500,1200)};
+const grain=(x,r,n,c)=>{for(let i=0;i<n;i++){x.strokeStyle=`rgba(${c},${.035+r()*.07})`;x.lineWidth=1+r()*2;const y=r()*1200;x.beginPath();x.moveTo(0,y);x.bezierCurveTo(450,y+r()*16-8,900,y+r()*16-8,1500,y+r()*12-6);x.stroke()}};
+const stitch=(x,inset,col)=>{x.strokeStyle=col;x.lineWidth=3;x.setLineDash([12,9]);rr(x,750-345+inset,600-450+inset,690-2*inset,900-2*inset,22);x.stroke();x.setLineDash([])};
+const pokeBall=(x,cx,cy,s)=>{x.beginPath();x.arc(cx,cy,s,0,7);x.stroke();x.beginPath();x.moveTo(cx-s,cy);x.lineTo(cx-s*.3,cy);x.moveTo(cx+s*.3,cy);x.lineTo(cx+s,cy);x.stroke();x.beginPath();x.arc(cx,cy,s*.3,0,7);x.stroke()};
 const THEMES=[
- {n:'Meja Sekolah',clear:0x8f6236,draw:(x,w,h)=>{const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#bf8a53');g.addColorStop(1,'#a56d3a');x.fillStyle=g;x.fillRect(0,0,w,h);const r=rng(7);
-   for(let i=0;i<280;i++){x.strokeStyle=`rgba(90,50,20,${.04+r()*.08})`;x.lineWidth=1+r()*2;const y=r()*h;x.beginPath();x.moveTo(0,y);x.bezierCurveTo(w*.3,y+r()*16-8,w*.6,y+r()*16-8,w,y+r()*12-6);x.stroke()}
-   x.fillStyle='#3f7d5a';rr(x,750-340,600-440,680,880,26);x.fill();x.strokeStyle='#e6f3e9aa';x.lineWidth=3;x.setLineDash([12,9]);rr(x,750-328,600-428,656,856,20);x.stroke();x.setLineDash([]);
-   x.strokeStyle='rgba(255,255,255,.07)';x.lineWidth=2;for(let i=0;i<w;i+=50){x.beginPath();x.moveTo(i,150);x.lineTo(i,h-150);x.stroke()}}},
- {n:'Papan Tulis',clear:0x1d3329,draw:(x,w,h)=>{const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#2b4a3e');g.addColorStop(1,'#1d3329');x.fillStyle=g;x.fillRect(0,0,w,h);const r=rng(13);
-   for(let i=0;i<260;i++){const px=r()*w,py=r()*h;if(Math.abs((px-750)/50)<6.6&&Math.abs((py-600)/50)<7.8){r();r();r();continue}x.fillStyle=`rgba(255,255,255,${.015+r()*.04})`;x.beginPath();x.ellipse(px,py,30+r()*140,6+r()*18,r()*3,0,7);x.fill()}
-   x.fillStyle='rgba(255,255,255,.2)';x.font='700 60px "Comic Sans MS",ui-rounded,system-ui';const doodles=['E = mc²','2 + 2 = 4','★','a² + b² = c²','π ≈ 3.14','✎','10 × 10','♪'];for(let i=0;i<22;i++){const px=r()<.5?r()*330:w-r()*330,py=r()*h;x.save();x.translate(px,py);x.rotate((r()-.5)*.4);x.fillText(doodles[i%doodles.length],0,0);x.restore()}
-   x.strokeStyle='#8a5a2d';x.lineWidth=46;x.strokeRect(0,0,w,h)}},
- {n:'Meja Cafe',clear:0xcfa87a,draw:(x,w,h)=>{x.fillStyle='#f5ecdc';x.fillRect(0,0,w,h);x.fillStyle='rgba(200,70,60,.22)';for(let i=0;i<w;i+=75)x.fillRect(i,0,37,h);for(let j=0;j<h;j+=75)x.fillRect(0,j,w,37);
-   const g=x.createRadialGradient(750,600,200,750,600,900);g.addColorStop(0,'rgba(255,240,210,.0)');g.addColorStop(1,'rgba(120,70,30,.28)');x.fillStyle=g;x.fillRect(0,0,w,h)}},
+ {n:'Meja Sekolah',clear:0x8f6236,draw:(x,w,h)=>{const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#c08b55');g.addColorStop(1,'#a46b39');x.fillStyle=g;x.fillRect(0,0,w,h);const r=rng(7);grain(x,r,300,'90,50,20');
+   x.strokeStyle='rgba(60,32,12,.35)';x.lineWidth=3;for(const y of[150,1050]){x.beginPath();x.moveTo(0,y);x.lineTo(w,y);x.stroke()}   // sambungan papan meja
+   const note=(cx,cy,rot)=>{x.save();x.translate(cx,cy);x.rotate(rot);x.shadowColor='rgba(0,0,0,.28)';x.shadowBlur=14;x.shadowOffsetY=6;x.fillStyle='#f7f4ea';x.fillRect(-120,-160,240,320);x.shadowColor='transparent';
+    x.strokeStyle='rgba(70,120,200,.35)';x.lineWidth=2;for(let y=-120;y<160;y+=22){x.beginPath();x.moveTo(-120,y);x.lineTo(120,y);x.stroke()}x.strokeStyle='rgba(210,60,60,.45)';x.beginPath();x.moveTo(-82,-160);x.lineTo(-82,160);x.stroke();
+    x.strokeStyle='rgba(60,60,72,.55)';x.lineWidth=3;pokeBall(x,22,8,46);x.restore()};   // buku tulis bergaris dgn coretan pensil Poké Ball
+   note(190,330,-.18);note(1310,880,.14);
+   x.fillStyle='#3a7654';rr(x,750-345,600-450,690,900,26);x.fill();const fr=rng(3);for(let i=0;i<5000;i++){x.fillStyle=fr()<.5?'rgba(0,0,0,.05)':'rgba(255,255,255,.03)';x.fillRect(405+fr()*688,155+fr()*888,2,2)}
+   stitch(x,13,'rgba(230,243,233,.55)');glowC(x,'255,236,200',.1);vign(x,w,h,.45)}},
+ {n:'Papan Tulis',clear:0x1d3329,draw:(x,w,h)=>{const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#2b4a3e');g.addColorStop(1,'#1e352b');x.fillStyle=g;x.fillRect(0,0,w,h);const r=rng(13);
+   for(let i=0;i<260;i++){const px=r()*w,py=r()*h;if(Math.abs(px-750)<390&&Math.abs(py-600)<480){r();r();r();continue}x.fillStyle=`rgba(255,255,255,${.012+r()*.035})`;x.beginPath();x.ellipse(px,py,30+r()*140,6+r()*18,r()*3,0,7);x.fill()}   // bekas hapusan, hanya di luar area main
+   x.fillStyle='rgba(255,255,255,.15)';x.font='700 52px "Comic Sans MS",ui-rounded,system-ui';const dd=['E = mc²','2 + 2 = 4','a² + b² = c²','π ≈ 3,14','10 × 10'];
+   for(let i=0;i<12;i++){const px=r()<.5?40+r()*250:w-300+r()*230,py=120+r()*(h-240);x.save();x.translate(px,py);x.rotate((r()-.5)*.35);x.fillText(dd[i%dd.length],0,0);x.restore()}
+   x.strokeStyle='rgba(255,255,255,.17)';x.lineWidth=5;x.lineCap='round';for(const[cx,cy,s]of[[170,250,56],[1330,950,62],[1300,240,40],[205,990,44]])pokeBall(x,cx,cy,s);x.lineCap='butt';   // coretan kapur Poké Ball
+   x.strokeStyle='#8a5a2d';x.lineWidth=46;x.strokeRect(0,0,w,h);vign(x,w,h,.4)}},
+ {n:'Meja Cafe',clear:0x3b2416,draw:(x,w,h)=>{const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#6b4429');g.addColorStop(1,'#553420');x.fillStyle=g;x.fillRect(0,0,w,h);const r=rng(21);grain(x,r,260,'30,14,6');
+   x.strokeStyle='rgba(20,10,4,.45)';x.lineWidth=3;for(let y=100;y<h;y+=200){x.beginPath();x.moveTo(0,y);x.lineTo(w,y);x.stroke()}   // papan meja kayu walnut
+   x.save();x.translate(215,245);x.rotate(-.35);x.shadowColor='rgba(0,0,0,.3)';x.shadowBlur=12;x.shadowOffsetY=5;x.fillStyle='#f3ead8';x.fillRect(-150,-150,300,300);x.shadowColor='transparent';x.fillStyle='rgba(196,58,50,.38)';for(let i=-150;i<150;i+=30){x.fillRect(i,-150,15,300);x.fillRect(-150,i,300,15)}x.restore();   // serbet kotak-kotak terlipat
+   x.strokeStyle='rgba(30,14,4,.4)';x.lineWidth=7;for(const[cx,cy,s]of[[1290,300,56],[1255,965,48],[235,985,52]]){x.beginPath();x.arc(cx,cy,s,.3,5.6);x.stroke()}   // bekas gelas kopi
+   x.save();rr(x,750-345,600-450,690,900,30);x.fillStyle='#2c2f31';x.fill();x.clip();x.fillStyle='rgba(255,255,255,.025)';for(let i=400;i<1100;i+=4)x.fillRect(i,150,1,900);for(let j=150;j<1050;j+=4)x.fillRect(400,j,700,1);x.restore();   // tatakan linen arang
+   stitch(x,14,'rgba(240,225,200,.45)');glowC(x,'255,214,160',.1);vign(x,w,h,.5)}},
  {n:'Meja Biliar',clear:0x150d08,draw:(x,w,h)=>{x.fillStyle='#150d08';x.fillRect(0,0,w,h);const wd=x.createLinearGradient(0,0,w,0);wd.addColorStop(0,'#5a3418');wd.addColorStop(.5,'#3d220f');wd.addColorStop(1,'#5a3418');x.fillStyle=wd;rr(x,750-470,600-420,940,840,44);x.fill();
    const g=x.createRadialGradient(750,600,140,750,600,560);g.addColorStop(0,'#17605f');g.addColorStop(1,'#0a3133');x.fillStyle=g;x.fillRect(750-412,600-362,824,724);const r=rng(31);
    for(let i=0;i<7000;i++){x.fillStyle=r()<.5?'rgba(0,0,0,.07)':'rgba(255,255,255,.035)';x.fillRect(750-412+r()*822,600-362+r()*722,2,2)}
-   x.strokeStyle='rgba(0,0,0,.4)';x.lineWidth=12;x.strokeRect(750-406,600-356,812,712);x.fillStyle='#050505';for(const a of[-1,0,1])for(const b of[-1,1]){x.beginPath();x.arc(750+a*408,600+b*358,25,0,7);x.fill()}}},
- {n:'Mode Latihan',clear:0x0e1626,draw:(x,w,h)=>{const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#0e1626');g.addColorStop(.5,'#1a2742');g.addColorStop(1,'#0e1626');x.fillStyle=g;x.fillRect(0,0,w,h);
-   x.strokeStyle='rgba(80,220,255,.16)';x.lineWidth=2;for(let i=0;i<=w;i+=100){x.beginPath();x.moveTo(i,0);x.lineTo(i,h);x.stroke()}for(let j=0;j<=h;j+=100){x.beginPath();x.moveTo(0,j);x.lineTo(w,j);x.stroke()}
-   x.strokeStyle='rgba(80,220,255,.34)';x.lineWidth=4;for(let i=0;i<=w;i+=500){x.beginPath();x.moveTo(i,0);x.lineTo(i,h);x.stroke()}for(let j=0;j<=h;j+=400){x.beginPath();x.moveTo(0,j);x.lineTo(w,j);x.stroke()}
-   x.strokeStyle='rgba(255,160,60,.2)';x.lineWidth=6;x.beginPath();x.arc(750,600,330,0,7);x.stroke();x.beginPath();x.arc(750,600,500,0,7);x.stroke();
-   x.fillStyle='rgba(120,230,255,.1)';x.font='900 120px ui-rounded,system-ui,sans-serif';x.textAlign='center';x.fillText('TRAINING',750,140);x.fillText('TRAINING',750,1110)}}];
+   x.strokeStyle='rgba(0,0,0,.4)';x.lineWidth=12;x.strokeRect(750-406,600-356,812,712);x.fillStyle='#050505';for(const a of[-1,0,1])for(const b of[-1,1]){x.beginPath();x.arc(750+a*408,600+b*358,25,0,7);x.fill()}
+   const dia=(px,py)=>{x.beginPath();x.moveTo(px,py-7);x.lineTo(px+5,py);x.lineTo(px,py+7);x.lineTo(px-5,py);x.closePath();x.fill()};x.fillStyle='rgba(236,226,204,.75)';   // titik bidik di bibir meja
+   for(let i=1;i<8;i++)if(i!==4)for(const py of[209,991])dia(280+i*940/8,py);for(let j=1;j<4;j++)for(const px of[309,1191])dia(px,180+j*840/4);
+   glowC(x,'255,240,200',.08,480);vign(x,w,h,.55)}},
+ {n:'Mode Latihan',clear:0x0b111d,draw:(x,w,h)=>{const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#0b111d');g.addColorStop(.5,'#121d33');g.addColorStop(1,'#0b111d');x.fillStyle=g;x.fillRect(0,0,w,h);
+   const lines=(st,a,lw)=>{x.strokeStyle=`rgba(90,200,255,${a})`;x.lineWidth=lw;for(let i=0;i<=w;i+=st){x.beginPath();x.moveTo(i,0);x.lineTo(i,h);x.stroke()}for(let j=0;j<=h;j+=st){x.beginPath();x.moveTo(0,j);x.lineTo(w,j);x.stroke()}};lines(50,.06,1.5);lines(250,.12,2);
+   rr(x,750-350,600-455,700,910,8);x.fillStyle='rgba(6,10,18,.74)';x.fill();   // panel area main: lebih gelap, grid meredup di bawah kartu
+   const X0=400,X1=1100,Y0=145,Y1=1055,L=34;x.strokeStyle='rgba(120,220,255,.55)';x.lineWidth=4;for(const[px,py,dx,dy]of[[X0,Y0,1,1],[X1,Y0,-1,1],[X1,Y1,-1,-1],[X0,Y1,1,-1]]){x.beginPath();x.moveTo(px+dx*L,py);x.lineTo(px,py);x.lineTo(px,py+dy*L);x.stroke()}   // braket sudut
+   x.fillStyle='rgba(140,220,255,.4)';x.font='600 16px "Chakra Petch",ui-sans-serif,sans-serif';x.textAlign='center';for(let i=-6;i<=6;i++){const px=750+i*50;x.fillRect(px-1,Y0-16,2,i%2?6:11);x.fillText(String(Math.abs(i)).padStart(2,'0'),px,Y0-24)}   // penggaris berangka
+   for(const sx of[180,w-240]){x.save();x.beginPath();x.rect(sx,0,60,h);x.clip();x.fillStyle='#15120a';x.fillRect(sx,0,60,h);x.fillStyle='rgba(255,210,31,.5)';for(let y=-60;y<h;y+=48){x.beginPath();x.moveTo(sx,y);x.lineTo(sx+60,y+60);x.lineTo(sx+60,y+84);x.lineTo(sx,y+24);x.fill()}x.restore()}   // pita hazard di tepi jauh (layar lebar)
+   x.fillStyle='rgba(140,220,255,.12)';x.font='700 80px "Chakra Petch",ui-sans-serif,sans-serif';x.fillText('MODE LATIHAN',750,108);x.fillText('MODE LATIHAN',750,1150);vign(x,w,h,.5)}}];
 const mat=new THREE.Mesh(new THREE.PlaneGeometry(30,24),new THREE.MeshBasicMaterial({polygonOffset:true,polygonOffsetFactor:2,polygonOffsetUnits:2,depthWrite:false}));mat.rotation.x=-Math.PI/2;scene.add(mat);   // meja tak menulis depth: efek di balik kartu terangkat (sinar evolusi) tak terpotong permukaan meja
 let propsG=null,themeCur=0;
 function buildProps(k,seed){
  const g=new THREE.Group(),r=rng(seed);
- const ok=(x,z)=>Math.abs(x)>5.9||Math.abs(z)>7.4;
+ const ok=(x,z)=>(Math.abs(x)>5.9||Math.abs(z)>7.4)&&!(x>5&&z<3.5);   // kanan atas-tengah = tempat tombol & pil HUD di desktop: tanpa properti
  const spot=(n,fn,xr=14,zr=11)=>{let c=0,t=0;while(c<n&&t++<n*40){const x=(r()*2-1)*xr,z=(r()*2-1)*zr;if(ok(x,z)){fn(x,z);c++}}};
  const add=(geo,m,x,y,z,rx,ry,rz)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);if(rx)o.rotation.x=rx;if(ry)o.rotation.y=ry;if(rz)o.rotation.z=rz;g.add(o);return o};
  const BM=c=>new THREE.MeshBasicMaterial({color:c});
@@ -80,8 +115,8 @@ function buildProps(k,seed){
   spot(2,(x,z)=>add(new THREE.BoxGeometry(.24,.2,.24),LM(0x3b82c4),x,.1,z,0,r()*3),7.6,6.8)}
  else{
   spot(8,(x,z)=>{add(new THREE.ConeGeometry(.28,.6,12),LM(0xff7a1a),x,.3,z);add(new THREE.CylinderGeometry(.34,.34,.04,12),LM(0x222a3a),x,.02,z)});
-  for(const sx of[-1,1])add(new THREE.BoxGeometry(.14,.05,14),BM(0x39e3ff),sx*7.6,.03,0);
-  for(const sz of[-1,1])add(new THREE.BoxGeometry(18,.05,.14),BM(0x39e3ff),0,.03,sz*8.4)}
+  for(const sx of[-1,1])add(new THREE.BoxGeometry(.1,.04,14),BM(0x1e5f78),sx*7.6,.03,0);   // batas panggung latihan: redup, tak menyilaukan
+  for(const sz of[-1,1])add(new THREE.BoxGeometry(18,.04,.1),BM(0x1e5f78),0,.03,sz*8.4)}
  return g}
 let themeNow='';
 function setTheme(i){themeCur=i%THEMES.length;const T=THEMES[themeCur];themeNow=T.n;

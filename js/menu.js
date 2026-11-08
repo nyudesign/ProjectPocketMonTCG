@@ -61,7 +61,7 @@ function renderDB(){
 function updDB(){
  for(const k of Object.keys(CARDS)){const t=$('t-'+k);if(!t)continue;const n=DB.list[k]||0;t.querySelector('span').textContent=n;t.classList.toggle('on',n>0);const[bm,bp]=t.querySelectorAll('button');bm.disabled=!n;bp.disabled=total()>=60||n>=maxFor(k)||(CARDS[k].k!=='energy'&&copiesByName(CARDS[k].n)>=4)}
  for(const[name,fn]of CLUSTERS){const e=$('cc-'+name);if(e)e.textContent=Object.entries(DB.list).filter(([k])=>fn(CARDS[k])).reduce((a,[,v])=>a+v,0)}
- const n=total();let sum=`<div class="dcount"><b>${n}/60</b><span>kartu di deck</span></div><div class="bar${n===60?' full':''}"><i style="width:${n/60*100}%"></i></div><div class="kinds">`;
+ const n=total();let sum=`<div class="dcount"><b>${n}/60</b><span>kartu di deck</span><button class="dtog" aria-controls="db-side" aria-expanded="${$('db-side').classList.contains('open')}">Rincian</button></div><div class="bar${n===60?' full':''}"><i style="width:${n/60*100}%"></i></div><div class="kinds">`;
  for(const[name,fn]of CLUSTERS){const v=Object.entries(DB.list).filter(([k])=>fn(CARDS[k])).reduce((a,[,q])=>a+q,0);sum+=`<span>${name}</span><b>${v}</b>`}
  $('db-sum').innerHTML=sum+'</div>';
  let chk='';for(const f of Object.keys(FORMATS)){const l=legal(DB.list,f);chk+=`<div class="chk"><div class="${l.ok?'ok':'no'}">${ic(l.ok?'check':'x')} ${l.ok?'Sah':'Belum sah'}: ${FORMATS[f].n}</div>${l.issues.map(i=>`<div class="no">· ${i}</div>`).join('')}${f===DB.fmt?l.warn.map(i=>`<div class="wn">${ic('alert')} ${i}</div>`).join(''):''}</div>`}
@@ -69,6 +69,7 @@ function updDB(){
  $('db-rec').innerHTML=ic('spark')+(n?' Lengkapi otomatis':' Deck rekomendasi');$('db-rec').disabled=n>=60;
  $('db-del').disabled=!DB.id||isBuiltin(DB.id);$('db-clear').disabled=!n}
 $('db-back').onclick=()=>showScr('menu');
+$('db-side').addEventListener('click',e=>{const t=e.target.closest('.dtog');if(!t)return;t.setAttribute('aria-expanded',$('db-side').classList.toggle('open'))});   // HP: rincian jenis kartu dilipat agar grid kartu lebih lega
 $('db-rec').onclick=()=>{const before=total();DB.list=recommend(DB.list);updDB();$('db-chk').insertAdjacentHTML('afterbegin',`<div class="chk ok">${ic('spark')} ${before?'Dilengkapi jadi 60 kartu: Trainer staple dan Energi.':'Deck rekomendasi dimuat: Mega Sharpedo ex.'}</div>`)};
 $('db-clear').onclick=()=>{DB.list={};DB.id=null;DB.name='';$('db-name').value='';$('db-load').value='';updDB()};
 $('db-save').onclick=()=>{const name=$('db-name').value.trim();if(!name){$('db-name').focus();$('db-chk').insertAdjacentHTML('afterbegin','<div class="chk no">Isi nama deck dulu.</div>');return}
