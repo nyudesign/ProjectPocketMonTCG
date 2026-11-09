@@ -139,7 +139,7 @@ function whyTrainer(sd,c){const S=G[sd],E=G[opp(sd)];if(c.k==='item'&&S.noItem==
   case'candy':if(S.tn<2)return'Tidak boleh di giliran pertamamu';if(!S.hand.some(h=>inPlay(S).some(m=>candyOk(sd,h,m))))return'Tidak ada Stage 2 di tangan untuk Pokémon Basic di Arena';break}
  if(c.g&&!EFF[c.key])return genWhy(sd,c);   // Trainer H/I/J umum (js/fx.js)
  return''}
-const candyOk=(sd,c,m)=>c.stage===2&&m.card.stage===0&&m.t!==G[sd].tn&&Object.values(CARDS).some(s=>s.n===c.from&&s.from===m.card.n);
+const candyOk=(sd,c,m)=>c.stage===2&&m.card.stage===0&&m.t!==G[sd].tn&&m.noEvo!==G[sd].tn&&Object.values(CARDS).some(s=>s.n===c.from&&s.from===m.card.n);
 const whyEvolve=(sd,c,m)=>{const S=G[sd],ex=pab(m,'pEvoExFrom'),early=S.active===m&&!!pab(m,'pEvoEarly');   // Eevee ex: jadi Pokémon ex evolusi Eevee; Eevee: boleh di giliran pertama & giliran masuk
  if(c.from!==m.card.n&&!(ex&&c.from===ex.name&&/ ex$/.test(c.n)))return`Hanya bisa dari ${c.from}`;if(m.noEvo===S.tn)return'Tingkat evolusinya baru diturunkan giliran ini';
  if(S.tn<2&&!early)return'Tidak boleh evolusi di giliran pertamamu';if(m.t===S.tn&&!early&&!stOps('stEvoNew').some(s=>m.card.type===s.t&&c.type===s.t))return'Pokémon ini baru masuk Arena giliran ini';if(m.evo===S.tn)return'Sudah berevolusi giliran ini';return''};
@@ -314,9 +314,9 @@ const BOT={bot:true,
  async turn(sd){return botTurn(sd)}};
 const pause=async()=>{fx('sync');await fx('pause')};
 async function botTurn(sd){
- const S=G[sd],E=G[opp(sd)];let c,guard=0;
+ const S=G[sd],E=G[opp(sd)],g=G;let c,guard=0;   // g: pertandingan giliran ini; bila G diganti (pertandingan baru) giliran Bot berhenti, tidak menyentuh pertandingan baru
  const find=k=>S.hand.find(x=>x.key===k);
- const tryT=async k=>{const x=find(k);if(x&&!whyTrainer(sd,x)){await actTrainer(sd,x);await pause();return true}return false};
+ const tryT=async k=>{const x=G===g&&find(k);if(x&&!whyTrainer(sd,x)){await actTrainer(sd,x);await pause();return true}return false};
  if(S.active&&AB.chance&&S.active)for(const m of inPlay(S))if(m.card.ab&&m.card.ab.key==='chance'&&!abWhy(sd,m)){await actAbility(sd,m);await pause()}
  for(const m of inPlay(S))if(m.card.ab&&['fan','recon'].includes(m.card.ab.key)&&!abWhy(sd,m)){await actAbility(sd,m);await pause()}
  for(const m of inPlay(S))if(m.card.ab&&m.card.ab.key==='gen'&&!abWhy(sd,m)&&genUseful(sd,{g:m.card.ab.g})){await actAbility(sd,m);await pause();if(G.over)return}   // Ability umum H/I/J
@@ -342,11 +342,11 @@ async function botTurn(sd){
  if(find('eretrieval')&&S.discard.filter(x=>x.k==='energy').length>=2)await tryT('eretrieval');
  if(find('redcard')&&E.hand.length>=5)await tryT('redcard');
  if(find('galette')&&S.active&&(conds(S.active).some(k=>k!=='poison')||S.active.dmg>=20&&conds(S.active).length))await tryT('galette');
- while(find('potion')&&inPlay(S).some(m=>m.dmg>=30)&&await tryT('potion'));
+ while(G===g&&find('potion')&&inPlay(S).some(m=>m.dmg>=30)&&await tryT('potion'));
  for(const x of S.hand.filter(h=>h.g&&(h.k==='item'||h.k==='supporter')&&!EFF[h.key]&&!h.fossil))if(S.hand.includes(x)&&!whyTrainer(sd,x)&&genUseful(sd,x)){await actTrainer(sd,x);await pause();if(G.over)return}   // Trainer H/I/J umum
  // Bench & evolve
  if(stUseOf()&&!whyStadium(sd)&&genUseful(sd,{g:stUseOf().g})){await actStadium(sd);await pause();if(G.over)return}   // efek Stadium
- while(S.bench.length<cap()&&(c=S.hand.find(isBasic))){await actBasic(sd,c);await pause()}
+ while(G===g&&S.bench.length<cap()&&(c=S.hand.find(isBasic))){await actBasic(sd,c);await pause()}if(G!==g)return;
  for(const f of S.hand.filter(x=>x.fossil))if(S.bench.length<cap()&&[...S.hand,...S.deck].some(h=>isMon(h)&&h.from===f.n)&&!whyFossil(sd,f)){actFossil(sd,f);await pause()}   // fosil hanya bila evolusinya ada
  while(await tryT('candy'));
  for(const h of S.hand.filter(x=>isMon(x)&&x.stage>0)){const t=inPlay(S).sort((a,b)=>(b===S.active)-(a===S.active)).find(m=>!whyEvolve(sd,h,m));if(t){await actEvolve(sd,h,t);await pause()}}
@@ -369,7 +369,7 @@ async function botTurn(sd){
  // Mundur
  if(S.active&&!bestAtk()&&!whyRetreat(sd)&&S.bench.some(m=>m.card.atk.some(t=>afford(m,t.cost)))){await actRetreat(sd);await pause()}
  b=bestAtk();
- if(b&&!G.over){await actAttack(sd,b.k);return}
+ if(b&&!G.over&&G===g){await actAttack(sd,b.k);return}
  await pause()}
 /* ---------- persiapan & alur permainan ---------- */
 function setupPlace(sd,c,spot){const S=G[sd];if(spot==='active'&&S.active)return'Pokémon Bertarung sudah ada';if(spot==='bench'&&(S.bench.length>=bmax(sd)||!S.active))return S.active?'Cadangan penuh':'Taruh Pokémon Bertarung dulu';
