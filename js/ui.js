@@ -25,6 +25,8 @@ async function cardShow(cards,from,to,hold,o={}){const box=$('cfx'),n=cards.leng
 const TRC={item:0x3b82f6,supporter:0xf97316,stadium:0x22c55e,tool:0xa855f7};
 /* kartu mendarat di tempat main: cincin + percikan warna jenis kartu (tanpa kilat layar: user, tidak enak di mata) */
 function playSplash(c,sd){const P=playSpot(sd),col=c.ace?0xec4899:TRC[c.k]||0x3b82f6;ring(P[0],P[2],col);burst(P[0],P[2],col,60,2.4,.2);burst(P[0],P[2],0xffffff,24,1.6)}
+/* MULAI! sebagai logo garis bersudut potong (selaras Chakra Petch), 3 lapis jalur yang sama: merah & kuning tipis memimpin, putih tebal menyusul ("!" putihnya kuning) */
+const GOSVG=(P=>`<svg class="gm" viewBox="0 0 610 100">${['r','y','w'].map(c=>`<g class="${c}">${P.map((d,i)=>`<path d="${d}" pathLength="1" style="--i:${i}"/>`).join('')}</g>`).join('')}</svg>`)(['M9 100V33L33 9H95L119 33V100','M64 9V100','M159 0V67L183 91H237L261 67V0','M301 0V67L325 91H388','M419 100V33L443 9H497L521 33V100','M419 60H521','M561 0V100','M601 0V68','M601 82V100']);
 /* pita judul di atas layar (mis. mulligan Bot): masuk dari kiri dgn kilau berjalan; fungsi kembalian mengeluarkannya ke kanan */
 function banner(html,sd='o'){const e=$('ban');e.innerHTML=`<div class="rb">${html}</div>`;e.className='';void e.offsetWidth;e.className='on '+sd;return()=>{e.classList.add('out');setTimeout(()=>{if(e.classList.contains('out'))e.className=''},380)}}
 /* kartu baru di tanganmu (awal, sesudah mulligan, Lillie, Iris, dll): tampil tegak menghadap layar, lalu turun tepat ke slot tangan.
@@ -260,8 +262,9 @@ Object.assign(FX,{
  mulligan:async(sd,hands)=>{const me=sd==='p',bx=$('dlg-b');bx.classList.add('mlw');   // panel lebar; daftar kartu bergulir sendiri, tombol Selesai selalu terlihat
   await dlg(`<div class="mlh ${sd}"><small>${me?'Kamu':'Bot'}</small><b>Mulligan ${hands.length}×</b></div><p>${me?'Kamu':'Bot'} mulligan ${hands.length} kali sebelum mendapat Pokémon Basic. Ini kartu yang diperlihatkan:</p><div class="mlsc">${hands.map((h,i)=>`<div class="mls"><b>Mulligan ${i+1}</b><div class="mlg">${h.map(c=>`<img src="${imgOf(c)}" alt="${cname(c)}">`).join('')}</div></div>`).join('')}</div>`,[['Lanjut',1,'go']]);bx.classList.remove('mlw')},
  dealPrizes:async()=>{say(`Menaruh ${G.prizeN} Kartu Point…`,1500);await sleep(900)},
- /* pertandingan dimulai: MULAI! + garis tengah & cincin ala Poké Ball + lampu samping dua warna (merah Bot, biru kamu); turnstart menggantinya */
- revealSetup:async()=>{const l=$('tl'),go=$('go');l.className='';void l.offsetWidth;l.className='start';go.innerHTML='<b>MULAI!</b>';go.className='';void go.offsetWidth;go.className='on';
+ /* pertandingan dimulai: logo garis MULAI! dirakit di pita HUD pada garis tengah + garis kecepatan + lampu samping dua warna (merah Bot, biru kamu); turnstart menggantinya */
+ revealSetup:async()=>{const l=$('tl'),go=$('go');l.className='';void l.offsetWidth;l.className='start';
+  go.innerHTML=`<i class="gs o"></i><i class="gs y"></i><i class="gs p"></i><div class="gw"><div class="gl"><span><i class="hz"></i><i class="sq p"></i>Kamu <em>vs</em> Bot<i class="sq o"></i></span><span>${G.prizeN} Kartu Point</span></div>${GOSVG}<div class="gl"><span>${G.first==='o'?'Bot':'Kamu'} jalan duluan</span><span>Arena ${themeNow}</span></div></div>`;go.className='';void go.offsetWidth;go.className='on';
   for(const sd of['p','o']){const a=G[sd].active;if(a){const g=M.get(a.id);if(g)ring(g.position.x,g.position.z,0x7dd3fc)}}await sleep(RMO?700:2100);go.className=''},
  /* tunggu angka damage, HP turun, & kartu terbang selesai (efek serangan/Checkup) sebelum lanjut; ms = jeda tambahan */
  settle:async(ms=0)=>{for(let i=0;i<120;i++){const now=performance.now();let busy=!!document.querySelector('.dmg');for(const o of OV.values())if(o.a&&now<o.a.t0+o.a.D+120)busy=true;for(const g of M.values())if(g.userData.fly)busy=true;if(!busy)break;await sleep(50)}if(ms&&!RMO)await sleep(ms)},

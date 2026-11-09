@@ -220,14 +220,30 @@ body.bt .hud{display:flex}
 #tl.start{opacity:1}
 #tl.start::before,#tl.start::after{width:clamp(40px,16vw,280px);background:linear-gradient(180deg,rgb(227 38 46/.85),rgb(255 210 31/.55) 50%,rgb(47 107 255/.85));-webkit-mask:linear-gradient(90deg,#000,#0009 45%,transparent);mask:linear-gradient(90deg,#000,#0009 45%,transparent);animation:tlstart .45s ease-in-out 6 alternate}
 @keyframes tlstart{from{filter:brightness(.7)}to{filter:brightness(1.6)}}
-/* ---- MULAI!: garis tengah menyapu + cincin Poké Ball, teks kuning ---- */
-#go{position:fixed;inset:0;z-index:28;display:none;align-items:center;justify-content:center;pointer-events:none;overflow:hidden}#go.on{display:flex}
-#go::before{content:'';position:absolute;left:0;right:0;top:50%;height:6px;margin-top:-3px;background:var(--paper);animation:goline 2.1s cubic-bezier(.2,.8,.2,1) forwards}
-#go::after{content:'';position:absolute;left:50%;top:50%;width:min(52vmin,320px);aspect-ratio:1;border:8px solid var(--paper);border-radius:50%;transform:translate(-50%,-50%);animation:goring 2.1s cubic-bezier(.2,.8,.2,1) forwards}
-#go b{position:relative;z-index:1;font:italic 700 clamp(66px,14vw,168px)/1 var(--fd);color:var(--yel);letter-spacing:.02em;-webkit-text-stroke:5px var(--ink);paint-order:stroke fill;text-shadow:0 8px 0 var(--ink);animation:goin 2.1s cubic-bezier(.2,.9,.3,1.2) forwards}
-@keyframes goin{0%{transform:scale(2.6) rotate(-6deg);opacity:0}16%{transform:scale(.92) rotate(-6deg);opacity:1}24%{transform:scale(1.05) rotate(-6deg)}32%,78%{transform:scale(1) rotate(-6deg);opacity:1}100%{transform:scale(1.2) rotate(-6deg);opacity:0}}
-@keyframes goline{0%{transform:scaleX(0);opacity:1}22%{transform:scaleX(1)}78%{opacity:1}100%{opacity:0}}
-@keyframes goring{0%{transform:translate(-50%,-50%) scale(.2);opacity:0}20%{transform:translate(-50%,-50%) scale(1);opacity:1}78%{opacity:1}100%{transform:translate(-50%,-50%) scale(1.25);opacity:0}}
+/* ---- MULAI! (#go, 2,1 dtk): logo garis dirakit (ala animasi logo "line build") di pita HUD gelap pada garis tengah, garis kecepatan merah/kuning/biru, teks mikro ala techwear ---- */
+#go{--gw:min(80vw,740px);position:fixed;inset:0;z-index:28;display:none;pointer-events:none;overflow:hidden}#go.on{display:block}
+#go .gs{position:absolute;left:0;right:0;top:var(--mid,50%);height:4px;margin-top:calc(var(--y) - 2px);background:var(--c);opacity:0;animation:gstreak .55s var(--d) cubic-bezier(.7,0,.25,1)}
+#go .gs.o{--c:var(--red);--y:-34px;--d:0ms;animation-direction:reverse}#go .gs.y{--c:var(--yel);--y:0px;--d:90ms;height:2px}#go .gs.p{--c:var(--blue);--y:34px;--d:30ms}
+#go .gw{position:absolute;left:50%;top:var(--mid,50%);width:var(--gw);transform:translate(-50%,-50%);display:flex;flex-direction:column;gap:16px}
+#go .gw::before{content:'';position:absolute;z-index:-1;top:-18px;bottom:-18px;left:calc(50% - 50vw);width:100vw;background:linear-gradient(90deg,transparent calc(50% - var(--gw)/2 - 150px),rgb(13 14 18/.9) calc(50% - var(--gw)/2 - 24px) calc(50% + var(--gw)/2 + 24px),transparent calc(50% + var(--gw)/2 + 150px));animation:gband 2.1s cubic-bezier(.2,.8,.2,1) both}
+#go .gl{position:relative;display:flex;justify-content:space-between;gap:12px;font:700 11px/1 var(--fd);letter-spacing:.16em;text-transform:uppercase;color:var(--paper);white-space:nowrap}
+#go .gl:first-child{padding-bottom:10px}#go .gl:last-child{padding-top:10px}
+#go .gl::after{content:'';position:absolute;left:0;right:0;height:2px;background:var(--paper);animation:grule 2.1s cubic-bezier(.7,0,.2,1) both}
+#go .gl:first-child::after{bottom:0}#go .gl:last-child::after{top:0}
+#go .gl span{display:flex;align-items:center;gap:8px;animation:gtype .36s .42s steps(9,end) both,gout .25s 1.7s forwards}#go .gl span+span{animation-delay:.52s,1.7s}
+#go .gl em{font-style:normal;color:var(--mute)}
+#go .hz{width:28px;height:10px;margin-right:4px;background:repeating-linear-gradient(-45deg,var(--red) 0 4px,transparent 4px 7px)}
+#go .sq{width:8px;height:8px;background:var(--blue)}#go .sq.o{background:var(--red)}
+#go .gm{display:block;width:100%;height:auto;overflow:visible;transform:skewX(-12deg);fill:none;stroke-width:12;animation:gdrift 2.1s linear both}
+/* garis putih ditarik balik dulu, ekor kuning lalu merah menyusul; harus selesai sebelum revealSetup menutup #go di 2,1 dtk */
+#go .gm path{stroke-dasharray:1 1;animation:gdraw .42s calc(var(--i)*45ms + var(--l)) cubic-bezier(.6,0,.2,1) both,gerase .3s calc(1540ms + var(--i)*20ms + var(--t)) cubic-bezier(.6,0,.4,1) forwards}
+#go .gm .r{stroke:var(--red);--l:0ms;--t:90ms}#go .gm .y{stroke:var(--yel);--l:50ms;--t:45ms}#go .gm .w{stroke:var(--paper);stroke-width:18;--l:100ms;--t:0ms}
+#go .gm .w path:nth-child(n+8){stroke:var(--yel)}
+@keyframes gstreak{0%{opacity:1;clip-path:inset(0 100% 0 0)}45%{clip-path:inset(0)}100%{opacity:1;clip-path:inset(0 0 0 100%)}}
+@keyframes gband{0%{transform:scaleY(0)}12%,82%{transform:scaleY(1);opacity:1}100%{transform:scaleY(.2);opacity:0}}
+@keyframes grule{0%,12%{clip-path:inset(0 100% 0 0)}32%,80%{clip-path:inset(0)}96%,100%{clip-path:inset(0 0 0 100%)}}
+@keyframes gtype{from{clip-path:inset(0 100% 0 0)}}@keyframes gout{to{opacity:0}}
+@keyframes gdraw{from{stroke-dashoffset:1}}@keyframes gerase{to{stroke-dashoffset:-1}}@keyframes gdrift{0%{translate:-40px}20%{translate:-8px}75%{translate:6px}100%{translate:40px}}
 /* ---- pita judul (#ban): MULLIGAN! (biru = kamu, merah = Bot) ---- */
 #ban{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 3vh);z-index:27;display:none;justify-content:center;pointer-events:none}#ban.on{display:flex}
 #ban .rb{--s:var(--red);position:relative;display:flex;align-items:center;gap:14px;padding:12px 44px 16px 20px;background:var(--ink);box-shadow:0 12px 30px rgb(0 0 0/.55),inset 0 4px 0 var(--s);transform:skewX(-12deg);overflow:hidden;animation:banin .55s cubic-bezier(.2,.9,.3,1.25) both}
@@ -384,10 +400,11 @@ body.bt .hud{display:flex}
  #bbar .b{min-height:34px}
  #b-log{display:none}#b-atk{order:1}#b-end{order:2}#b-menu{order:3}
  #turn .tb{padding:6px 26px 7px}#turn .tb span{font-size:12px;max-width:80vw;text-align:center}
+ #go{--gw:86vw}
  body:has(#pickbar.on:not(.near)) #msg{top:calc(env(safe-area-inset-top,0px) + 48px + var(--pkh,80px))}}
 /* ---- gerak dikurangi ---- */
 @media (prefers-reduced-motion:reduce){
  #zoom.db #zside{transform:none}
  #ann img,.box,#pickbar.on,.amw{animation-duration:.01s}#atkb.on,#abt.on,#tl.on,#tl.start::before,#tl.start::after,#ban .rb,#ban .rb::after,#dhint path{animation:none}
- .dmg{animation-duration:.01s;animation-delay:.7s;animation-fill-mode:both}#go b,#go::before,#go::after,.stp{animation-duration:.01s}
+ .dmg{animation-duration:.01s;animation-delay:.7s;animation-fill-mode:both}.stp{animation-duration:.01s}#go .gs,#go .gw::before,#go .gl::after,#go .gl span,#go .gm,#go .gm path{animation:none}
  #turn.on .tb,#turn.on::before{animation-duration:2.2s;animation-name:fadeio}@keyframes fadeio{0%,100%{opacity:0}10%,85%{opacity:1}}}
