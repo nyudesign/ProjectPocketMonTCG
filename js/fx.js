@@ -517,7 +517,7 @@ async function onAttachFx(sd,c,m){const S=G[sd];for(const s of c.g||[]){
  if(s.op==='onlyOwner'&&!ownerIs(m.card,s.o)){m.en.splice(m.en.indexOf(c),1);S.discard.push(c);log(`${cname(c)} dibuang: hanya untuk Pokémon ${s.o}`);fx('sync');return}
  if(s.op==='onAttach'&&s.draw){const n=await drawShow(sd,s.draw);log(`${who(sd)} mengambil ${n} kartu (${cname(c)})`)}
  if(s.op==='onAttach'&&s.call&&m.card.type===s.t){const r=await pickDeck(sd,c,{title:`Pilih s/d ${s.call} Pokémon Basic ${TYPES[s.t][0]} untuk Cadangan`,pred:x=>isBasic(x)&&x.type===s.t,max:Math.min(s.call,bmax(sd)-S.bench.length),pref:x=>x.hp});r.forEach(x=>toBench(sd,x));await shuffleDeck(sd)}}}
-/* ---------- deck acak dari seluruh pool yang didukung (Bot & tombol Deck acak) ----------
+/* ---------- deck acak dari seluruh pool yang didukung (Bot mode "acak"; cadangan bila deck berpola juara gagal disusun) ----------
    1 keluarga evolusi utama (semua tahapnya didukung) + 1 pendamping, Trainer staple & umum, Energi Dasar sesuai biaya serangan; selalu dicek legal() */
 let FAMS=null;
 function genFams(){if(FAMS)return FAMS;const P=Object.keys(CARDS).filter(k=>CARDS[k].k==='pokemon'&&!CARDS[k].hide),by={};P.forEach(k=>(by[CARDS[k].n]=by[CARDS[k].n]||[]).push(k));

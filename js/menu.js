@@ -43,7 +43,7 @@ function renderPre(){
  else{const e=document.createElement('div');e.className='empty-st';e.innerHTML=`<p class="note">Belum ada deck tersimpan. Susun deck sendiri, atau main dulu dengan deck ${BUILTINS.length?'bawaan':'acak'} di bawah.</p>`;
   const a=document.createElement('button');a.className='b go';a.innerHTML=ic('deck')+' Susun deck';a.onclick=()=>{DB.list={};DB.art={};DB.id=null;DB.name='';renderDB();showScr('db')};e.append(a);box.append(e)}
  if(BUILTINS.length){lbl('Deck bawaan');item(BUILTIN,'Mega Sharpedo ex');item(BUILTIN_TERA,'Archetype Tera');item(BUILTIN_DRAGA,'Archetype Dragapult')}
- lbl('Deck acak');const r=document.createElement('button');r.className='dk';r.innerHTML=`${ic('dice')}<span style="flex:1;min-width:0">Deck acak<small>Disusun dari semua kartu, selalu sah</small></span><span class="go1">MAIN ${ic('play')}</span>`;r.onclick=()=>startBattle(randomDeck(PRE.fmt),PRE.fmt);box.append(r)}
+ lbl('Deck acak');const r=document.createElement('button');r.className='dk';r.innerHTML=`${ic('dice')}<span style="flex:1;min-width:0">Deck acak<small>Pokémon acak, pola deck juara, selalu sah</small></span><span class="go1">MAIN ${ic('play')}</span>`;r.onclick=()=>startBattle(randomDeck(PRE.fmt),PRE.fmt);box.append(r)}
 $('pre-back').onclick=()=>showScr('menu');
 /* ----- susun deck ----- */
 const DB={list:{},art:{},id:null,fmt:'std'};   // list: total salinan per kartu; art: kunci kartu -> {id gambar varian lain: jumlah}, sisanya cetakan utama

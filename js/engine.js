@@ -460,7 +460,7 @@ function buildDeck(fmt='std'){
   if(countDeck(L)!==60||!legal(L,fmt).ok)continue;
   const top=[main,...parts].map(k=>DLINE[k][DLINE[k].length-1][0]).filter(k=>L[k]).map(k=>CARDS[k].ni);return{L,name:top.join(' + ')}}
  return{L:{...DRAGA_DECK},name:'Dragapult ex (archetype)'}}
-const randomDeck=fmt=>(buildGenDeck(fmt)||buildDeck(fmt)).L;   // tombol Deck acak: acak dari seluruh kartu (js/fx.js)
+const randomDeck=fmt=>(buildRecDeck(fmt)||buildGenDeck(fmt)||buildDeck(fmt)).L;   // tombol Deck acak: Pokémon acak, susunan mengikuti pola list juara Limitless (js/fx.js)
 /* list juara 1-3 turnamen dari limitlesstcg.com (js/decks-meta.js) yang semua kartunya sudah bisa dimainkan dan sah */
 const metaDecks=fmt=>(typeof META_DECKS==='undefined'?[]:META_DECKS).filter(d=>Object.keys(d.L).every(k=>CARDS[k]&&!CARDS[k].hide)&&legal(d.L,fmt).ok);
 /* Deck Bot: list juara (50%), racikan sendiri dengan pola list juara (25%), atau 100% acak. Deck yang dipakai 2-3 pertandingan terakhir (`recent`)
