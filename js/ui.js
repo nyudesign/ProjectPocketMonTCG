@@ -320,12 +320,12 @@ function monMenu(mon,sd,pick){const c=mon.card,el=$('am'),me=sd==='p',my=me&&can
   dm=a=>a.dmg?a.dmg+(a.plus?'+':a.times?'×':''):'',stg=k=>k.stage===2?'Stage 2':k.stage===1?'Stage 1':'Basic',T=TYB[c.type]||TYB.C,sc=spChip(mon),
   st=[[c,stg(c)],...[...mon.under].reverse().map(u=>[u,stg(u)]),...mon.en.map(e=>[e,'Energi']),...(mon.tool?[[mon.tool,'Tool']]:[])],si=Math.max(0,st.findIndex(x=>x[0]===pick)),
   ab=c.ab&&!c.ab.passive&&!c.ab.setup,abw=my&&ab?abWhy('p',mon):null,rw=my&&isAct?whyRetreat('p'):null,rc=rcost(mon),
-  row=(a,k)=>{const w=my&&isAct?whyAttack('p',k):null,h=`<span class="amt"><span class="cost">${costIcons(a.cost)}</span><b>${a.n}</b><i>${dm(a)}</i></span>${a.tx?`<p>${a.tx}</p>`:''}`;
+  row=(a,k)=>{const w=my&&isAct?whyAttack('p',k):null,h=`<span class="amt"><span class="cost">${costIcons(a.cost)}</span><b>${a.n}</b><i>${dm(a)}</i></span>${a.src?`<p>Dari ${esc(a.src)} di Cadangan</p>`:''}${a.tx?`<p>${a.tx}</p>`:''}`;   // a.src: serangan Pokémon Cadangan (Mew ex)
    return w===null?`<div class="amr info">${h}</div>`:`<button class="amr${w?' off':''}" data-a="${k}"${w?' disabled':''}>${h}${w?`<small>${w}</small>`:''}</button>`};
  el.innerHTML=`<div class="amw"><div class="amc"><img src="${imgOf(st[si][0])}" alt="${cname(c)}">${st.length>1?`<div class="ams">${st.map(([cd,l],i)=>`<button class="zt${i===si?' on':''}" data-i="${i}"><img src="${imgOf(cd)}" alt="${cname(cd)}"><span>${l}</span></button>`).join('')}</div>`:''}</div>
  <div class="amp"><div class="amh" style="--b1:${T[0]};--b2:${T[1]};--tt:${T[2]}"><b>${cname(c)}</b><span>HP ${Math.max(0,hp(mon))}/${maxHp(mon)}</span></div>${sc.length?`<div class="amchips">${sc.map(q=>`<span class="chip">${q}</span>`).join('')}</div>`:''}
  ${c.ab?(abw===null?`<div class="amr ab info"><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p>${c.ab.tx}</p></div>`:`<button class="amr ab${abw?' off':''}" data-a="ab"${abw?' disabled':''}><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p>${c.ab.tx}</p>${abw?`<small>${abw}</small>`:''}</button>`):''}
- ${c.atk.map(row).join('')}
+ ${(isAct?atkList(mon):c.atk).map(row).join('')}
  <div class="amf"><span>Kelemahan ${c.weak?costIcons(c.weak)+' ×2':'–'}</span><span>Resistansi ${c.res?costIcons(c.res)+' −30':'–'}</span>${rw===null?`<span class="amri">Mundur ${rc?costIcons('C'.repeat(rc)):'0'}</span>`:`<button class="amret" data-a="ret"${rw?` disabled title="${rw}"`:''}>Mundur ${rc?costIcons('C'.repeat(rc)):'0'}</button>`}</div>${rw?`<small class="amri" style="padding:0 2px;font-size:12.5px">Mundur: ${rw}</small>`:''}
  ${setup?`<button class="b ghost" data-a="back">${ic('undo')} Kembalikan ke tangan</button>`:''}${my&&c.fossil?`<button class="b ghost" data-a="fout"${whyFossilOut('p',mon)?' disabled':''}>${ic('x')} Buang fosil ke Trash</button>`:''}</div></div>`;
  el.classList.add('on');UI.am=1;hideHv();

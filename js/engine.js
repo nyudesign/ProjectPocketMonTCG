@@ -140,12 +140,17 @@ function whyTrainer(sd,c){const S=G[sd],E=G[opp(sd)];if(c.k==='item'&&S.noItem==
  if(c.g&&!EFF[c.key])return genWhy(sd,c);   // Trainer H/I/J umum (js/fx.js)
  return''}
 const candyOk=(sd,c,m)=>c.stage===2&&m.card.stage===0&&m.t!==G[sd].tn&&Object.values(CARDS).some(s=>s.n===c.from&&s.from===m.card.n);
-const whyEvolve=(sd,c,m)=>{const S=G[sd];if(c.from!==m.card.n)return`Hanya bisa dari ${c.from}`;if(S.tn<2)return'Tidak boleh evolusi di giliran pertamamu';if(m.t===S.tn&&!stOps('stEvoNew').some(s=>m.card.type===s.t&&c.type===s.t))return'Pokémon ini baru masuk Arena giliran ini';if(m.evo===S.tn)return'Sudah berevolusi giliran ini';return''};
+const whyEvolve=(sd,c,m)=>{const S=G[sd],ex=pab(m,'pEvoExFrom'),early=S.active===m&&!!pab(m,'pEvoEarly');   // Eevee ex: jadi Pokémon ex evolusi Eevee; Eevee: boleh di giliran pertama & giliran masuk
+ if(c.from!==m.card.n&&!(ex&&c.from===ex.name&&/ ex$/.test(c.n)))return`Hanya bisa dari ${c.from}`;if(m.noEvo===S.tn)return'Tingkat evolusinya baru diturunkan giliran ini';
+ if(S.tn<2&&!early)return'Tidak boleh evolusi di giliran pertamamu';if(m.t===S.tn&&!early&&!stOps('stEvoNew').some(s=>m.card.type===s.t&&c.type===s.t))return'Pokémon ini baru masuk Arena giliran ini';if(m.evo===S.tn)return'Sudah berevolusi giliran ini';return''};
 const whyEnergy=sd=>G[sd].en?'Sudah memasang Energi giliran ini':'';
 const whyTool=(sd,c,m)=>m.tool?'Pokémon ini sudah memakai Pokémon Tool':'';
 const whyBasic=sd=>G[sd].bench.length>=bmax(sd)?`Cadangan penuh (maks ${bmax(sd)})`:'';
 const whyRetreat=sd=>{const S=G[sd],a=S.active;if(!a)return'Tidak ada Pokémon Bertarung';if(S.ret)return'Sudah mundur giliran ini';if(a.sp==='asleep'||a.sp==='paralyzed')return`Pokémon yang ${CONDN[a.sp]} tidak bisa mundur`;if(a.x&&a.x.noRet===S.tn)return'Efek serangan lawan: tidak bisa mundur giliran ini';if(a.poison&&S.noRetP===S.tn)return'Pokémon yang Racun tidak bisa mundur giliran ini';if(!S.bench.length)return'Cadangan kosong';if(a.card.fossil)return'Fosil tidak bisa mundur';if(a.en.length<rcost(a))return`Butuh ${rcost(a)} Energi untuk mundur`;return''};
-const whyAttack=(sd,k)=>{const S=G[sd],a=S.active;if(!a)return'Tidak ada Pokémon Bertarung';if(firstTurn(sd)&&!(a.card.atk[k].g||[]).some(s=>s.op==='atkFirstOk'))return'Pemain pertama tidak boleh menyerang di giliran pertama';if(a.sp==='asleep')return'Pokémon yang Tidur tidak bisa menyerang';if(a.sp==='paralyzed')return'Pokémon yang Lumpuh tidak bisa menyerang';const at=a.card.atk[k];if(at.g&&at.g.some(s=>s.op==='onlyFirst2')&&!(G.first!==sd&&S.tn===1))return'Hanya di giliran pertama Pemain Kedua';if((at.fx==='union'||at.g&&at.g.some(s=>s.op==='notFirst2'))&&G.first!==sd&&S.tn===1)return'Tidak bisa di giliran pertama Pemain Kedua';
+/* serangan yang bisa dipakai: milik Pokémon ini + serangan Pokémon Cadangan sendiri bila Ability-nya mengizinkan (Mew ex; Energi tetap dari Pokémon ini) */
+const atkList=m=>{if(!G||!G.p||!pab(m,'pBenchAtk'))return m.card.atk;const S=G[ownerOf(m)];if(S.active!==m)return m.card.atk;
+ return[...m.card.atk,...S.bench.flatMap(b=>b.card.atk.filter(t=>t.fx!=='todo'&&!(t.g||[]).some(x=>x.op==='copyAtk')).map(t=>({...t,src:cname(b.card)})))]};
+const whyAttack=(sd,k)=>{const S=G[sd],a=S.active;if(!a)return'Tidak ada Pokémon Bertarung';const at=atkList(a)[k];if(!at)return'Serangan tidak tersedia';if(firstTurn(sd)&&!(at.g||[]).some(s=>s.op==='atkFirstOk'))return'Pemain pertama tidak boleh menyerang di giliran pertama';if(a.sp==='asleep')return'Pokémon yang Tidur tidak bisa menyerang';if(a.sp==='paralyzed')return'Pokémon yang Lumpuh tidak bisa menyerang';if(at.g&&at.g.some(s=>s.op==='onlyFirst2')&&!(G.first!==sd&&S.tn===1))return'Hanya di giliran pertama Pemain Kedua';if((at.fx==='union'||at.g&&at.g.some(s=>s.op==='notFirst2'))&&G.first!==sd&&S.tn===1)return'Tidak bisa di giliran pertama Pemain Kedua';
  if(a.x&&a.x.noAtk===S.tn)return'Pokémon ini tidak bisa menyerang giliran ini';if(a.x&&a.x.noAtkN&&a.x.noAtkN.tn===S.tn&&a.x.noAtkN.n===at.n)return`${at.n} tidak bisa dipakai giliran ini`;
  const pn=pab(a,'pAtkNeed');if(pn&&inPlay(S).filter(m=>ownerIs(m.card,pn.o)).length<pn.n)return`Butuh ${pn.n} Pokémon ${pn.o} di Arena`;   // Mewtwo Tim Roket ex
  if(at.g&&at.g.some(s=>s.op==='notAfter'&&S.lastAtk&&S.lastAtk.tn===S.tn-1&&S.lastAtk.n===s.name))return`${at.n} tidak bisa dipakai dua giliran berturut-turut`;   // Sylveon ex
@@ -248,11 +253,13 @@ async function actRetreat(sd){const w=whyRetreat(sd);if(w)return w;const S=G[sd]
  if(cost>0){pay=await ask(sd,'pay',{mon:a,cost,to:m,cancel:true});if(!pay)return}
  pay.forEach(c=>{a.en.splice(a.en.indexOf(c),1);S.discard.push(c)});swapActive(sd,m);S.ret=1;log(`${who(sd)} mundur: ${cname(a.card)} → ${cname(m.card)}`)}
 const bestTarget=(sd,pref)=>{const l=sideMons(sd);return l.sort((a,b)=>pref(b)-pref(a))[0]};
-async function actAttack(sd,k){const w=whyAttack(sd,k);if(w)return w;
- const S=G[sd],E=G[opp(sd)],a=S.active,at=a.card.atk[k],o=opp(sd);
+async function actAttack(sd,k,second){const w=whyAttack(sd,k);if(w)return w;   // second: serangan kedua Orkes Festival
+ const S=G[sd],E=G[opp(sd)],a=S.active,o=opp(sd);let at=atkList(a)[k];
  log(`⚔️ ${cname(a.card)} memakai ${at.n}`);await fx('announce',{mon:a,name:at.n,tx:at.tx,sd,kind:'Jurus'});
  if(a.sp==='confused'){const h=await flip(sd,'Pusing','Pusing: sisi belakang = serangan gagal dan Pokémon ini menerima 3 Token Kerusakan.');if(!h){await fx('strike',{a,at,sd,fail:1});a.dmg+=30;fx('hit',a.id,30);log(`${cname(a.card)} melukai dirinya sendiri (30)`);await resolveKO();return finishTurn()}}
  if(a.x&&a.x.atkFlip===S.tn&&!await flip(sd,'Efek serangan lawan','Sisi belakang = serangan gagal.')){await fx('strike',{a,at,sd,fail:1});log('Serangan gagal');return finishTurn()}   // efek serangan lawan sebelumnya
+ const cp=(at.g||[]).find(s=>s.op==='copyAtk');   // Slowking, Mimikyu Tim Roket: serangan kartu lain dipakai sebagai serangan ini
+ if(cp){const c2=await copyPick(sd,a,cp);if(!c2){log('Tidak ada serangan yang bisa ditiru');await fx('strike',{a,at,sd,fail:1});return finishTurn()}at=c2;log(`${cname(a.card)} memakai ${at.n}`);await fx('announce',{mon:a,name:at.n,tx:at.tx,sd,kind:'Jurus'})}
  let base=at.dmg,tgt=E.active;
  if(at.fx==='jaw'&&a.dmg>0)base+=150;
  if(at.fx==='ledak')base=60*(G.prizeN-E.prizes.length);
@@ -278,11 +285,15 @@ async function actAttack(sd,k){const w=whyAttack(sd,k);if(w)return w;
    if(r.length){await ask(sd,'attachEnergies',{energies:r,targets:S.bench,card:a.card,apply:(en,t)=>{t.en.push(en);fx('sync');fx('energy',t,en)}});
     for(const en of r)if(!S.bench.some(b=>b.en.includes(en)))S.bench[0].en.push(en)}
    if(r.length)log(`${who(sd)} memasang ${r.length} Energi ke Cadangan`);await shuffleDeck(sd);break}}
- fx('sync');await sleep(0);await resolveKO();G.atk=null;if(!G.over)finishTurn()}
+ fx('sync');await sleep(0);await resolveKO();G.atk=null;if(G.over)return;
+ const tw=!second&&S.active===a&&pab(a,'pTwice');   // Orkes Festival: dengan Stadium itu di Arena, serang sekali lagi (sesudah pengganti yang KO maju)
+ if(tw&&G.stadium&&cname(G.stadium.card)===tw.st&&E.active){const ks=a.card.atk.map((_,i)=>i).filter(i=>!whyAttack(sd,i));
+  if(ks.length){const i=await ask(sd,'choice',{title:`${a.card.ab.n}: serang sekali lagi?`,tx:a.card.ab.tx,opts:[...ks.map(i=>a.card.atk[i].n),'Tidak'],pref:()=>0});if(i<ks.length)return actAttack(sd,ks[i],1)}}
+ finishTurn()}
 function finishTurn(){if(G.turnResolve){const r=G.turnResolve;G.turnResolve=null;r()}}
 /* ---------- Bot ---------- */
 const mval=m=>m.card.hp/50+(m.card.prize||1)*3+m.en.length+(m.card.stage||0);
-const dmgOf=(m,k)=>{const at=m.card.atk[k];if(at.g)return genDmg(m,at,G.cur);return at.fx==='jaw'?at.dmg+(m.dmg>0?150:0):at.fx==='en40'?40*m.en.length:at.fx==='ledak'?60*(G.prizeN-G[opp(G.cur)].prizes.length):at.fx==='arrow'?100:at.fx==='union'?30*G[G.cur].bench.length:at.fx==='flip3'?15:at.fx==='landing'?(G.stadium?70:0):at.dmg};
+const dmgOf=(m,k)=>{const at=atkList(m)[k];if(at.g)return genDmg(m,at,G.cur);return at.fx==='jaw'?at.dmg+(m.dmg>0?150:0):at.fx==='en40'?40*m.en.length:at.fx==='ledak'?60*(G.prizeN-G[opp(G.cur)].prizes.length):at.fx==='arrow'?100:at.fx==='union'?30*G[G.cur].bench.length:at.fx==='flip3'?15:at.fx==='landing'?(G.stadium?70:0):at.dmg};
 const BOT={bot:true,
  async cards({cards,max,min=0,pref,pick}){const p=pref||(()=>1);let r=cards.filter(pick||(()=>true)).map(c=>[c,p(c)]).sort((a,b)=>b[1]-a[1]);if(min)r=r.slice(0,min);else r=r.filter(x=>x[1]>0).slice(0,max);return r.map(x=>x[0])},
  async mon({mons,pref}){const p=pref||(m=>mval(m)+(m.card.atk.some(a=>afford(m,a.cost))?20:0));return[...mons].sort((a,b)=>p(b)-p(a))[0]},
@@ -315,7 +326,7 @@ async function botTurn(sd){
  const needCards=S.hand.length<=3;
  if(!S.sup&&!firstTurn(sd)){
   const pl=inPlay(S);const ready=a=>pl.some(m=>m.card.atk.some(t=>afford(m,t.cost)));
-  const killBench=E.bench.find(b=>S.active&&Math.max(...S.active.card.atk.map((_,k)=>afford(S.active,S.active.card.atk[k].cost)?dmgOf(S.active,k):0))>=hp(b)&&hp(b)<hp(E.active||b)+1&&(b.card.prize||1)>1);
+  const killBench=E.bench.find(b=>S.active&&Math.max(...atkList(S.active).map((t,k)=>afford(S.active,t.cost)?dmgOf(S.active,k):0))>=hp(b)&&hp(b)<hp(E.active||b)+1&&(b.card.prize||1)>1);
   if(find('briar')&&S.active&&S.active.card.tera&&E.active&&await tryT('briar'));
   else if(find('boss')&&killBench&&await tryT('boss'));
   else if(S.hand.length<=4&&find('lillie')&&await tryT('lillie'));
@@ -351,7 +362,7 @@ async function botTurn(sd){
   if(m.card.ab.key==='adr'&&!sideMons(opp(sd)).length)continue;
   await actAbility(sd,m);await pause();if(G.over)return}
  // Gust jika bisa KO
- const bestAtk=()=>{const a=S.active;if(!a)return null;let b=null;a.card.atk.forEach((t,k)=>{if(!whyAttack(sd,k)){const d=dmgOf(a,k);if(!b||d>b.d)b={k,d}}});return b};
+ const bestAtk=()=>{const a=S.active;if(!a)return null;let b=null;atkList(a).forEach((t,k)=>{if(!whyAttack(sd,k)){const d=dmgOf(a,k);if(!b||d>b.d)b={k,d}}});return b};
  let b=bestAtk();
  if(b&&!S.sup&&find('boss')&&!whyTrainer(sd,find('boss'))){const t=E.bench.find(x=>hp(x)<=b.d&&(x.card.prize||1)>=(E.active.card.prize||1));if(t&&hp(E.active)>b.d){await actTrainer(sd,find('boss'));await pause()}}
  if(b&&find('prime')&&!whyTrainer(sd,find('prime'))){const t=E.bench.find(x=>hp(x)<=b.d&&(x.card.prize||1)>1);if(t&&hp(E.active)>b.d){await actTrainer(sd,find('prime'));await pause()}}
@@ -452,11 +463,13 @@ function buildDeck(fmt='std'){
 const randomDeck=fmt=>(buildGenDeck(fmt)||buildDeck(fmt)).L;   // tombol Deck acak: acak dari seluruh kartu (js/fx.js)
 /* list juara 1-3 turnamen dari limitlesstcg.com (js/decks-meta.js) yang semua kartunya sudah bisa dimainkan dan sah */
 const metaDecks=fmt=>(typeof META_DECKS==='undefined'?[]:META_DECKS).filter(d=>Object.keys(d.L).every(k=>CARDS[k]&&!CARDS[k].hide)&&legal(d.L,fmt).ok);
-/* Deck Bot: list juara (50%), racikan sendiri dengan pola list juara (25%), atau 100% acak; nama di `recent` (2-3 pertandingan terakhir) tidak dipakai */
-function botDeck(fmt='std',recent=[]){const r=Math.random(),ok=metaDecks(fmt).filter(d=>!recent.includes(d.name));
- if(ok.length&&r<.5){const d=ok[rnd(ok.length)];return{L:{...d.L},name:d.name}}
+/* Deck Bot: list juara (50%), racikan sendiri dengan pola list juara (25%), atau 100% acak. Deck yang dipakai 2-3 pertandingan terakhir (`recent`)
+   tidak dipakai lagi, dihitung per archetype: dua list Dragapult dari turnamen berbeda tetap "deck yang sama" */
+const archOf=n=>n.replace(/ \((Juara [^)]*|racikan Bot|acak)\)$/,'');
+function botDeck(fmt='std',recent=[]){const r=Math.random(),ra=recent.map(archOf),ok=metaDecks(fmt).filter(d=>!ra.includes(archOf(d.name)));
+ if(ok.length&&r<.5){const as=[...new Set(ok.map(d=>archOf(d.name)))],a=as[rnd(as.length)],ds=ok.filter(d=>archOf(d.name)===a),d=ds[rnd(ds.length)];return{L:{...d.L},name:d.name}}   // archetype dulu: Dragapult (banyak list) tidak mendominasi
  for(let i=0;i<9;i++){const g=r<.75&&buildRecDeck(fmt),d=g?{L:g.L,name:g.name+' (racikan Bot)'}:(x=>({L:x.L,name:x.name+' (acak)'}))(buildGenDeck(fmt)||buildDeck(fmt));
-  if(!recent.includes(d.name))return d}
+  if(!ra.includes(archOf(d.name)))return d}
  const d=buildGenDeck(fmt)||buildDeck(fmt);return{L:d.L,name:d.name+' (acak)'}}
 
 function concede(sd){if(!G||G.over)return;log(`🏳️ ${who(sd)} menyerah`);G.why='menyerah';endGame(opp(sd))}
@@ -466,5 +479,5 @@ function pendingActions(sd){const S=G[sd],L=[];
  if(!S.sup&&S.hand.some(c=>c.k==='supporter'&&!whyTrainer(sd,c)))L.push('Mainkan Supporter dari tangan');
  if(!S.stad&&S.hand.some(c=>c.k==='stadium'&&!whyTrainer(sd,c)))L.push('Mainkan Stadium dari tangan');
  for(const m of inPlay(S))if(m.card.ab&&!m.card.ab.passive&&!m.card.ab.setup&&!abWhy(sd,m))L.push(`Pakai Ability ${m.card.ab.n} (${cname(m.card)})`);
- if(S.active&&S.active.card.atk.some((_,k)=>!whyAttack(sd,k)))L.push('Menyerang dengan Pokémon Bertarung (menyerang juga mengakhiri giliran)');
+ if(S.active&&atkList(S.active).some((_,k)=>!whyAttack(sd,k)))L.push('Menyerang dengan Pokémon Bertarung (menyerang juga mengakhiri giliran)');
  return L}

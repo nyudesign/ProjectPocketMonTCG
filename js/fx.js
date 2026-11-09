@@ -198,8 +198,16 @@ const SRCP={mon:isMon,basic:isBasic,benergy:x=>x.k==='energy',energy:isEn,item:x
 const SRCN={mon:'Pokémon',basic:'Pokémon Basic',benergy:'Energi Dasar',energy:'Energi',item:'Item',supporter:'Supporter',tool:'Pokémon Tool',stadium:'Stadium',trainer:'Trainer',evo:'Pokémon Evolusi',any:'kartu'};
 const noRecov=x=>!(x.g&&x.g.some(s=>s.op==='noRec'));   // "selama di Trash tidak dapat ditambahkan ke Kartu Pegangan / dikembalikan ke Deck"
 async function genSearch(sd,card,s){const r=await pickDeck(sd,card,{title:`Pilih s/d ${s.n} ${SRCN[s.what]} untuk tangan`,pred:SRCP[s.what],max:s.n,pref:s.what==='mon'||s.what==='basic'||s.what==='evo'?wantPoke(sd):()=>1});await toHand(sd,card,r);log(`${who(sd)} mengambil ${r.length} kartu dari Deck`);await shuffleDeck(sd)}
+/* serangan yang ditiru: kartu teratas Deck sendiri (Pokémon tanpa Peraturan) atau Pokémon Terastal di Arena Bertarung lawan; serangan berefek belum didukung tidak bisa ditiru */
+async function copyPick(sd,a,s){const S=G[sd],E=G[opp(sd)];let src=null;
+ if(s.from==='millTop'){if(!S.deck.length)return null;const c=S.deck.pop();S.discard.push(c);fx('sync');log(`${who(sd)} membuang ${cname(c)} dari atas Deck`);await fx('reveal',sd,[c],a.card);if(isMon(c)&&!rule(c))src=c}
+ else if(E.active&&E.active.card.tera)src=E.active.card;
+ const ok=src?src.atk.filter(t=>t.fx!=='todo'&&!(t.g||[]).some(x=>x.op==='copyAtk')):[];if(!ok.length)return null;
+ const k=ok.length>1?await ask(sd,'choice',{title:`Pilih serangan ${cname(src)} yang dipakai`,tx:ok.map(t=>`${t.n} ${t.dmg||''}`).join(' · '),opts:ok.map(t=>t.n),pref:()=>ok.reduce((b,t,i)=>(t.dmg||0)>(ok[b].dmg||0)?i:b,0)}):0;
+ return ok[k]}
 /* perkiraan damage untuk Bot (koin = nilai harapan) */
 function genDmg(a,at,sd){let b=at.dmg;for(const s of at.g||[]){
+ if(s.op==='copyAtk'){const d=G[opp(sd)].active;b=s.from==='oppTera'?(d&&d.card.tera?Math.max(0,...d.card.atk.map(t=>t.dmg||0)):0):40;continue}
  if(s.op==='flipMul')b=s.per*s.n/2;else if(s.op==='flipAddPer')b+=s.per*s.n/2;else if(s.op==='flipUntilMul')b=s.per;else if(s.op==='flipUntilAdd')b+=s.per;else if(s.op==='flipAdd')b+=s.add/2;else if(s.op==='flip2Add')b+=s.add/4;
  else if(s.op==='flipFail')b/=2;else if(s.op==='addPer')b+=s.per*gCount(s.of,sd,a,s);else if(s.op==='mul')b=s.per*gCount(s.of,sd,a,s);else if(s.op==='addIf'&&gCond(s.if,sd,a,s))b+=s.add;else if(s.op==='snipe')b=s.per?s.per*a.en.length:s.n;else if(s.op==='setBase'){const d=G[opp(sd)].active;b=!s.ex||d&&rule(d.card)?s.n:0}else if(s.op==='addLastHit'&&a.hitT===G[opp(sd)].tn)b+=a.hitD||0;else if(s.op==='millCount')b=s.mode==='mul'?s.per*s.n/4:b+s.per*s.n/4;else if(s.op==='mulHeads')b=s.per;
  else if(s.op==='optDiscBoost'&&a.en.filter(e=>e.k==='energy'&&e.t===s.t).length>=s.k)b+=s.add;else if(s.op==='discEnAnyMul')b=s.per*inPlay(G[sd]).reduce((n,m)=>n+m.en.filter(e=>e.k==='energy').length,0);
@@ -254,6 +262,7 @@ function genWhy(sd,c){const S=G[sd],E=G[opp(sd)],hand=S.hand.filter(x=>x!==c);fo
  if(s.op==='recoverDeck'&&!S.discard.some(x=>x.k==='energy'))return'Tidak ada Energi Dasar di Trash';
  if(s.op==='attach'){if(!(s.where==='bench'?S.bench:inPlay(S)).some(gm(sd,s.pt)))return`Tidak ada ${s.lt}${s.where==='bench'?' di Cadangan':''}`;if(s.src==='discard'&&!S.discard.some(gp(sd,s.pe)))return`Tidak ada ${s.lb} di Trash`}
  if(s.op==='moveEnOwn'&&!(inPlay(S).length>1&&inPlay(S).some(m=>m.en.some(e=>e.k==='energy'&&(!s.t||e.t===s.t)))))return'Tidak ada Energi Dasar yang bisa dipindah';
+ if(s.op==='devolve'&&!inPlay(S).some(m=>m.under.some(isMon)&&m.card.type===s.t))return`Tidak ada Pokémon ${TYPES[s.t][0]} yang telah berevolusi`;
  if(s.op==='healCure'&&!inPlay(S).some(m=>m.dmg>0||conds(m).length))return'Tidak ada Pokémon-mu yang perlu dipulihkan';
  if(s.op==='discTools'&&![...inPlay(S),...inPlay(E)].some(m=>m.tool))return'Tidak ada Pokémon Tool di Arena';
  if(s.op==='discEnOppAny'&&!inPlay(E).some(m=>m.en.some(e=>!s.special||e.k==='senergy')))return s.special?'Pokémon lawan tidak punya Energi Spesial':'Pokémon lawan tidak punya Energi';
@@ -401,6 +410,10 @@ async function genTrainer(sd,c,list){const S=G[sd],E=G[opp(sd)],o=opp(sd);let la
    const r=await ask(sd,'cards',{title:`Pindahkan Energi sesukanya ke ${cname(m.card)}`,cards:es,max:es.length,card:c,pref:()=>1});
    for(const e of r){const h=src.find(x=>x.en.includes(e));h.en.splice(h.en.indexOf(e),1);m.en.push(e);fx('energy',m,e)}fx('sync');if(r.length)log(`${who(sd)} memindahkan ${r.length} Energi ke ${cname(m.card)}`);break}
   case'healAttached':if(G.lastAtt&&inPlay(S).includes(G.lastAtt))heal(sd,G.lastAtt,s.n);break;
+  case'devolve':{const ms=inPlay(S).filter(m=>m.under.some(isMon)&&m.card.type===s.t);if(!ms.length)break;   // Jam Mencurigakan: kartu evolusi kembali ke tangan, tidak bisa berevolusi lagi giliran ini
+   const m=ms.length>1?await ask(sd,'mon',{title:`Pilih Pokémon ${TYPES[s.t][0]} yang tingkat evolusinya diturunkan`,mons:ms,ctx:'target',sd,cancel:!done,pref:x=>x.dmg}):ms[0];if(!m)return'cancel';
+   const st=m.under.filter(isMon).length,k=st>1?1+await ask(sd,'choice',{title:`Lepas berapa kartu evolusi dari ${cname(m.card)}?`,tx:c.tx,opts:Array.from({length:st},(_,i)=>`${i+1} kartu`),pref:()=>0}):1;
+   for(let i=0;i<k&&m.under.some(isMon);i++){S.hand.push(m.card);m.card=m.under.pop()}m.noEvo=S.tn;m.sp=null;m.poison=0;m.burn=0;m.x={};fx('sync');log(`${cname(m.card)}: tingkat evolusi turun, ${k} kartu kembali ke tangan`);await resolveKO();break}
   case'bothDraw':for(const x of[sd,o]){const n=await drawShow(x,s.n);log(`${who(x)} mengambil ${n} kartu`)}break;
   case'dropStadium':await dropStadium();break;
   case'toolSelf':{const m=G.abMon;if(m&&!m.tool){const r=await pickDeck(sd,c,{title:'Pilih 1 Pokémon Tool untuk dipasang',pred:x=>x.k==='tool',max:1,pref:()=>1});if(r.length){m.tool=r[0];log(`${who(sd)} memasang ${cname(r[0])} ke ${cname(m.card)}`);fx('sync')}}await shuffleDeck(sd);break}
@@ -437,7 +450,7 @@ function genUseful(sd,c){const S=G[sd],E=G[opp(sd)],a=S.active,canHit=()=>a&&a.c
  if(s.op==='moveEnOwn'&&!(a&&!canHit()))return false;
  if(s.op==='flipIf'&&!genUseful(sd,{g:s.then}))return false;
  if((s.op==='recover'||s.op==='recov')&&S.hand.length>6)return false;
- if(['endTurn','prizeSwap','millSelf','scoop','gravel','handTop'].includes(s.op)||s.op==='find'&&(s.to==='discard'||s.to==='top'))return false;   // butuh pertimbangan, Bot tidak memakainya
+ if(['endTurn','prizeSwap','millSelf','scoop','gravel','handTop','devolve'].includes(s.op)||s.op==='find'&&(s.to==='discard'||s.to==='top'))return false;   // butuh pertimbangan, Bot tidak memakainya
  if(['shuffleHand','redraw','lucian','discHand'].includes(s.op)&&S.hand.length>4)return false;
  if(s.op==='oppRedraw'&&E.hand.length<5)return false;
  if(s.op==='drawUntil'&&!s.allO&&S.hand.length>=s.n-1)return false;
