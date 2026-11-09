@@ -555,12 +555,14 @@ function loop(t){
 requestAnimationFrame(loop);
 /* --- mulai / akhir pertandingan --- */
 function resetScene(){for(const g of M.values())scene.remove(g);for(const g of PX.values())scene.remove(g);for(const o of OV.values())scene.remove(o.g);for(const id of [...CF.keys()])cfDrop(id);M.clear();PX.clear();OV.clear();LI=new Map();DCS.forEach(m=>m.visible=false);DZ.visible=false;$('tl').className='';COIN.g.visible=COIN.sh.visible=DIE.m.visible=DIE.sh.visible=false;CS=DS=null}
+const botRecent=add=>{let a=[];try{a=JSON.parse(localStorage.getItem('ptcg.botRecent')||'[]')}catch(e){}if(!Array.isArray(a))a=[];   // nama deck Bot terakhir, terbaru di depan
+ if(add){a=[add,...a.filter(x=>x!==add)].slice(0,3);try{localStorage.setItem('ptcg.botRecent',JSON.stringify(a))}catch(e){}}return a};
 async function startBattle(list,fmt,opt){
  UI.last={list,fmt,art:opt&&opt.art};closeAll();resetScene();UI.placing=null;UI.si=UI.si||0;
  ['menu','pre','db'].forEach(i=>$(i).classList.remove('on'));$('end').classList.remove('on');
  document.body.classList.add('bt');$('log-b').innerHTML='';
  UI.themeI=(UI.themeI+1+rnd(2))%THEMES.length;const tn=setTheme(UI.themeI);
  DEC.p=UIDEC;DEC.o={...BOT,turn:s=>botTurn(s)};
- const bd=opt?.bot||metaDeck(fmt)||buildGenDeck(fmt)||buildDeck(fmt);UI.last.bot=bd;say(`Arena: ${tn} · Deck Bot: ${esc(bd.name)}`,3400);   // Bot: deck juara turnamen (Limitless) yang bisa dimainkan, selain itu deck acak; Sudden Death memakai deck yang sama
+ const bd=opt?.bot||botDeck(fmt,botRecent().slice(0,2+rnd(2)));if(!opt?.bot)botRecent(bd.name);UI.last.bot=bd;say(`Arena: ${tn} · Deck Bot: ${esc(bd.name)}`,3400);   // deck Bot 2-3 pertandingan terakhir tidak diulang; Sudden Death memakai deck yang sama
  try{await setup(list,bd.L,opt)}catch(e){console.error(e);say('⛔ Terjadi galat: '+e.message,8000)}}
 function toMenu(){closeAll();document.body.classList.remove('bt');resetScene();G=null;showScr('menu')}

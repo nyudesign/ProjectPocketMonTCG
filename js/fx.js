@@ -472,3 +472,42 @@ function buildGenDeck(fmt='std'){const F=genFams();if(!F.length)return null;
   if(countDeck(L)!==60||!legal(L,fmt).ok)continue;
   const top=[main,part].map(f=>CARDS[f[f.length-1]].ni).filter((v,i,a)=>a.indexOf(v)===i);return{L,name:top.join(' + ')}}
  return null}
+/* ---------- deck rekomendasi: pola susunan list juara Limitless (js/decks-meta.js), Pokémon diacak ----------
+   1 list juara jadi cetakan: bentuk tiap lini (mis. 4-4-3, tech 1 lembar), Trainer & jumlahnya, jumlah Energi. Tiap lini diganti keluarga
+   acak dengan tahap sama (tech 70% Basic ber-Ability, seperti di data). Trainer yang syaratnya tak cocok diganti staple terpopuler semua list. */
+const TXT={Daun:'G',Api:'R',Air:'W',Listrik:'L',Psychic:'P',Petarung:'F',Kegelapan:'D',Logam:'M',Naga:'N',Bening:'C'};
+function fitsDeck(c,L){const ms=Object.keys(L).map(k=>CARDS[k]).filter(isMon),has=f=>ms.some(f),tx=c.tx||'',anti=(c.g||[]).find(s=>['stHp','stTeraCost','stNoAb'].includes(s.op));
+ if(anti)return !(anti.op==='stHp'&&anti.n<0&&has(m=>m.stage===anti.stage)||anti.op==='stTeraCost'&&has(m=>m.tera)||anti.op==='stNoAb'&&has(m=>m.type===anti.t&&m.ab));   // Stadium yang merugikan Pokémon sendiri
+ const o=(tx+' '+c.n).match(/(?:Pokémon|kata) (Tim Roket|Hop|Lillie|Steven|Cynthia|Ethan|Marnie|Arvin|Erika|Misty|Dafin|Mistika|Brock)\b/);
+ if(o&&!has(m=>m.n.includes('<'+o[1]+'>'))||/Tim Roket/.test(c.n)&&!has(m=>m.n.includes('<Tim Roket>')))return false;
+ if(/Stage 2/.test(tx)&&!has(m=>m.stage===2)||/Terastal/.test(tx)&&!has(m=>m.tera)||/Evolusi Mega/.test(tx)&&!has(m=>m.mega)||/Pokémon Evolusi/.test(tx)&&!has(m=>m.stage>0))return false;
+ if(/Pokémon \{ex\} dari Deck/.test(tx)&&!has(rule)||/HP ≤70|HP 70 atau kurang/.test(tx)&&!has(m=>isBasic(m)&&m.hp<=70)||/tanpa Rule Box|selain Pokémon yang memiliki Peraturan/.test(tx)&&!has(m=>!rule(m)))return false;
+ const t=c.k==='stadium'?null:tx.match(/(?:Pokémon|Energi Dasar) \{(Daun|Api|Air|Listrik|Psychic|Petarung|Kegelapan|Logam|Naga|Bening)\}/);
+ return !(t&&!has(m=>m.type===TXT[t[1]])||c.k==='tool'&&/Racun/.test(tx)&&!has(m=>m.atk.some(a=>/Racun/.test(a.tx||''))))}
+function buildRecDeck(fmt='std'){const D=typeof META_DECKS==='undefined'?[]:META_DECKS,F=genFams();if(!D.length||!F.length)return null;
+ const use={};D.forEach(d=>Object.entries(d.L).forEach(([k,n])=>{if(CARDS[k]&&isTrainer(CARDS[k]))(use[k]=use[k]||[]).push(n)}));
+ const staple=Object.keys(use).sort((a,b)=>use[b].length-use[a].length),med=k=>[...use[k]].sort((a,b)=>a-b)[use[k].length>>1];
+ const EN={};for(const k of Object.keys(CARDS)){const c=CARDS[k];if(c.k==='energy'&&c.t&&!c.hide&&(!EN[c.t]||!/^h/.test(k)))EN[c.t]=k}
+ const techs=Object.keys(CARDS).filter(k=>isBasic(CARDS[k])&&!CARDS[k].hide&&!CARDS[k].fossil);
+ for(let tries=0;tries<40;tries++){const t=D[rnd(D.length)],L={},names=new Set(),q=(k,n)=>{if(n>0){L[k]=(L[k]||0)+n;names.add(CARDS[k].n)}},
+   cnt=f=>Object.keys(L).filter(k=>f(CARDS[k])).reduce((a,k)=>a+L[k],0),by={},grp={};
+  for(const[k,n]of Object.entries(t.L)){const c=CARDS[k];if(isMon(c))(by[c.n]=by[c.n]||[]).push([k,n])}
+  const root=k=>{let c=CARDS[k],i=0;while(c.from&&by[c.from]&&i++<3)c=CARDS[by[c.from][0][0]];return c.n};
+  for(const a of Object.values(by))for(const[k,n]of a)(grp[root(k)]=grp[root(k)]||[0,0,0])[CARDS[k].stage]+=n;
+  const shapes=Object.values(grp).map(a=>{const s=a.slice(0,a[2]?3:a[1]?2:1);for(let i=s.length-2;i>=0;i--)s[i]=Math.max(s[i],1);return s})   // lini tanpa Basic di cetakan tetap utuh
+   .sort((a,b)=>b.length-a.length||b.reduce((x,y)=>x+y)-a.reduce((x,y)=>x+y));
+  const lines=[];let ok=true;
+  for(const s of shapes){const ab=Math.random()<.7,pool=s.length>1||s[0]>=3?F.filter(f=>f.length===s.length&&f.every(k=>!names.has(CARDS[k].n))):techs.filter(k=>!names.has(CARDS[k].n)&&!!CARDS[k].ab===ab).map(k=>[k]);
+   if(!pool.length){ok=false;break}const f=pool[rnd(pool.length)];f.forEach((k,j)=>q(k,s[j]));if(s.length>1||s[0]>=3)lines.push(f)}
+  if(!ok||!lines.length)continue;
+  const T=Object.keys(t.L).filter(k=>CARDS[k]&&isTrainer(CARDS[k])).reduce((a,k)=>a+t.L[k],0);let ace=0;
+  for(const[k,n]of Object.entries(t.L)){const c=CARDS[k];if(c&&(isTrainer(c)||c.k==='senergy')&&!c.hide&&!(c.ace&&ace)&&fitsDeck(c,L)){q(k,c.ace?1:n);if(c.ace)ace=1}}
+  for(const k of staple){const c=CARDS[k],left=T-cnt(isTrainer);if(left<=0)break;if(c.hide||L[k]||c.ace&&ace||!fitsDeck(c,L))continue;q(k,Math.min(left,med(k)));if(c.ace)ace=1}
+  const E=60-countDeck(L);if(E<4||E>20)continue;
+  const need={};for(const k of Object.keys(L)){const c=CARDS[k];if(isMon(c))for(const a of c.atk)for(const ty of a.cost)if(ty!=='C'&&EN[ty])need[ty]=(need[ty]||0)+L[k]}
+  const ts=Object.keys(need);if(!ts.length)ts.push(Object.keys(EN)[rnd(Object.keys(EN).length)]);
+  const tot=ts.reduce((a,x)=>a+(need[x]||1),0);let left=E;
+  ts.sort((a,b)=>(need[b]||1)-(need[a]||1)).forEach((x,i)=>{const n=i===ts.length-1?left:Math.min(left,Math.max(2,Math.round(E*(need[x]||1)/tot)));if(n>0)L[EN[x]]=(L[EN[x]]||0)+n;left-=n});
+  if(countDeck(L)!==60||!legal(L,fmt).ok)continue;
+  return{L,name:lines.slice(0,2).map(f=>CARDS[f[f.length-1]].ni).join(' + '),pola:t.name}}
+ return null}

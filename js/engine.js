@@ -436,9 +436,14 @@ function buildDeck(fmt='std'){
   const top=[main,...parts].map(k=>DLINE[k][DLINE[k].length-1][0]).filter(k=>L[k]).map(k=>CARDS[k].ni);return{L,name:top.join(' + ')}}
  return{L:{...DRAGA_DECK},name:'Dragapult ex (archetype)'}}
 const randomDeck=fmt=>(buildGenDeck(fmt)||buildDeck(fmt)).L;   // tombol Deck acak: acak dari seluruh kartu (js/fx.js)
-/* Deck Bot: list juara 1-3 turnamen dari limitlesstcg.com (js/decks-meta.js), hanya yang semua kartunya sudah bisa dimainkan dan sah */
-function metaDeck(fmt='std'){const ok=(typeof META_DECKS==='undefined'?[]:META_DECKS).filter(d=>Object.keys(d.L).every(k=>CARDS[k]&&!CARDS[k].hide)&&legal(d.L,fmt).ok);
- if(!ok.length)return null;const d=ok[rnd(ok.length)];return{L:{...d.L},name:d.name}}
+/* list juara 1-3 turnamen dari limitlesstcg.com (js/decks-meta.js) yang semua kartunya sudah bisa dimainkan dan sah */
+const metaDecks=fmt=>(typeof META_DECKS==='undefined'?[]:META_DECKS).filter(d=>Object.keys(d.L).every(k=>CARDS[k]&&!CARDS[k].hide)&&legal(d.L,fmt).ok);
+/* Deck Bot: list juara (50%), racikan sendiri dengan pola list juara (25%), atau 100% acak; nama di `recent` (2-3 pertandingan terakhir) tidak dipakai */
+function botDeck(fmt='std',recent=[]){const r=Math.random(),ok=metaDecks(fmt).filter(d=>!recent.includes(d.name));
+ if(ok.length&&r<.5){const d=ok[rnd(ok.length)];return{L:{...d.L},name:d.name}}
+ for(let i=0;i<9;i++){const g=r<.75&&buildRecDeck(fmt),d=g?{L:g.L,name:g.name+' (racikan Bot)'}:(x=>({L:x.L,name:x.name+' (acak)'}))(buildGenDeck(fmt)||buildDeck(fmt));
+  if(!recent.includes(d.name))return d}
+ const d=buildGenDeck(fmt)||buildDeck(fmt);return{L:d.L,name:d.name+' (acak)'}}
 
 function concede(sd){if(!G||G.over)return;log(`🏳️ ${who(sd)} menyerah`);G.why='menyerah';endGame(opp(sd))}
 
