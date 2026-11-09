@@ -68,7 +68,7 @@ dragapult:{n:'Dragapult ex',ni:'Dragapult ex',k:'pokemon',type:'N',hp:320,stage:
  atk:[{n:'Jet Head',cost:'C',dmg:70,fx:'plain',tx:''},{n:'Phantom Dive',cost:'RP',dmg:200,fx:'dive',tx:'Taruh 6 damage counter sesukamu ke Pokémon Bench lawan.'}]},
 candy:{n:'Rare Candy',ni:'Permen Langka',k:'item',img:19014,tx:'Pilih 1 Pokémon Stage 2 dari tangan, evolusikan Pokémon Basic-nya di Arena tanpa Stage 1. Tidak bisa di giliran pertamamu atau ke Pokémon yang baru masuk.'},
 /* ----- item pemulih (mark J) ----- */
-potion:{n:'Potion',ni:'Obat Luka',k:'item',img:780,mark:'J',tx:'Pilih 1 Pokémon milikmu, pulihkan 30 HP.'},
+potion:{n:'Potion',ni:'Obat Luka',k:'item',img:7065,mark:'J',tx:'Pilih 1 Pokémon milikmu, pulihkan 30 HP.'},
 galette:{n:'Lumiose Galette',ni:'Lumiose Galette',k:'item',img:18383,mark:'J',tx:'Pulihkan 20 HP Pokémon Active milikmu, lalu pulihkan 1 Kondisi Khusus-nya.'},
 renergy:{n:'Basic Fire Energy',ni:'Energi Dasar Api',k:'energy',t:'R',img:14667,tx:'Energi Dasar tipe Api.'},
 penergy:{n:'Basic Psychic Energy',ni:'Energi Dasar Psikis',k:'energy',t:'P',img:14670,tx:'Energi Dasar tipe Psikis.'}
