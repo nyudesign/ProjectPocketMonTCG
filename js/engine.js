@@ -392,7 +392,6 @@ function legal(list,fmt){const issues=[],warn=[],n=countDeck(list),byName={};let
  return{ok:!issues.length,issues,warn,n}}
 function recommend(cur){
  const L={...cur};Object.keys(L).forEach(k=>{if(!L[k])delete L[k]});
- if(!countDeck(L))return{...USER_DECK};
  const add=(k,q)=>{const c=CARDS[k],have=Object.entries(L).filter(([x])=>CARDS[x].n===c.n).reduce((a,[,v])=>a+v,0),cap=c.k==='energy'?99:c.ace?(Object.keys(L).some(x=>CARDS[x].ace&&x!==k)?0:1):4;const m=Math.max(0,Math.min(q,cap-have,60-countDeck(L)));if(m)L[k]=(L[k]||0)+m};
  for(const k of Object.keys(L)){const c=CARDS[k];if(c.from){const pre=Object.keys(CARDS).find(x=>CARDS[x].n===c.from);if(pre&&!L[pre])add(pre,L[k]+1)}}
  const basics=()=>Object.keys(L).filter(k=>CARDS[k].stage===0&&CARDS[k].k==='pokemon').reduce((a,k)=>a+L[k],0);
