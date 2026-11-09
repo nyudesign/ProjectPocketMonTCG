@@ -4,7 +4,8 @@ const store={mem:null,get(){try{const v=JSON.parse(localStorage.getItem('ptcg.de
  for(const k in d.list){const nk=!CARDS[k]&&typeof CARD_ALIAS!=='undefined'&&CARD_ALIAS[k],id=+k.slice(1);if(!nk)continue;   /* kartu lama yang kini digabung: pindahkan, gambar lamanya jadi varian */
   d.list[nk]=(d.list[nk]||0)+d.list[k];if(id!==CARDS[nk].img&&(CARDS[nk].alt||[]).includes(id))art[nk]={...art[nk],[id]:((art[nk]||{})[id]||0)+d.list[k]};delete d.list[k]}
  for(const k in d.list)if(!CARDS[k])delete d.list[k];for(const k in art){for(const id in art[k])if(!d.list[k]||!(CARDS[k].alt||[]).includes(+id)||!(art[k][id]>0))delete art[k][id];if(!Object.keys(art[k]).length)delete art[k]}});/* kartu yang sudah dihapus dari CARDS */store.mem=v;return v}}catch(e){}return store.mem||[]},set(a){store.mem=a;try{localStorage.setItem('ptcg.decks.v1',JSON.stringify(a))}catch(e){}}};
-const BUILTIN={id:'builtin',name:'Wishlist deck 2',list:USER_DECK,ace:'sharpedo'},BUILTIN_TERA={id:'builtin-tera',name:'Terapagos ex',list:TERA_DECK,ace:'terapagos'},BUILTIN_DRAGA={id:'builtin-draga',name:'Dragapult ex',list:DRAGA_DECK,ace:'dragapult'},BUILTINS=[BUILTIN,BUILTIN_TERA,BUILTIN_DRAGA],isBuiltin=id=>BUILTINS.some(b=>b.id===id);
+const LOCAL=/^(localhost|\[::1\])$|^(127|10|192\.168|172\.(1[6-9]|2\d|3[01]))\.|\.local$/.test(location.hostname);   // deck bawaan hanya di dev lokal (localhost, IP LAN, *.local); GitHub Pages & host lain: kosong
+const BUILTIN={id:'builtin',name:'Wishlist deck 2',list:USER_DECK,ace:'sharpedo'},BUILTIN_TERA={id:'builtin-tera',name:'Terapagos ex',list:TERA_DECK,ace:'terapagos'},BUILTIN_DRAGA={id:'builtin-draga',name:'Dragapult ex',list:DRAGA_DECK,ace:'dragapult'},BUILTINS=LOCAL?[BUILTIN,BUILTIN_TERA,BUILTIN_DRAGA]:[],isBuiltin=id=>BUILTINS.some(b=>b.id===id);
 const showScr=id=>{['menu','pre','db'].forEach(i=>$(i).classList.toggle('on',i===id));if(id==='menu')renderMenu();const f=$(id).querySelector(id==='menu'?'#m-battle':'.b.ib');if(f)f.focus({preventScroll:true})};
 function seg(el,opts,cur,f){el.innerHTML='';opts.forEach(([k,l])=>{const b=document.createElement('button');b.textContent=l;b.className=k===cur?'on':'';b.setAttribute('aria-pressed',k===cur);b.onclick=()=>{f(k)};el.append(b)})}
 /* ----- menu utama: angka di kaki menu dihitung dari data (bukan karangan), kartu deck bawaan = main cepat ----- */
@@ -39,9 +40,9 @@ function renderPre(){
   b.onclick=()=>startBattle(d.list,PRE.fmt,{art:d.art});box.append(b)};
  lbl('Deck tersimpan');
  if(saved.length)saved.forEach(d=>item(d,''));
- else{const e=document.createElement('div');e.className='empty-st';e.innerHTML='<p class="note">Belum ada deck tersimpan. Susun deck sendiri, atau main dulu dengan deck bawaan di bawah.</p>';
+ else{const e=document.createElement('div');e.className='empty-st';e.innerHTML=`<p class="note">Belum ada deck tersimpan. Susun deck sendiri, atau main dulu dengan deck ${BUILTINS.length?'bawaan':'acak'} di bawah.</p>`;
   const a=document.createElement('button');a.className='b go';a.innerHTML=ic('deck')+' Susun deck';a.onclick=()=>{DB.list={};DB.art={};DB.id=null;DB.name='';renderDB();showScr('db')};e.append(a);box.append(e)}
- lbl('Deck bawaan');item(BUILTIN,'Mega Sharpedo ex');item(BUILTIN_TERA,'Archetype Tera');item(BUILTIN_DRAGA,'Archetype Dragapult');
+ if(BUILTINS.length){lbl('Deck bawaan');item(BUILTIN,'Mega Sharpedo ex');item(BUILTIN_TERA,'Archetype Tera');item(BUILTIN_DRAGA,'Archetype Dragapult')}
  lbl('Deck acak');const r=document.createElement('button');r.className='dk';r.innerHTML=`${ic('dice')}<span style="flex:1;min-width:0">Deck acak<small>Disusun dari semua kartu, selalu sah</small></span><span class="go1">MAIN ${ic('play')}</span>`;r.onclick=()=>startBattle(randomDeck(),PRE.fmt);box.append(r)}
 $('pre-back').onclick=()=>showScr('menu');
 /* ----- susun deck ----- */

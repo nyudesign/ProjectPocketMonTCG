@@ -59,6 +59,7 @@ kbd{font:600 11px var(--fd)}
 .mfoot{grid-area:foot;margin:0;font-size:13px;color:var(--mute)}.mfoot b{color:var(--paper);font-weight:600}
 /* deck bawaan berjajar seperti katalog berlabel; kartu tengah sedikit naik */
 .mshow{grid-area:show;align-self:center;display:flex;justify-content:center;align-items:flex-start;gap:clamp(10px,1.6vw,22px);padding-top:28px}
+.mshow:empty{display:none}
 .qp{position:relative;flex:0 1 clamp(150px,15vw,214px);min-width:0;padding:0;border:0;background:none;color:var(--paper);text-align:left;transform:translateY(var(--y,0px));transition:transform .22s cubic-bezier(.2,.8,.2,1);touch-action:manipulation}
 .qp:nth-child(2){--y:-28px}
 .qp img{display:block;width:100%;height:auto;aspect-ratio:5/7;border-radius:4.5%/3.2%;box-shadow:0 22px 40px rgb(0 0 0/.55)}
@@ -67,7 +68,7 @@ kbd{font:600 11px var(--fd)}
 .qp .tag b{font:700 14px/1.1 var(--fd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.qp .tag .ic{width:18px;height:18px;color:var(--redd);flex:none}
 .qp:hover,.qp:focus-visible{transform:translateY(calc(var(--y,0px) - 10px))}.qp:active{transform:translateY(calc(var(--y,0px) - 6px))}
 @media (max-width:900px){
- #menu::after{left:50%;top:auto;bottom:clamp(250px,40vh,330px)}#menu::before{display:none}
+ #menu::after{left:50%;top:auto;bottom:clamp(250px,40vh,330px)}#menu::before{display:none}#menu:has(.mshow:empty)::after{display:none}
  .mwrap{grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "show" "nav" "foot";padding:20px 16px 24px;row-gap:16px}
  .mhead h1{font-size:clamp(40px,11vw,64px)}.lead{font-size:14.5px}
  .mshow{padding-top:16px}.qp{flex-basis:clamp(96px,28vw,150px)}.qp:nth-child(2){--y:-14px}.qp .tag{margin-top:6px;padding:6px 8px}.qp .tag b{font-size:12px}.qp .tag small{display:none}.qp .tag .ic{display:none}
