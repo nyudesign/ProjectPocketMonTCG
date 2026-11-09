@@ -561,6 +561,6 @@ async function startBattle(list,fmt,opt){
  document.body.classList.add('bt');$('log-b').innerHTML='';
  UI.themeI=(UI.themeI+1+rnd(2))%THEMES.length;const tn=setTheme(UI.themeI);
  DEC.p=UIDEC;DEC.o={...BOT,turn:s=>botTurn(s)};
- const bd=opt?.bot||buildDeck(fmt);UI.last.bot=bd;say(`Arena: ${tn} · Deck Bot: ${bd.name}`,3400);   // Bot menyusun deck kustomnya sendiri; Sudden Death memakai deck yang sama
+ const bd=opt?.bot||metaDeck(fmt)||buildGenDeck(fmt)||buildDeck(fmt);UI.last.bot=bd;say(`Arena: ${tn} · Deck Bot: ${esc(bd.name)}`,3400);   // Bot: deck juara turnamen (Limitless) yang bisa dimainkan, selain itu deck acak; Sudden Death memakai deck yang sama
  try{await setup(list,bd.L,opt)}catch(e){console.error(e);say('⛔ Terjadi galat: '+e.message,8000)}}
 function toMenu(){closeAll();document.body.classList.remove('bt');resetScene();G=null;showScr('menu')}

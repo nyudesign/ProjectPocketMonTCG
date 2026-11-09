@@ -401,7 +401,7 @@ function recommend(cur){
  add('prism',1);
  const pool=['ultra','pad','poffin','lillie','boss','carvanha','toxel'];let g=0;while(countDeck(L)<60&&g++<200)add(pool[g%pool.length],1);add('denergy',60-countDeck(L));
  return L}
-/* deck kustom (Bot & tombol "Deck acak"): disusun sendiri dari seluruh pool, bukan hanya archetype. 1 lini penyerang utama + 0-2 pendamping
+/* deck kustom cadangan (bila buildGenDeck di js/fx.js gagal): disusun sendiri dari seluruh pool, bukan hanya archetype. 1 lini penyerang utama + 0-2 pendamping
    yang cocok, Trainer staple sesuai isi deck (Permen Langka hanya bila ada Stage 2, Gua Besar Zero & Briar hanya bila ada Terastal, Helm Punk
    hanya bila ada Pokémon Kegelapan), Energi Dasar sesuai biaya serangan. Kadang memakai archetype bawaan. Selalu sah (dicek legal()) */
 const DLINE={sharpedo:[['carvanha',4],['sharpedo',3]],toxtricity:[['toxel',3],['toxtricity',3]],cinccino:[['minccino',4],['cinccino',3]],dragapult:[['dreepy',4],['drakloak',3],['dragapult',3]],
@@ -435,7 +435,10 @@ function buildDeck(fmt='std'){
   if(countDeck(L)!==60||!legal(L,fmt).ok)continue;
   const top=[main,...parts].map(k=>DLINE[k][DLINE[k].length-1][0]).filter(k=>L[k]).map(k=>CARDS[k].ni);return{L,name:top.join(' + ')}}
  return{L:{...DRAGA_DECK},name:'Dragapult ex (archetype)'}}
-const randomDeck=()=>buildDeck().L;
+const randomDeck=fmt=>(buildGenDeck(fmt)||buildDeck(fmt)).L;   // tombol Deck acak: acak dari seluruh kartu (js/fx.js)
+/* Deck Bot: list juara 1-3 turnamen dari limitlesstcg.com (js/decks-meta.js), hanya yang semua kartunya sudah bisa dimainkan dan sah */
+function metaDeck(fmt='std'){const ok=(typeof META_DECKS==='undefined'?[]:META_DECKS).filter(d=>Object.keys(d.L).every(k=>CARDS[k]&&!CARDS[k].hide)&&legal(d.L,fmt).ok);
+ if(!ok.length)return null;const d=ok[rnd(ok.length)];return{L:{...d.L},name:d.name}}
 
 function concede(sd){if(!G||G.over)return;log(`🏳️ ${who(sd)} menyerah`);G.why='menyerah';endGame(opp(sd))}
 
