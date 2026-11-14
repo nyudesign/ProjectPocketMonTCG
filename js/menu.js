@@ -46,7 +46,7 @@ function renderPre(){
  lbl('Deck acak');const r=document.createElement('button');r.className='dk';r.innerHTML=`${ic('dice')}<span style="flex:1;min-width:0">Deck acak<small>Pokémon acak, pola deck juara, selalu sah</small></span><span class="go1">MAIN ${ic('play')}</span>`;r.onclick=()=>startBattle(randomDeck(PRE.fmt),PRE.fmt);box.append(r)}
 $('pre-back').onclick=()=>showScr('menu');
 /* ----- susun deck ----- */
-const DB={list:{},art:{},id:null,fmt:'std'};   // list: total salinan per kartu; art: kunci kartu -> {id gambar varian lain: jumlah}, sisanya cetakan utama
+const DB={list:{},art:{},id:null,fmt:'std',shut:new Set(),only:false};   // list: total salinan per kartu; art: kunci kartu -> {id gambar varian lain: jumlah}, sisanya cetakan utama; shut: kategori yang dilipat; only: tampilan Deck Anda
 const copiesByName=(n)=>Object.entries(DB.list).filter(([k])=>CARDS[k].n===n).reduce((a,[,v])=>a+v,0);
 const total=()=>countDeck(DB.list);
 function maxFor(k){const c=CARDS[k];if(c.k==='energy')return 60;if(c.ace){const other=Object.keys(DB.list).some(x=>DB.list[x]&&CARDS[x].ace&&x!==k);return other?0:1}return 4}
@@ -63,14 +63,16 @@ function vAdd(k,v,d){if(d>0?!canAdd(k):!(vCnt(k,v)>0))return;
 function renderDB(){
  const g=$('db-grid');g.innerHTML='';
  for(const[name,fn]of CLUSTERS){const keys=Object.keys(CARDS).filter(k=>!CARDS[k].hide&&fn(CARDS[k]));if(!keys.length)continue;
-  const h=document.createElement('h3');h.innerHTML=`<span>${name}</span><span id="cc-${name}"></span>`;g.append(h);
-  const t=document.createElement('div');t.className='tiles';
+  const h=document.createElement('h3'),t=document.createElement('div'),shut=DB.shut.has(name);t.className='tiles';h.className=shut?'shut':'';
+  h.innerHTML=`<button aria-expanded="${!shut}"><span>${name}</span><span><b id="cc-${name}"></b> di deck</span>${ic('minus')}${ic('plus')}</button>`;g.append(h);
+  h.firstChild.onclick=()=>{const s=!h.classList.contains('shut'),y=t.getBoundingClientRect().top-g.getBoundingClientRect().top-h.offsetHeight-8;   // kategori dilipat/dibuka; isinya tetap di DOM
+   h.classList.toggle('shut',s);DB.shut[s?'add':'delete'](name);h.firstChild.setAttribute('aria-expanded',!s);if(s&&y<0)g.scrollTop+=y};   // dilipat saat judulnya menempel di atas: kembali ke awal kategori, supaya kategori berikutnya langsung terlihat
   keys.forEach(k=>{const c=CARDS[k],d=document.createElement('div'),nA=(c.alt||[]).length;d.className='tile';d.id='t-'+k;d.innerHTML=`<img src="${IMG[shownV(k)]}" alt="${cname(c)}" loading="lazy" width="250" height="350">${nA?`<button class="skb" aria-label="${esc(cname(c))}: ${nA+1} varian" title="Varian kartu">${ic('layers')}<b>${nA+1}</b></button>`:''}<div class="ctl"><button aria-label="Kurangi ${cname(c)}">${ic('minus')}</button><span aria-live="polite">0</span><button aria-label="Tambah ${cname(c)}">${ic('plus')}</button></div>`;
    d.querySelector('img').onclick=()=>dbZoom(k);if(nA)d.querySelector('.skb').onclick=()=>dbZoom(k);const[bm,,bp]=d.querySelectorAll('.ctl button, .ctl span');
    bm.onclick=()=>vAdd(k,shownV(k),-1);bp.onclick=()=>vAdd(k,shownV(k),1);t.append(d)});g.append(t)}
  g.insertAdjacentHTML('beforeend','<p class="note dbempty" hidden>Tidak ada kartu yang cocok. Ubah kata kunci atau filter.</p>');
- if(!$('db-t').options.length)$('db-t').innerHTML='<option value="">Semua</option>'+Object.entries(TYPES).map(([k,v])=>`<option value="${k}">Pokémon ${v[0]}</option>`).join('')+'<option value="T">Trainer</option><option value="E">Energi</option>';
- dbFilter();
+ if(!$('db-t').options.length)$('db-t').innerHTML='<option value="">Semua tipe</option>'+Object.entries(TYPES).map(([k,v])=>`<option value="${k}">Pokémon ${v[0]}</option>`).join('')+'<option value="T">Trainer</option><option value="E">Energi</option>';
+ seg($('db-view'),[['','Semua kartu'],['deck','Deck Anda']],'',k=>dbView(!!k));dbView(DB.only&&total()>0);   // masuk lagi dengan deck kosong: kembali ke Semua kartu
  seg($('db-fmt'),[['std','Standard'],['exp','Expanded']],DB.fmt,k=>{DB.fmt=k;renderDB()});$('db-fmt').style.display=FORMATS.exp?'':'none';
  const sel=$('db-load');sel.innerHTML='<option value="">Pilih deck…</option>';[...BUILTINS,...store.get()].forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name+(isBuiltin(d.id)?' (bawaan)':'');sel.append(o)});sel.value=DB.id||'';
  $('db-name').value=DB.name||'';updDB()}
@@ -93,7 +95,7 @@ const CR={el:$('ztrack'),keys:[],sl:new Map(),i:0,pos:0,tgt:0,v:0,raf:0,t:0,W:0,
 const crMv=on=>$('zoom').classList.toggle('mv',on);   // #zoom.mv = sedang digeser lewat seret/roda: tombol memudar sampai carousel diam (‹ ›, panah keyboard, klik kartu samping tidak memudarkan)
 const crClamp=i=>Math.min(CR.keys.length-1,Math.max(0,i)),crDamp=(a,b,k,dt)=>a+(b-a)*(1-Math.exp(-k*dt)),crIdle=()=>!CR.raf&&!CR.drag;
 function crSize(){CR.W=CR.el.clientWidth;CR.step=CR.W+Math.max(12,CR.W*.04);CR.pos=CR.tgt=CR.i*CR.step;CR.v=0;crDraw()}
-function crOpen(k){const ks=[...$('db-grid').querySelectorAll('.tile')].filter(t=>!t.hidden).map(t=>t.id.slice(2));   // daftar = tile yang tampil sekarang (filter ikut)
+function crOpen(k){const ks=[...$('db-grid').querySelectorAll('.tile')].filter(t=>!t.hidden&&t.offsetParent).map(t=>t.id.slice(2));   // daftar = tile yang tampil sekarang (filter ikut, kategori yang dilipat tidak)
  CR.keys=ks.includes(k)?ks:[k];CR.i=CR.keys.indexOf(k);CR.sl.forEach(e=>e.remove());CR.sl.clear();CR.pd=CR.drag=CR.wh=null;crMv(false);crSize()}
 function crSync(open){const k=DB.z.k;if(!open)crOpen(k);else if(CR.keys[CR.i]!==k){const i=CR.keys.indexOf(k);if(i<0)crOpen(k);else crGo(CR.i=i)}
  const im=CR.sl.get(CR.i)?.querySelector('img');if(im&&im.getAttribute('src')!==IMG[DB.z.v])im.src=IMG[DB.z.v]}   // slide aktif menampilkan varian yang dipilih
@@ -160,26 +162,28 @@ function hlTick(){const h=HL,s=h.el.style;h.x+=(h.tx-h.x)*.2;h.y+=(h.ty-h.y)*.2;
  s.setProperty('--mx',h.x.toFixed(4));s.setProperty('--my',h.y.toFixed(4));s.setProperty('--o',h.o.toFixed(3));h.raf=h.o||h.to?requestAnimationFrame(hlTick):0}
 const hlAim=e=>{const r=HL.r;HL.tx=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));HL.ty=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))};
 function hlGo(act,pid){HL.tm=0;CR.pd=null;zT=null;zHolo(act.firstChild);HL.to=1;$('zoom').classList.add('hold');(CR.cap=act).setPointerCapture(pid);if(!HL.raf)hlTick()}   // zT=null: tahan bukan geser, jangan buka info saat dilepas
-/* saring tile tanpa membuat ulang (ribuan kartu): cari nama/serangan/Ability, tipe, atau hanya yang di deck */
+/* saring tile tanpa membuat ulang (ribuan kartu): cari nama/serangan/Ability dan tipe. Tampilan Deck Anda (DB.only) = semua kartu di deck: cari, tipe, dan lipatan kategori diabaikan supaya rekapnya lengkap */
 const SRCH={};const srch=k=>SRCH[k]||(SRCH[k]=(()=>{const c=CARDS[k];return[c.ni,c.n,...(c.atk||[]).map(a=>a.n),c.ab?c.ab.n:''].join(' ').toLowerCase()})());
-function dbFilter(){const q=$('db-q').value.trim().toLowerCase(),t=$('db-t').value,only=$('db-show').value==='deck';let n=0;
+function dbFilter(){const only=DB.only,q=only?'':$('db-q').value.trim().toLowerCase(),t=only?'':$('db-t').value;let n=0;
  for(const h of $('db-grid').querySelectorAll('h3')){const box=h.nextElementSibling;let v=0;
   for(const d of box.children){const k=d.id.slice(2),c=CARDS[k],ok=(!q||srch(k).includes(q))&&(!t||(t==='T'?isTrainer(c):t==='E'?isEn(c):c.k==='pokemon'&&c.type===t))&&(!only||DB.list[k]>0);d.hidden=!ok;if(ok)v++}
   h.hidden=box.hidden=!v;n+=v}
- $('db-n').textContent=`${n} kartu`;const e=$('db-grid').querySelector('.dbempty');if(e)e.hidden=n>0}
-['db-q','db-t','db-show'].forEach(i=>$(i).addEventListener('input',dbFilter));
+ $('db-n').textContent=only?'':`${n} kartu`;const e=$('db-grid').querySelector('.dbempty');if(e){e.hidden=n>0;e.textContent=only?'Deck masih kosong. Buka Semua kartu, lalu tekan + pada kartu.':'Tidak ada kartu yang cocok. Ubah kata kunci atau filter.'}}
+['db-q','db-t'].forEach(i=>$(i).addEventListener('input',dbFilter));
+function dbView(only){DB.only=only;[...$('db-view').children].forEach((b,i)=>{b.className=!!i===only?'on':'';b.setAttribute('aria-pressed',!!i===only)});
+ $('db').classList.toggle('only',only);$('db-q').disabled=$('db-t').disabled=only;for(const b of $('db-grid').querySelectorAll('h3 button'))b.disabled=only;dbFilter();$('db-grid').scrollTop=0}
 function updDB(){
  for(const k of Object.keys(CARDS)){const t=$('t-'+k);if(!t)continue;const n=DB.list[k]||0,im=t.querySelector('img'),src=IMG[shownV(k)],sk=t.querySelector('.skb');if(im.getAttribute('src')!==src)im.src=src;if(sk)sk.classList.toggle('on',!!DB.art[k]);t.querySelector('span').textContent=n;t.classList.toggle('on',n>0);const[bm,bp]=t.querySelectorAll('.ctl button');bm.disabled=!n;bp.disabled=!canAdd(k)}
  for(const[name,fn]of CLUSTERS){const e=$('cc-'+name);if(e)e.textContent=Object.entries(DB.list).filter(([k])=>fn(CARDS[k])).reduce((a,[,v])=>a+v,0)}
- const n=total();let sum=`<div class="dcount"><b>${n}/60</b><span>kartu di deck</span><button class="dtog" aria-controls="db-side" aria-expanded="${$('db-side').classList.contains('open')}">Rincian</button></div><div class="bar${n===60?' full':''}"><i style="width:${n/60*100}%"></i></div><div class="kinds">`;
+ const n=total(),ok=legal(DB.list,DB.fmt).ok;let sum=`<div class="dcount"><b>${n}/60</b><span>kartu di deck</span><em class="${ok?'ok':'no'}">${ic(ok?'check':'x')} ${ok?'Sah':'Belum sah'}</em><button class="dtog" aria-controls="db-side" aria-expanded="${$('db-side').classList.contains('open')}">Kelola</button></div><div class="bar${n===60?' full':''}"><i style="width:${n/60*100}%"></i></div><div class="kinds">`;
  for(const[name,fn]of CLUSTERS){const v=Object.entries(DB.list).filter(([k])=>fn(CARDS[k])).reduce((a,[,q])=>a+q,0);sum+=`<span>${name}</span><b>${v}</b>`}
  $('db-sum').innerHTML=sum+'</div>';
  let chk='';for(const f of Object.keys(FORMATS)){const l=legal(DB.list,f);chk+=`<div class="chk"><div class="${l.ok?'ok':'no'}">${ic(l.ok?'check':'x')} ${l.ok?'Sah':'Belum sah'}: ${FORMATS[f].n}</div>${l.issues.map(i=>`<div class="no">· ${i}</div>`).join('')}${f===DB.fmt?l.warn.map(i=>`<div class="wn">${ic('alert')} ${i}</div>`).join(''):''}</div>`}
  $('db-chk').innerHTML=chk;
  $('db-rec').innerHTML=ic('spark')+(n?' Lengkapi otomatis':' Deck rekomendasi');$('db-rec').disabled=n>=60;
- $('db-del').disabled=!DB.id||isBuiltin(DB.id);$('db-clear').disabled=!n;if($('db-show').value==='deck')dbFilter()}
+ $('db-del').disabled=!DB.id||isBuiltin(DB.id);$('db-clear').disabled=!n;if(DB.only)dbFilter()}
 $('db-back').onclick=()=>showScr('menu');
-$('db-side').addEventListener('click',e=>{const t=e.target.closest('.dtog');if(!t)return;t.setAttribute('aria-expanded',$('db-side').classList.toggle('open'))});   // HP: rincian jenis kartu dilipat agar grid kartu lebih lega
+$('db-side').addEventListener('click',e=>{const t=e.target.closest('.dtog');if(!t)return;t.setAttribute('aria-expanded',$('db-side').classList.toggle('open'))});   // HP: panel deck jadi bilah tipis (jumlah + sah/belum); Kelola membuka rincian, nama, simpan
 $('db-rec').onclick=()=>{const d=!total()&&(buildRecDeck(DB.fmt)||buildGenDeck(DB.fmt)||buildDeck(DB.fmt));DB.list=d?d.L:recommend(DB.list);updDB();$('db-chk').insertAdjacentHTML('afterbegin',`<div class="chk ok">${ic('spark')} ${d?`Deck rekomendasi dimuat: ${esc(d.name)}.${d.pola?` Pola susunan: ${esc(d.pola)}.`:''}`:'Dilengkapi jadi 60 kartu: Trainer staple dan Energi.'}</div>`)};   // deck kosong: Pokémon acak, susunan mengikuti pola list juara Limitless (fx.js)
 $('db-clear').onclick=()=>{DB.list={};DB.art={};DB.id=null;DB.name='';$('db-name').value='';$('db-load').value='';updDB()};
 $('db-save').onclick=()=>{const name=$('db-name').value.trim();if(!name){$('db-name').focus();$('db-chk').insertAdjacentHTML('afterbegin','<div class="chk no">Isi nama deck dulu.</div>');return}

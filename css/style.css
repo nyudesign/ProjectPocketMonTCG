@@ -157,7 +157,7 @@ body.bt .hud{display:flex}
 .zctl button{display:grid;place-items:center;width:44px;height:40px;border:0;background:var(--paper);color:var(--ink)}
 .zctl button:hover:not(:disabled){background:var(--yel)}.zctl button:disabled{background:var(--ink3);color:#6e737d}
 .zctl span{display:grid;place-items:center;min-width:44px;height:40px;background:var(--ink);color:var(--paper);font:700 18px var(--fd);box-shadow:inset 0 0 0 1px var(--line)}
-#zoom.db .zbox .x{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));width:44px;height:44px;box-shadow:inset 0 0 0 1px var(--line)}   /* ✕ di pojok kanan atas layar: tempatnya tetap, satu-satunya tombol tutup */
+#zoom.db .zbox .x{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));width:44px;height:44px;background:var(--paper);color:var(--ink)}#zoom.db .zbox .x:hover{background:var(--yel)}   /* ✕ di pojok kanan atas layar: tempatnya tetap, satu-satunya tombol tutup, jadi segaya tombol ‹ › (kertas di latar hitam) */
 /* HP: − n + di tengah tepat di bawah kartu, baris varian di bawahnya dan tingginya selalu dipesan, jadi posisi tombol sama ada varian atau tidak */
 @media (max-width:760px){#zoom.db #zdb{flex-direction:column;gap:8px}#zoom.db .zctl{order:-1;margin:0}#zoom.db #zvar,#zoom.db #zvar:empty{display:flex;flex:none;max-width:100%;min-height:40px}}
 /* ---- holo per rarity (zoom Susun Deck): tekan-tahan kartu ----
@@ -377,23 +377,28 @@ body.bt .hud{display:flex}
 .endl{width:100%;margin:0;padding:0;list-style:none;font-size:14px;color:var(--tx2);text-align:left}.endl li{padding:6px 0;border-bottom:1px solid var(--paper3)}
 /* ---- susun deck ---- */
 #db{flex-direction:column;align-items:stretch;justify-content:flex-start;overflow:hidden;padding:0;gap:0;background:var(--paper);color:var(--tx)}
-.dbtop{flex:none;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:flex-end;padding:10px 12px;background:var(--ink);color:var(--paper)}
-.dbtop h2{margin:0 6px 0 0;align-self:center;font-size:20px;text-transform:uppercase}
-.fld{display:flex;flex-direction:column;gap:3px;flex:1 1 150px;min-width:0}.fld>span{font:600 10.5px var(--fd);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
-.fld input,.fld select{width:100%;min-height:38px;border:0;padding:8px 10px;background:var(--ink3);color:var(--paper);font:600 14px var(--fb);box-shadow:inset 0 0 0 1px var(--line)}
-.fld input::placeholder{color:#8a8f99}.dbtop .seg{flex:0 1 auto;align-self:flex-end}
-.dbflt{flex:none;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:flex-end;padding:8px 12px;background:var(--ink2);color:var(--paper);box-shadow:inset 0 -1px 0 var(--line)}
-.dbflt .fld{flex:0 1 190px}.dbflt .fld.fs{flex:1 1 260px}.dbflt .code{align-self:center;margin-left:auto;color:var(--yel)}
+/* baris atas: kembali, judul, cari, tipe, jumlah hasil, pilihan tampilan (Semua kartu / Deck Anda). Nama deck dan Buka deck ada di panel deck */
+.dbtop{flex:none;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:10px 12px;background:var(--ink);color:var(--paper)}
+.dbtop h2{margin:0 6px 0 0;font-size:20px;text-transform:uppercase}
+.fld{display:flex;flex-direction:column;gap:3px;min-width:0}.fld>span{font:600 10.5px var(--fd);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.fld input,.fld select,#db-q,#db-t{min-height:40px;border:0;border-radius:0;padding:8px 10px;background:var(--ink3);color:var(--paper);font:600 14px var(--fb);box-shadow:inset 0 0 0 1px var(--line)}.fld input,.fld select{width:100%}
+.fld input::placeholder,#db-q::placeholder{color:#8a8f99}#db-q{flex:1 1 200px;min-width:0;-webkit-appearance:none;appearance:none}#db-t{flex:0 1 180px;min-width:0}#db-q:disabled,#db-t:disabled{opacity:.45}
+.dbtop .code{color:var(--yel)}.dbtop .seg{flex:none}.dbtop .seg button{min-height:34px;white-space:nowrap}
 .dbempty{padding:24px 4px;color:var(--tx2)!important;text-align:left!important}[hidden]{display:none!important}
 .dbmain{flex:1;min-height:0;display:flex;gap:12px;padding:10px 12px 0;width:100%}
 #db-grid{flex:1;min-width:0;overflow:auto;padding:0 4px 16px 0}
-#db-grid h3{position:sticky;top:0;z-index:1;margin:0 0 8px;padding:8px 2px 6px;display:flex;justify-content:space-between;align-items:baseline;background:var(--paper);font-size:13px;letter-spacing:.08em;text-transform:uppercase;border-bottom:2px solid var(--ink)}
-#db-grid h3 span:last-child{font-size:13px;color:var(--tx2)}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin-bottom:16px}
+/* judul kategori = tombol lipat (− terbuka, + dilipat); di tampilan Deck Anda lipatan diabaikan dan tombolnya mati */
+#db-grid h3{position:sticky;top:0;z-index:1;margin:0 0 8px;background:var(--paper);font-size:14px;border-bottom:2px solid var(--ink)}
+#db-grid h3 button{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;padding:6px 4px 6px 2px;border:0;background:none;color:inherit;font:inherit;letter-spacing:.08em;text-transform:uppercase;text-align:left}
+#db-grid h3 button:hover:not(:disabled){background:var(--paper2)}#db-grid h3 button:disabled{cursor:default}#db-grid h3 button:focus-visible{outline-color:var(--blued);outline-offset:-2px}
+#db-grid h3 span:first-child{flex:1}#db-grid h3 span+span{font:600 13px var(--fb);letter-spacing:0;text-transform:none;color:var(--tx2)}#db-grid h3 b{font:700 14px var(--fd);color:var(--tx)}
+#db-grid h3 .ic{width:20px;height:20px}#db-grid h3 .ic+.ic,#db-grid h3.shut .ic,#db.only #db-grid h3 .ic{display:none}#db:not(.only) #db-grid h3.shut .ic+.ic{display:inline-block}
+#db:not(.only) #db-grid h3.shut+.tiles{display:none}
+.tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:16px}   /* desktop 5 kolom, layar sedang 4, HP 3 */
 .tile{position:relative;padding:5px;background:#fff;box-shadow:inset 0 0 0 1px var(--paper3)}.tile img{width:100%;height:auto;display:block;aspect-ratio:5/7;border-radius:4.5%/3.2%;cursor:zoom-in}
 .tile .ctl{display:flex;align-items:center;justify-content:space-between;margin-top:5px}
-.tile .ctl button{display:grid;place-items:center;border:0;width:36px;height:32px;background:var(--ink);color:var(--paper)}.tile .ctl button:hover:not(:disabled){background:var(--blued)}.tile .ctl button:disabled{background:var(--paper2);color:var(--paper3)}
-.tile .ctl span{font:700 16px var(--fd)}.tile.on{box-shadow:inset 0 0 0 3px var(--yel)}
+.tile .ctl button{display:grid;place-items:center;border:0;width:clamp(34px,36%,44px);height:38px;background:var(--ink);color:var(--paper)}.tile .ctl button:hover:not(:disabled){background:var(--blued)}.tile .ctl button:disabled{background:var(--paper2);color:var(--paper3)}
+.tile .ctl span{font:700 16px var(--fd)}#db:not(.only) .tile.on{box-shadow:inset 0 0 0 3px var(--yel)}   /* cincin kuning = sudah di deck; di tampilan Deck Anda semuanya di deck, jadi tanpa cincin */
 .tile .ctl button .ic{width:16px;height:16px}
 .tile .skb{position:absolute;top:9px;right:9px;display:flex;align-items:center;gap:3px;height:28px;padding:0 8px;border:0;background:rgb(13 14 18/.85);color:var(--paper);font:700 12px var(--fd);cursor:pointer}   /* jumlah varian kartu; kuning bila deck memakai varian selain cetakan utama */
 .tile .skb .ic{width:14px;height:14px}.tile .skb.on{background:var(--yel);color:var(--ink)}.tile .skb:hover{filter:brightness(1.15)}.tile .skb:focus-visible{outline:2px solid var(--yel);outline-offset:2px}
@@ -403,10 +408,16 @@ body.bt .hud{display:flex}
 .chk{font-size:13.5px;line-height:1.5}.chk .ok{color:var(--grnl);font-weight:700}.chk .no{color:#ff8a8f;font-weight:700}.chk .wn{color:#ffd76a}
 .kinds{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:13.5px;color:#d5d8de}.kinds b{font-family:var(--fd);color:var(--paper)}
 #db-side .b.ghost{--bg:var(--ink3)}
-.dtog{display:none;margin-left:10px;min-height:32px;padding:4px 10px;border:1px solid var(--line);background:transparent;color:var(--paper);font:700 11px var(--fd);letter-spacing:.06em;text-transform:uppercase}
+.dcount em{display:none;font:700 13.5px var(--fb)}.dcount em.ok{color:var(--grnl)}.dcount em.no{color:#ff8a8f}
+.dtog{display:none;margin-left:auto;min-height:40px;padding:4px 10px;border:1px solid var(--line);background:transparent;color:var(--paper);font:700 11px var(--fd);letter-spacing:.06em;text-transform:uppercase}
 .dtog::after{content:'';display:inline-block;width:6px;height:6px;margin-left:7px;border:solid currentColor;border-width:0 2px 2px 0;transform:translateY(-2px) rotate(45deg)}#db-side.open .dtog::after{transform:translateY(1px) rotate(-135deg)}
-@media (max-width:760px){.dbtop h2{display:none}.dbmain{flex-direction:column;padding:8px 8px 0}#db-grid{flex:1 1 auto;min-height:0}#db-side{width:100%;flex:none;max-height:62dvh;padding:10px;gap:8px}.tiles{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}.dbtop .seg{flex:1 1 100%}#db-side .row .b{padding:9px 6px;font-size:12px}
- .dcount b{font-size:24px}.dtog{display:inline-flex;align-items:center}#db-side:not(.open) .kinds,#db-side:not(.open) .chk .wn{display:none}}
+@media (max-width:1180px){.tiles{grid-template-columns:repeat(4,minmax(0,1fr))}}@media (max-width:900px){.dbtop h2{display:none}}
+/* HP: dua baris ringkas di atas, grid mengisi layar, panel deck jadi bilah tipis di bawah (jumlah, sah/belum, Kelola) */
+@media (max-width:760px){.dbtop{padding:8px}#db-n{display:none}#db-q{flex:1 1 calc(100% - 54px)}#db-t{flex:1 1 110px}.dbtop .seg{flex:2 1 200px}.dbtop .seg button{padding:8px 6px}#db-q,#db-t,.fld input,.fld select{font-size:16px}#db-q,#db-t,#db-back{min-height:44px}#db-back{min-width:44px}.dbtop .seg button{min-height:38px}   /* 16px: iOS tidak memperbesar halaman saat field difokus; kontrol baris atas setinggi 44px */
+ .dbmain{flex-direction:column;padding:8px 8px 0}#db-grid{flex:1 1 auto;min-height:0}.tiles{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+ #db-side{width:100%;flex:none;max-height:70dvh;padding:10px;gap:8px}#db-side .row .b{padding:9px 6px;font-size:12px}
+ .dcount{justify-content:flex-start;align-items:center;gap:10px}.dcount b{font-size:24px}.dcount span{display:none}.dcount em{display:inline}.dtog{display:inline-flex;align-items:center}
+ #db-side:not(.open)>:not(#db-sum),#db-side:not(.open) .kinds{display:none}}
 /* ikon UI (js/uiicons.js): SVG garis, warna ikut teks */
 .ic{display:inline-block;width:1.2em;height:1.2em;vertical-align:-.24em;flex:none}
 .x .ic{width:18px;height:18px}

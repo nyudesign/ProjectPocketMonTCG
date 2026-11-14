@@ -27,12 +27,11 @@
  <div class="lbl" id="pre-fmt-l">Format</div><div class="seg" id="pre-fmt"></div>
  <div id="pre-decks" class="list"></div></div></section>
 <section id="db" class="scr" aria-labelledby="db-h"><div class="dbtop"><button class="b ghost ib" id="db-back" aria-label="Kembali ke menu"><i data-ic="back"></i></button><h2 id="db-h">Susun deck</h2>
+ <input id="db-q" type="search" placeholder="Cari kartu atau serangan" aria-label="Cari kartu" autocomplete="off"><select id="db-t" aria-label="Tipe kartu"></select><span class="code" id="db-n" aria-live="polite"></span>
+ <div class="seg" id="db-view" role="group" aria-label="Kartu yang ditampilkan"></div></div>
+ <div class="dbmain"><div id="db-grid"></div><aside id="db-side" aria-label="Deck Anda"><div id="db-sum"></div><div id="db-chk" aria-live="polite"></div>
  <label class="fld"><span>Nama deck</span><input id="db-name" placeholder="Contoh: Dragapult kantor" maxlength="30" autocomplete="off"></label>
- <label class="fld"><span>Buka deck</span><select id="db-load"></select></label>
- <div class="seg" id="db-fmt"></div></div>
- <div class="dbflt"><label class="fld fs"><span>Cari kartu</span><input id="db-q" type="search" placeholder="Nama Pokémon, Trainer, atau serangan" autocomplete="off"></label>
- <label class="fld"><span>Tipe</span><select id="db-t"></select></label><label class="fld"><span>Tampilkan</span><select id="db-show"><option value="">Semua kartu</option><option value="deck">Hanya yang di deck</option></select></label><span class="code" id="db-n" aria-live="polite"></span></div>
- <div class="dbmain"><div id="db-grid"></div><aside id="db-side" aria-label="Ringkasan deck"><div id="db-sum"></div><div id="db-chk" aria-live="polite"></div>
+ <label class="fld"><span>Buka deck</span><select id="db-load"></select></label><div class="seg" id="db-fmt"></div>
  <div class="row"><button class="b go" id="db-rec"><i data-ic="spark"></i> Lengkapi otomatis</button><button class="b atk" id="db-save"><i data-ic="save"></i> Simpan deck</button></div>
  <div class="row"><button class="b ghost" id="db-clear">Kosongkan</button><button class="b ghost" id="db-del">Hapus deck ini</button></div></aside></div></section>
 <div id="hudt" class="hud" role="status" aria-label="Bot"><div class="pl"><div class="nm"><b><i data-ic="bot"></i> Bot</b><div class="pips" id="op"></div></div></div></div>
