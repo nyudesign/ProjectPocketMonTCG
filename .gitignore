@@ -8,3 +8,7 @@ __pycache__/
 graphify-out/
 CLAUDE.md
 .claude/
+# file skill impeccable, jangan di-commit
+.impeccable/
+DESIGN.md
+PRODUCT.md
