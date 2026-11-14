@@ -138,7 +138,7 @@ body.bt .hud{display:flex}
 #zoom.db .zbox{--zw:min(514px,calc((100dvh - 150px)*5/7),calc(100vw - 80px));display:grid;grid-template-columns:var(--zw);gap:12px;max-width:none;max-height:none;overflow:visible}
 #zoom.db #ztrack,#zoom.db #zside,#zoom.db .znav{grid-area:1/1}#zoom.db #zleft{display:none}
 /* carousel: #ztrack = sel kartu tengah. Slide .zs ditumpuk di sel itu lalu digeser, diskala, dan dipudarkan JS (coverflow 2D di js/menu.js); .zc = kartunya, yang dimiringkan holo */
-#ztrack{display:none}#zoom.db{overflow:hidden;background:rgb(6 7 10/.9)}#zoom.db,#zoom.db .zbox,#zoom.db #ztrack{touch-action:none}#zoom.db #zside{touch-action:pan-y}#zoom.db #zvar{touch-action:pan-x}   /* tanpa ini browser membatalkan seret sentuh di kartu */
+#ztrack{display:none}#zoom.db{overflow:hidden;background:#06070a}#zoom.db,#zoom.db .zbox,#zoom.db #ztrack{touch-action:none}#zoom.db #zside{touch-action:pan-y}#zoom.db #zvar{touch-action:pan-x}   /* tanpa ini browser membatalkan seret sentuh di kartu */
 #zoom.db #ztrack{display:block;position:relative;z-index:0;width:var(--zw);aspect-ratio:5/7;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .zs{position:absolute;inset:0;cursor:pointer;will-change:transform,opacity}.zs.act{cursor:grab}.zs.act:active{cursor:grabbing}#zoom.db.info .zs.act{cursor:auto}
 .zc{position:relative;width:100%;height:100%;isolation:isolate;transition:opacity .3s}
@@ -148,7 +148,7 @@ body.bt .hud{display:flex}
 #zoom.db .znav{display:grid;place-items:center;align-self:center;z-index:2;width:48px;height:48px;border:0;border-radius:50%;background:var(--paper);color:var(--ink);box-shadow:0 6px 18px rgb(0 0 0/.45)}
 #zoom.db #zprev{justify-self:start;transform:translateX(-50%)}#zoom.db #znext{justify-self:end;transform:translateX(50%)}
 #zoom.db .znav:hover:not(:disabled){background:var(--yel)}#zoom.db .znav:disabled{opacity:.35}#zoom.db .znav .ic{width:24px;height:24px}
-#zoom.db #zdb{display:flex;align-items:center;gap:10px;min-width:0}
+#zoom.db #zdb{position:relative;z-index:1;display:flex;align-items:center;gap:10px;min-width:0}   /* z-index: di atas bayangan kartu (#ztrack) */
 #zvar{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}#zvar:empty{display:none}
 #zvar button{flex:none;display:flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:0;background:var(--paper);color:var(--tx);font:700 12px var(--fd);letter-spacing:.03em;white-space:nowrap}
 #zvar button:hover{background:#fff}#zvar button.on{box-shadow:inset 0 0 0 3px var(--yel)}
@@ -157,8 +157,9 @@ body.bt .hud{display:flex}
 .zctl button{display:grid;place-items:center;width:44px;height:40px;border:0;background:var(--paper);color:var(--ink)}
 .zctl button:hover:not(:disabled){background:var(--yel)}.zctl button:disabled{background:var(--ink3);color:#6e737d}
 .zctl span{display:grid;place-items:center;min-width:44px;height:40px;background:var(--ink);color:var(--paper);font:700 18px var(--fd);box-shadow:inset 0 0 0 1px var(--line)}
-#zoom.db .zbox .x{transform:translateX(calc(100% + 12px))}
-@media (max-width:760px){#zoom.db .zbox .x{transform:translateY(calc(-100% - 10px))}#zoom.db #zdb{flex-wrap:wrap}#zvar{flex-basis:100%}}
+#zoom.db .zbox .x{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));width:44px;height:44px;box-shadow:inset 0 0 0 1px var(--line)}   /* ✕ di pojok kanan atas layar: tempatnya tetap, satu-satunya tombol tutup */
+/* HP: − n + di tengah tepat di bawah kartu, baris varian di bawahnya dan tingginya selalu dipesan, jadi posisi tombol sama ada varian atau tidak */
+@media (max-width:760px){#zoom.db #zdb{flex-direction:column;gap:8px}#zoom.db .zctl{order:-1;margin:0}#zoom.db #zvar,#zoom.db #zvar:empty{display:flex;flex:none;max-width:100%;min-height:40px}}
 /* ---- holo per rarity (zoom Susun Deck): tekan-tahan kartu ----
    .hs = kilau pelangi di area foil, .ht = kilau yang menempel pada pola foil yang sudah tergambar di gambar kartu (bintang RR, etsa SR/SAR, bola mirror),
    .hg = pantulan cahaya. Ketiganya dipindah JS ke .zc kartu aktif. --mx/--my = posisi pointer 0..1, --o = kuat efek 0..1 (js/menu.js), data-r = rarity cetakan (js/rar.js), data-f = p/v/t/e (Pokemon Basic/Pokemon evolusi/Trainer/Energi).
@@ -190,8 +191,9 @@ body.bt .hud{display:flex}
 .zc[data-r=SR]{--hs:.5;--ht:.9}
 .zc:is([data-r=SAR],[data-r=FUR],[data-r=MA]){--hs:.6;--ht:.8}
 .zc:is([data-r=UR],[data-r=MUR]){--hs:.55;--ht:.9;--rb:repeating-linear-gradient(115deg,#ffd24a 0,#ff9a1f 7%,#fff3b8 13%,#f0a000 20%,#ffd24a 28%)}
-/* holo ditahan (#zoom.hold): tombol dan kartu lain memudar pelan, lalu kembali saat dilepas */
+/* holo ditahan (#zoom.hold): tombol dan kartu lain memudar pelan, lalu kembali saat dilepas. Digeser lewat seret/roda (#zoom.mv): tombol memudar cepat, kembali saat carousel diam */
 #zoom.db .znav,#zoom.db #zdb,#zoom.db .zbox .x{transition:opacity .3s}
+#zoom.db.mv .znav,#zoom.db.mv #zdb,#zoom.db.mv .zbox .x{opacity:0;pointer-events:none;transition:opacity .15s}
 #zoom.db.hold .znav,#zoom.db.hold #zdb,#zoom.db.hold .zbox .x,#zoom.db.hold .zs:not(.act) .zc{opacity:0;pointer-events:none;transition:opacity .5s}
 /* panel pilih kartu (efek Trainer / mundur) */
 .pbox{width:min(1000px,100%);max-height:96dvh;overflow:auto;overflow-x:hidden;padding:14px;background:var(--ink2);clip-path:var(--notch);box-shadow:inset 0 0 0 1px var(--line),var(--shadow)}.ptop{display:flex;gap:14px;align-items:flex-start}

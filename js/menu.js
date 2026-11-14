@@ -86,38 +86,39 @@ $('zvar').onclick=e=>{const b=e.target.closest('button');if(!b)return;DB.z.v=+b.
 $('zmin').onclick=()=>vAdd(DB.z.k,DB.z.v,-1);$('zplus').onclick=()=>vAdd(DB.z.k,DB.z.v,1);
 $('zprev').onclick=()=>crStep(-1);$('znext').onclick=()=>crStep(1);
 const zInfo=on=>$('zoom').classList.toggle('info',on);
-/* carousel: versi sendiri dari prototipe inertia-scroll jhey.dev dengan setelan user (snap, damping 50, flick 1; coverflow perspective 800, depth 80, skala .12, opacity .8, rotate 0).
+/* carousel: versi sendiri dari prototipe inertia-scroll jhey.dev dengan setelan user (snap, damping 50, flick 1; coverflow perspective 800, depth 80, rotate 0; skala .4 dan pudar 1.1 = kartu samping kecil dan gelap).
    Track digerakkan transform dan hanya indeks ±3 yang punya elemen, karena daftar bisa 1.500+ kartu. pos/tgt dalam px, satu kartu = CR.step.
    Zona: kartu tengah = periksa (tahan = holo, roda vertikal = info); di luar itu = jelajah (seret/lempar, roda, klik kartu samping) */
 const CR={el:$('ztrack'),keys:[],sl:new Map(),i:0,pos:0,tgt:0,v:0,raf:0,t:0,W:0,step:1,pd:null,drag:null,wh:null,cap:null};
+const crMv=on=>$('zoom').classList.toggle('mv',on);   // #zoom.mv = sedang digeser lewat seret/roda: tombol memudar sampai carousel diam (‹ ›, panah keyboard, klik kartu samping tidak memudarkan)
 const crClamp=i=>Math.min(CR.keys.length-1,Math.max(0,i)),crDamp=(a,b,k,dt)=>a+(b-a)*(1-Math.exp(-k*dt)),crIdle=()=>!CR.raf&&!CR.drag;
 function crSize(){CR.W=CR.el.clientWidth;CR.step=CR.W+Math.max(12,CR.W*.04);CR.pos=CR.tgt=CR.i*CR.step;CR.v=0;crDraw()}
 function crOpen(k){const ks=[...$('db-grid').querySelectorAll('.tile')].filter(t=>!t.hidden).map(t=>t.id.slice(2));   // daftar = tile yang tampil sekarang (filter ikut)
- CR.keys=ks.includes(k)?ks:[k];CR.i=CR.keys.indexOf(k);CR.sl.forEach(e=>e.remove());CR.sl.clear();CR.pd=CR.drag=CR.wh=null;crSize()}
+ CR.keys=ks.includes(k)?ks:[k];CR.i=CR.keys.indexOf(k);CR.sl.forEach(e=>e.remove());CR.sl.clear();CR.pd=CR.drag=CR.wh=null;crMv(false);crSize()}
 function crSync(open){const k=DB.z.k;if(!open)crOpen(k);else if(CR.keys[CR.i]!==k){const i=CR.keys.indexOf(k);if(i<0)crOpen(k);else crGo(CR.i=i)}
  const im=CR.sl.get(CR.i)?.querySelector('img');if(im&&im.getAttribute('src')!==IMG[DB.z.v])im.src=IMG[DB.z.v]}   // slide aktif menampilkan varian yang dipilih
 function crDraw(){const{el,sl,keys,step,W}=CR,c=Math.round(CR.pos/step),half=(innerWidth+W)/2;
  for(const[i,e]of sl)if(Math.abs(i-c)>3){e.remove();sl.delete(i)}
  for(let i=Math.max(0,c-3);i<=Math.min(keys.length-1,c+3);i++){let e=sl.get(i);const k=keys[i];
   if(!e){e=document.createElement('div');e.className='zs';e.dataset.i=i;e.innerHTML=`<div class="zc"><img draggable="false" alt="${esc(cname(CARDS[k]))}" src="${IMG[i===CR.i&&DB.z.k===k?DB.z.v:shownV(k)]}"></div>`;el.append(e);sl.set(i,e)}
-  const d=i*step-CR.pos,a=Math.min(1,Math.abs(d)/half),pf=800/(800+80*a);   // coverflow 2D: makin jauh dari tengah makin kecil, rapat ke tengah, dan pudar
-  e.style.transform=`translate3d(${(d*pf).toFixed(2)}px,0,0) scale(${(pf*(1-.12*a)).toFixed(4)})`;e.style.opacity=(1-.8*a).toFixed(3);e.style.zIndex=Math.round(100-40*a);
+  const d=i*step-CR.pos,a=Math.min(1,Math.abs(d)/half),pf=800/(800+80*a),o=Math.max(0,1-1.1*a);   // coverflow 2D: makin jauh dari tengah makin kecil, rapat ke tengah, dan gelap (latar hitam pekat, jadi pudar = gelap)
+  e.style.transform=`translate3d(${(d*pf).toFixed(2)}px,0,0) scale(${(pf*(1-.4*a)).toFixed(4)})`;e.style.opacity=o.toFixed(3);e.style.visibility=o>.04?'':'hidden';e.style.zIndex=Math.round(100-40*a);   // kartu yang sudah tak terlihat jangan bisa diklik
   e.classList.toggle('act',i===CR.i);e.setAttribute('aria-hidden',i!==CR.i)}}
 const crSnap=v=>{CR.tgt=crClamp(Math.round((CR.tgt+v)/CR.step))*CR.step;CR.v=0};   // flick 1: sasaran = posisi + kecepatan x 1 dtk, dibulatkan ke kartu
 const crRun=()=>{if(!CR.raf){CR.t=performance.now();CR.raf=requestAnimationFrame(crTick)}};
 const crGo=i=>{CR.tgt=crClamp(i)*CR.step;crRun()},crStep=d=>crGo(Math.round(CR.tgt/CR.step)+d);
-function crTick(t){if(!$('zoom').matches('.on.db')){CR.raf=0;CR.pd=CR.drag=CR.wh=null;return}   // zoom ditutup saat bergerak: berhenti, jangan sampai dbZoom membukanya lagi
+function crTick(t){if(!$('zoom').matches('.on.db')){CR.raf=0;CR.pd=CR.drag=CR.wh=null;crMv(false);return}   // zoom ditutup saat bergerak: berhenti, jangan sampai dbZoom membukanya lagi
  const dt=Math.min((t-CR.t)/1e3,1/30),end=(CR.keys.length-1)*CR.step,w=CR.wh;CR.t=t;
  if(w&&!CR.drag&&t-w.t>60){CR.wh=null;crSnap(w.v*.5*w.fl);if(Math.round(CR.tgt/CR.step)===w.i&&Math.abs(w.sum)>=w.min)CR.tgt=crClamp(w.i+Math.sign(w.sum))*CR.step}   // putaran roda selesai: minimal pindah 1 kartu
  const rb=CR.drag?5:30;if(CR.tgt<0)CR.tgt=crDamp(CR.tgt,0,rb,dt);else if(CR.tgt>end)CR.tgt=crDamp(CR.tgt,end,rb,dt);   // karet di ujung daftar
  CR.pos=CR.drag||RMO?CR.tgt:crDamp(CR.pos,CR.tgt,50,dt);
  const i=crClamp(Math.round(CR.tgt/CR.step));if(i!==CR.i){CR.i=i;dbZoom(CR.keys[i])}   // info, varian, jumlah ikut kartu sasaran
- const done=!CR.drag&&!CR.wh&&CR.tgt>-.1&&CR.tgt<end+.1&&Math.abs(CR.pos-CR.tgt)<.15;if(done)CR.pos=CR.tgt;crDraw();CR.raf=done?0:requestAnimationFrame(crTick)}
+ const done=!CR.drag&&!CR.wh&&CR.tgt>-.1&&CR.tgt<end+.1&&Math.abs(CR.pos-CR.tgt)<.15;if(done){CR.pos=CR.tgt;crMv(false)}crDraw();CR.raf=done?0:requestAnimationFrame(crTick)}
 function crWheel(d,min,fl){const now=performance.now(),w=CR.wh||(CR.wh={i:Math.round(CR.tgt/CR.step),sum:0,v:0,t:0,min,fl}),dt=(now-w.t)/1e3;   // fl = pakai proyeksi kecepatan (flick) saat putaran selesai
- w.v=w.t&&dt>0&&dt<.2?w.v+(d/dt-w.v)*.5:d/.11;w.t=now;w.sum+=d;if(!CR.raf)CR.tgt=CR.pos;CR.tgt+=d;crRun()}
+ w.v=w.t&&dt>0&&dt<.2?w.v+(d/dt-w.v)*.5:d/.11;w.t=now;w.sum+=d;if(!CR.raf)CR.tgt=CR.pos;CR.tgt+=d;crMv(true);crRun()}
 const crEat=e=>{e.stopPropagation();e.preventDefault()};
 const crMid=e=>{const m=CR.el.getBoundingClientRect();return e.clientX>=m.left&&e.clientX<=m.right&&e.clientY>=m.top&&e.clientY<=m.bottom};   // zona tengah = kotak kartu tengah di layar, bukan slide aktif: saat bergerak slide aktif bisa masih di samping
-const crStop=()=>{cancelAnimationFrame(CR.raf);CR.raf=0;CR.wh=null;CR.v=0;CR.pos=CR.tgt=CR.i*CR.step;crDraw()};
+const crStop=()=>{cancelAnimationFrame(CR.raf);CR.raf=0;CR.wh=null;CR.v=0;CR.pos=CR.tgt=CR.i*CR.step;crMv(false);crDraw()};
 function crUp(e){if(e.type==='lostpointercapture'&&e.target!==CR.cap)return;   // sentuh: capture bawaan di gambar ikut lepas saat capture dipindah, itu bukan jari diangkat
  clearTimeout(HL.tm);HL.tm=0;if(HL.to){HL.to=0;$('zoom').classList.remove('hold')}
  const p=CR.pd;if(!p||p.id!==e.pointerId)return;CR.pd=null;if(!p.on)return;   // belum jadi seret: biarkan klik biasa (kartu samping = lompat, latar = tutup)
@@ -132,7 +133,7 @@ $('zoom').addEventListener('pointerdown',e=>{const z=$('zoom');if(e.button||!z.c
 $('zoom').addEventListener('pointermove',e=>{if(HL.to)return hlAim(e);const p=CR.pd;if(!p||p.id!==e.pointerId)return;if(HL.tm)hlAim(e);
  if(!p.on){const ax=Math.abs(e.clientX-p.x0),ay=Math.abs(e.clientY-p.y0);if(Math.max(ax,ay)<=(e.pointerType==='touch'?10:8))return;
   clearTimeout(HL.tm);HL.tm=0;if(ay>ax){CR.pd=null;return}   // gerak vertikal bukan seret carousel (di HP: geser buka-info)
-  p.on=1;zT=null;CR.drag=p;CR.wh=null;CR.v=0;CR.tgt=CR.pos;p.x=e.clientX;p.t=e.timeStamp;(CR.cap=$('zoom')).setPointerCapture(p.id);return crRun()}
+  p.on=1;zT=null;CR.drag=p;CR.wh=null;CR.v=0;CR.tgt=CR.pos;p.x=e.clientX;p.t=e.timeStamp;(CR.cap=$('zoom')).setPointerCapture(p.id);crMv(true);return crRun()}
  const dx=e.clientX-p.x,dt=(e.timeStamp-p.t)/1e3;CR.tgt-=dx;if(dt>0&&dt<.1)CR.v+=(-dx/dt-CR.v)*.4;p.x=e.clientX;p.t=e.timeStamp;e.preventDefault()});
 for(const n of['pointerup','pointercancel','lostpointercapture'])$('zoom').addEventListener(n,crUp);   // lepas, batal, atau zoom ditutup
 CR.el.addEventListener('click',e=>{const s=e.target.closest('.zs');if(s&&!s.classList.contains('act'))crGo(+s.dataset.i)});

@@ -85,7 +85,7 @@ function cardText(c){if(c.k!=='pokemon')return`<div><span class="chip">${KIND[c.
  `<div>Kelemahan: ${c.weak?TYPES[c.weak][0]+' ×2':'-'} · Resistansi: ${c.res?TYPES[c.res][0]+' −30':'-'} · Mundur: ${c.retreat}</div>`}
 function zoomCard(c){$('zimg').src=imgOf(c);$('zimg').alt=cname(c);$('zinfo').innerHTML=`<div><b>${cname(c)}</b></div>`+cardText(c);$('zbtn').innerHTML='';$('zoom').classList.remove('db','info');$('zoom').classList.add('on')}   // kartu tangan/discard/Stadium; Pokémon di arena: monMenu
 const closeZoom=()=>$('zoom').classList.remove('on');
-$('zx').onclick=closeZoom;$('zoom').onclick=e=>{if(e.target.id==='zoom')closeZoom()};
+$('zx').onclick=closeZoom;$('zoom').onclick=e=>{if(e.target.id==='zoom'&&!$('zoom').classList.contains('db'))closeZoom()};   // zoom Susun Deck hanya ditutup lewat ✕ atau Escape: latarnya dipakai untuk menyeret carousel
 /* --- Discard --- */
 function openDisc(sd){
  const tabs=$('disc-tabs');tabs.innerHTML='';
