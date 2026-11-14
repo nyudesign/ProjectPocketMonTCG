@@ -136,7 +136,7 @@ body.bt .hud{display:flex}
 /* zoom susun deck (#zoom.db): tombol ‹ › di tepi kartu, info efek muncul di atas kartu lewat scroll/geser, baris varian + jumlah per varian di bawah */
 .znav,#zdb{display:none}
 #zoom.db .zbox{--zw:min(514px,calc((100dvh - 150px)*5/7),calc(100vw - 80px));display:grid;grid-template-columns:var(--zw);gap:12px;max-width:none;max-height:none;overflow:visible}
-#zoom.db #zleft,#zoom.db #zside,#zoom.db .znav{grid-area:1/1}#zoom.db #zleft{touch-action:none}
+#zoom.db #zleft,#zoom.db #zside,#zoom.db .znav{grid-area:1/1}
 #zoom.db #zimg{display:block;width:var(--zw);height:auto;max-width:none;transition:filter .18s}
 #zoom.db #zside{z-index:1;align-self:center;justify-self:center;width:min(340px,calc(var(--zw) - 56px));max-height:calc(var(--zw)*1.4 - 64px);visibility:hidden;opacity:0;transform:translateY(10px);transition:opacity .18s,transform .18s,visibility .18s}
 #zoom.db.info #zside{visibility:visible;opacity:1;transform:none}#zoom.db.info #zimg{filter:brightness(.42)}#zoom.db #zbtn{display:none}
@@ -154,6 +154,38 @@ body.bt .hud{display:flex}
 .zctl span{display:grid;place-items:center;min-width:44px;height:40px;background:var(--ink);color:var(--paper);font:700 18px var(--fd);box-shadow:inset 0 0 0 1px var(--line)}
 #zoom.db .zbox .x{transform:translateX(calc(100% + 12px))}
 @media (max-width:760px){#zoom.db .zbox .x{transform:translateY(calc(-100% - 10px))}#zoom.db #zdb{flex-wrap:wrap}#zvar{flex-basis:100%}}
+/* ---- holo per rarity (zoom Susun Deck): tekan-tahan kartu ----
+   .hs = kilau pelangi di area foil, .ht = kilau yang menempel pada pola foil yang sudah tergambar di gambar kartu (bintang RR, etsa SR/SAR, bola mirror),
+   .hg = pantulan cahaya. --mx/--my = posisi pointer 0..1, --o = kuat efek 0..1 (js/menu.js), data-r = rarity cetakan (js/rar.js), data-f = p/v/t/e (Pokemon Basic/Pokemon evolusi/Trainer/Energi).
+   Susunan lapisannya mengikuti poke-holo (kilau + pantulan digerakkan pointer); gradien, mask, dan angkanya buatan sendiri. */
+.hl{display:none}
+#zoom.db #zleft{position:relative;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;--mx:.5;--my:.5;--o:0;
+ transform:perspective(1000px) rotateX(calc((.5 - var(--my))*var(--o)*24deg)) rotateY(calc((var(--mx) - .5)*var(--o)*24deg));
+ --rb:repeating-linear-gradient(115deg,#ff2a55 0,#ff9a1f 4%,#f5ee2e 8%,#2fd67a 12%,#1fc3ee 16%,#4a63ff 20%,#b84dff 24%,#ff2a55 28%);
+ --at:calc(var(--mx)*100%) calc(var(--my)*100%);--spot:radial-gradient(farthest-corner circle at var(--at),#a6a6a6 0,#6e6e6e 30%,#0c0c0c 85%);   /* redup: kilau menambah warna, bukan memutihkan gambar */
+ --spot2:radial-gradient(farthest-corner circle at var(--at),#fff 0,#b0b0b0 26%,#161616 78%);
+ --mR:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0h100v100H0zM4.2 3h91.6v94H4.2z'/%3E%3Cpath d='M7.8 10h84.4v37.2H7.8z'/%3E%3C/svg%3E");--mM:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0h100v100H0zM7.8 10h84.4v37.2H7.8z'/%3E%3C/svg%3E")}
+#zoom.db #zleft:active{cursor:grabbing}
+#zoom.db #zleft[data-f=v]{--mR:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cmask id='a'%3E%3Cpath fill='%23fff' d='M7.8 10h84.4v37.2H7.8z'/%3E%3Cellipse cx='9.4' cy='12.9' rx='8' ry='5.8'/%3E%3C/mask%3E%3Cpath fill-rule='evenodd' d='M0 0h100v100H0zM4.2 3h91.6v94H4.2z'/%3E%3Cpath mask='url(%23a)' d='M7.8 10h84.4v37.2H7.8z'/%3E%3C/svg%3E")}   /* Stage 1/2: lingkaran ikon evolusi di pojok ilustrasi bukan foil */
+#zoom.db #zleft[data-f=t]{--mR:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0h100v100H0zM4.2 3h91.6v94H4.2z'/%3E%3Cpath d='M7.6 13.8h84.8v35.1H7.6z'/%3E%3C/svg%3E");--mM:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0h100v100H0zM7.6 13.8h84.8v35.1H7.6z'/%3E%3C/svg%3E")}#zoom.db #zleft[data-f=e]{--mR:none;--mM:none}
+#zoom.db .hl{display:block;position:absolute;inset:0;border-radius:4.5%/3.2%;pointer-events:none}
+#zoom.db.info .hl{visibility:hidden}#zoom.db.info #zleft{cursor:auto}
+#zoom.db .hs,#zoom.db .ht{mix-blend-mode:color-dodge;background-blend-mode:multiply;mask:var(--msk,none) 0 0/100% 100% no-repeat}
+#zoom.db .hs{opacity:calc(var(--o)*var(--hs,0));background-image:var(--spot),var(--rb);background-size:100% 100%,250% 250%;background-position:0 0,var(--at);filter:saturate(1.25)}
+#zoom.db .ht{opacity:calc(var(--o)*var(--ht,0));background-image:var(--spot2),var(--rb),var(--img);background-size:100% 100%,250% 250%,100% 100%;
+ background-position:0 0,calc(100% - var(--mx)*100%) calc(100% - var(--my)*100%),0 0;filter:brightness(.8) contrast(2.8) saturate(1.5)}   /* kontras tinggi: hanya titik paling terang (pola foil) yang menyala */
+#zoom.db .hg{mix-blend-mode:overlay;opacity:calc(var(--o)*var(--hg,.5));
+ background-image:radial-gradient(farthest-corner circle at var(--at),rgb(255 255 255/.9) 0,rgb(255 255 255/.35) 24%,rgb(0 0 0/.5) 100%)}
+/* tabel rarity -> efek (--hs kilau pelangi, --ht kilau pola foil, --msk area foil, --rb warna). Tanpa data-r (C, U, tanpa tanda) = pantulan cahaya saja */
+#zleft[data-r]:not([data-r=""]){--hg:.3}
+#zleft:is([data-r=R],[data-r=TR]){--hs:.9;--msk:var(--mR)}
+#zleft[data-r=M]{--hs:.5;--ht:.8;--msk:var(--mM)}
+#zleft[data-r=RR]{--hs:.45;--ht:.9}
+#zleft[data-r=ACE]{--hs:.5;--ht:.8;--rb:repeating-linear-gradient(115deg,#ff2a9a 0,#7a4dff 7%,#1fc3ee 14%,#f5ee2e 21%,#ff2a9a 28%)}
+#zleft[data-r=AR]{--hs:.5}#zleft[data-r=BWR]{--hs:.35;--ht:.8}#zleft:is([data-r=AR],[data-r=BWR]){--rb:repeating-linear-gradient(115deg,#ff7a92 0,#ffc070 4%,#f4f27a 8%,#7fe8a6 12%,#6fdcf5 16%,#8d9bff 20%,#d68cff 24%,#ff7a92 28%)}   /* pastel */
+#zleft[data-r=SR]{--hs:.5;--ht:.9}
+#zleft:is([data-r=SAR],[data-r=FUR],[data-r=MA]){--hs:.6;--ht:.8}
+#zleft:is([data-r=UR],[data-r=MUR]){--hs:.55;--ht:.9;--rb:repeating-linear-gradient(115deg,#ffd24a 0,#ff9a1f 7%,#fff3b8 13%,#f0a000 20%,#ffd24a 28%)}
 /* panel pilih kartu (efek Trainer / mundur) */
 .pbox{width:min(1000px,100%);max-height:96dvh;overflow:auto;overflow-x:hidden;padding:14px;background:var(--ink2);clip-path:var(--notch);box-shadow:inset 0 0 0 1px var(--line),var(--shadow)}.ptop{display:flex;gap:14px;align-items:flex-start}
 #pimg{height:min(46dvh,420px);border-radius:4.5%/3.2%;flex:none;box-shadow:0 12px 26px rgb(0 0 0/.55)}.pmain{flex:1;min-width:0;width:100%;display:flex;flex-direction:column;gap:10px}
@@ -404,7 +436,7 @@ body.bt .hud{display:flex}
  body:has(#pickbar.on:not(.near)) #msg{top:calc(env(safe-area-inset-top,0px) + 48px + var(--pkh,80px))}}
 /* ---- gerak dikurangi ---- */
 @media (prefers-reduced-motion:reduce){
- #zoom.db #zside{transform:none}
+ #zoom.db #zside{transform:none}#zoom.db #zleft{transform:none}
  #ann img,.box,#pickbar.on,.amw{animation-duration:.01s}#atkb.on,#abt.on,#tl.on,#tl.start::before,#tl.start::after,#ban .rb,#ban .rb::after,#dhint path{animation:none}
  .dmg{animation-duration:.01s;animation-delay:.7s;animation-fill-mode:both}.stp{animation-duration:.01s}#go .gs,#go .gw::before,#go .gl::after,#go .gl span,#go .gm,#go .gm path{animation:none}
  #turn.on .tb,#turn.on::before{animation-duration:2.2s;animation-name:fadeio}@keyframes fadeio{0%,100%{opacity:0}10%,85%{opacity:1}}}

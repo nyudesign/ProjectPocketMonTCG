@@ -76,14 +76,14 @@ function renderDB(){
  $('db-name').value=DB.name||'';updDB()}
 /* zoom susun deck: kartu sebelumnya/berikutnya (urutan grid yang tampil), pilih varian, jumlah per varian; scroll/geser di area kartu = info efek */
 function dbZoom(k,v){const z=$('zoom'),open=z.matches('.on.db'),inf=open&&z.classList.contains('info');DB.z={k,v:v||shownV(k)};
- zoomCard({...CARDS[k],img:DB.z.v});z.classList.add('db');z.classList.toggle('info',inf);$('zside').scrollTop=0;zRender();
+ zoomCard({...CARDS[k],img:DB.z.v});zHolo();z.classList.add('db');z.classList.toggle('info',inf);$('zside').scrollTop=0;zRender();
  const t=$('t-'+k);if(t)t.scrollIntoView({block:'nearest'});if(!open)$('zx').focus({preventScroll:true})}
 const zStep=d=>{const ts=[...$('db-grid').querySelectorAll('.tile')];let i=ts.findIndex(t=>t.id==='t-'+DB.z.k);if(i<0)return;do i+=d;while(ts[i]&&ts[i].hidden);return ts[i]&&ts[i].id.slice(2)};
 function zRender(){const{k,v}=DB.z,c=CARDS[k],n=vCnt(k,v),vs=vars(k);
  $('zvar').innerHTML=vs.length>1?vs.map((id,i)=>{const q=vCnt(k,id),l=(c.altl||{})[id];return`<button data-v="${id}" class="${id===v?'on':''}" aria-pressed="${id===v}" aria-label="Varian ${i+1}${l?', '+esc(l):''}${q?`, ${q} di deck`:''}"${l?` title="${esc(l)}"`:''}>Varian ${i+1}${q?`<b>${q}</b>`:''}</button>`}).join(''):'';
  $('zn').textContent=n;$('zmin').disabled=!n;$('zplus').disabled=!canAdd(k);$('zprev').disabled=!zStep(-1);$('znext').disabled=!zStep(1);
  const s=$('zvar').querySelector('.on');if(s)s.scrollIntoView({block:'nearest',inline:'nearest'})}
-$('zvar').onclick=e=>{const b=e.target.closest('button');if(!b)return;DB.z.v=+b.dataset.v;$('zimg').src=IMG[DB.z.v];zRender()};
+$('zvar').onclick=e=>{const b=e.target.closest('button');if(!b)return;DB.z.v=+b.dataset.v;$('zimg').src=IMG[DB.z.v];zHolo();zRender()};
 $('zmin').onclick=()=>vAdd(DB.z.k,DB.z.v,-1);$('zplus').onclick=()=>vAdd(DB.z.k,DB.z.v,1);
 $('zprev').onclick=()=>{const k=zStep(-1);if(k)dbZoom(k)};$('znext').onclick=()=>{const k=zStep(1);if(k)dbZoom(k)};
 const zInfo=on=>$('zoom').classList.toggle('info',on);
@@ -95,6 +95,20 @@ let zT=null;$('zoom').addEventListener('touchstart',e=>{zT=$('zoom').classList.c
 $('zoom').addEventListener('touchend',e=>{if(!zT)return;const dy=e.changedTouches[0].clientY-zT[0];if(dy<-40)zInfo(true);else if(dy>40&&zT[1]<=0)zInfo(false);zT=null});
 addEventListener('keydown',e=>{if(!$('zoom').matches('.on.db')||e.ctrlKey||e.metaKey||e.altKey)return;   // G kosong di layar ini, jadi Escape dari ui.js tidak berlaku
  const f={Escape:closeZoom,ArrowLeft:()=>$('zprev').click(),ArrowRight:()=>$('znext').click(),ArrowDown:()=>zInfo(true),ArrowUp:()=>zInfo(false)}[e.key];if(f){e.preventDefault();f()}});
+/* holo per rarity: tekan-tahan kartu di zoom. Mouse langsung aktif; sentuh aktif setelah diam 130 md supaya geser buka-info tetap jalan.
+   --mx/--my = posisi pointer di kartu (0..1), --o = kuat efek (0..1); tampilannya per rarity ada di css (data-r dari js/rar.js) */
+const HL={el:$('zleft'),x:.5,y:.5,tx:.5,ty:.5,o:0,to:0,raf:0,tm:0};
+function zHolo(){const{k,v}=DB.z,c=CARDS[k],L=HL.el;L.dataset.r=RAR[v]||'';L.dataset.f=c.k==='pokemon'?c.stage?'v':'p':isEn(c)?'e':'t';L.style.setProperty('--img',`url("${new URL(IMG[v],location.href).href}")`)}
+function hlTick(){const h=HL,s=h.el.style;h.x+=(h.tx-h.x)*.2;h.y+=(h.ty-h.y)*.2;h.o+=(h.to-h.o)*.14;if(!h.to&&h.o<.004)h.o=0;
+ s.setProperty('--mx',h.x.toFixed(4));s.setProperty('--my',h.y.toFixed(4));s.setProperty('--o',h.o.toFixed(3));h.raf=h.o||h.to?requestAnimationFrame(hlTick):0}
+const hlAim=e=>{const r=HL.r;HL.tx=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));HL.ty=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))};
+function hlGo(){HL.tm=0;HL.to=1;zT=null;if(!HL.raf)hlTick()}   // zT=null: tahan bukan geser, jangan buka info saat dilepas
+HL.el.addEventListener('pointerdown',e=>{const z=$('zoom');if(e.button||!z.matches('.on.db')||z.classList.contains('info'))return;
+ HL.r=$('zimg').getBoundingClientRect();hlAim(e);HL.el.setPointerCapture(e.pointerId);
+ if(e.pointerType==='touch'){HL.p=[e.clientX,e.clientY];HL.tm=setTimeout(hlGo,130)}else hlGo()});
+HL.el.addEventListener('pointermove',e=>{if(HL.tm&&Math.hypot(e.clientX-HL.p[0],e.clientY-HL.p[1])>10){clearTimeout(HL.tm);HL.tm=0}if(HL.to||HL.tm)hlAim(e)});
+HL.el.addEventListener('lostpointercapture',()=>{clearTimeout(HL.tm);HL.tm=0;HL.to=0});   // lepas, batal, atau zoom ditutup
+HL.el.addEventListener('contextmenu',e=>{if($('zoom').classList.contains('db'))e.preventDefault()});   // tekan lama di HP jangan membuka menu gambar
 /* saring tile tanpa membuat ulang (ribuan kartu): cari nama/serangan/Ability, tipe, atau hanya yang di deck */
 const SRCH={};const srch=k=>SRCH[k]||(SRCH[k]=(()=>{const c=CARDS[k];return[c.ni,c.n,...(c.atk||[]).map(a=>a.n),c.ab?c.ab.n:''].join(' ').toLowerCase()})());
 function dbFilter(){const q=$('db-q').value.trim().toLowerCase(),t=$('db-t').value,only=$('db-show').value==='deck';let n=0;
