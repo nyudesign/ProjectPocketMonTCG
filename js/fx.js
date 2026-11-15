@@ -656,9 +656,12 @@ function genFams(){if(FAMS)return FAMS;const P=Object.keys(CARDS).filter(k=>CARD
   if(ok&&c.atk.some(a=>a.dmg>=60||a.g))FAMS.push(ch)}
  return FAMS}
 /* Energi deck mengikuti Pokémon-nya. Tipe = huruf biaya serangan selain ✱ */
-function basicEn(){const EN={};for(const k of Object.keys(CARDS)){const c=CARDS[k];if(c.k==='energy'&&c.t&&!c.hide&&(!EN[c.t]||!/^h/.test(k)))EN[c.t]=k}return EN}
-/* tipe Energi deck (Set ts) sesudah Pokémon c masuk: serangan terkuatnya (damage terbesar) harus bisa dibayar dengan paling banyak cap tipe, jadi Floatzel tidak masuk deck Api hanya karena serangan ✱✱; null = tidak muat. Tanpa serangan: ts tetap */
-function enSet(c,ts,cap){let best=null;const mx=Math.max(0,...c.atk.map(a=>a.dmg||0));for(const a of c.atk.filter(a=>(a.dmg||0)>=mx)){const s=new Set(ts);for(const t of a.cost)if(t!=='C')s.add(t);if(s.size<=cap&&(!best||(a.dmg||0)>=best.d))best={s,d:a.dmg||0}}return c.atk.length?best&&best.s:new Set(ts)}
+let BEN=null;
+function basicEn(){if(BEN)return BEN;const EN=BEN={};for(const k of Object.keys(CARDS)){const c=CARDS[k];if(c.k==='energy'&&c.t&&!c.hide&&(!EN[c.t]||!/^h/.test(k)))EN[c.t]=k}return EN}
+/* tipe Energi deck (Set ts) sesudah Pokémon c masuk; null = butuh lebih dari cap tipe. Serangan utama = serangan terakhir dan serangan ber-damage terbesar
+   (FMC Haxorus damage-nya 0 tapi itu serangan andalannya). lini: tipe Pokémon itu sendiri juga harus ada, jadi lini Seaking {Air} tidak masuk deck Daun hanya karena serangannya ✱ */
+function enSet(c,ts,cap,lini){const s=new Set(ts),mx=Math.max(0,...c.atk.map(a=>a.dmg||0));c.atk.forEach((a,i)=>{if(i===c.atk.length-1||(a.dmg||0)>=mx)for(const t of a.cost)if(t!=='C')s.add(t)});
+ if(lini&&basicEn()[c.type])s.add(c.type);return s.size<=cap?s:null}
 /* serangan terkuat semua ✱: tipe Energi dari serangan lain, lalu tipe Pokémon di deck, kalau tidak ada baru acak */
 function anyTy(L){const EN=basicEn(),ms=Object.keys(L).map(k=>CARDS[k]).filter(isMon),at=ms.flatMap(c=>c.atk.flatMap(a=>[...a.cost].filter(t=>EN[t]))),ty=at.length?at:ms.map(c=>c.type).filter(t=>EN[t]),all=Object.keys(EN);return ty.length?ty[rnd(ty.length)]:all[rnd(all.length)]}
 /* bagi E Energi Dasar ke tipe ts sebanding pemakaian di serangan Pokémon L; false = ada tipe yang dapat kurang dari 3 */
@@ -670,7 +673,7 @@ function fillEn(L,ts,E){const EN=basicEn(),need={};ts=[...ts];if(!ts.length)ts=[
 function buildGenDeck(fmt='std'){const F=genFams();if(!F.length)return null;
  const T=Object.keys(CARDS).filter(k=>{const c=CARDS[k];return isTrainer(c)&&!c.hide&&c.k!=='stadium'&&c.k!=='tool'&&!c.ace&&c.g&&!c.fossil});
  for(let tries=0;tries<25;tries++){const L={},q=(k,n)=>{if(!k||!CARDS[k])return;L[k]=Math.min(CARDS[k].k==='energy'?60:4,(L[k]||0)+n)};
-  const hd=f=>CARDS[f[f.length-1]],main=F[rnd(F.length)],mt=enSet(hd(main),new Set(),9),ps=F.filter(f=>enSet(hd(f),mt,Math.max(2,mt.size))),part=ps[rnd(ps.length)]||main,ts=enSet(hd(part),mt,9);   // pendamping memakai tipe Energi yang sama, atau menambah 1 tipe
+  const hd=f=>CARDS[f[f.length-1]],main=F[rnd(F.length)],mt=enSet(hd(main),new Set(),9,1),ps=F.filter(f=>enSet(hd(f),mt,Math.max(2,mt.size),1)),part=ps[rnd(ps.length)]||main,ts=enSet(hd(part),mt,9,1);   // pendamping memakai tipe Energi yang sama, atau menambah 1 tipe
   main.forEach((k,i)=>q(k,main.length===1?3:[4,3,3][i]));if(part!==main)part.forEach((k,i)=>q(k,part.length===1?2:[3,2,2][i]));
   const st2=Object.keys(L).some(k=>CARDS[k].stage===2),small=Object.keys(L).some(k=>isBasic(CARDS[k])&&CARDS[k].hp<=70);
   q('ultra',4);q('boss',2);q('lillie',3);q('iris',2);q('stretcher',2);if(small)q('poffin',3);if(st2)q('candy',3);if(Math.random()<.6)q('prime',1);
@@ -691,7 +694,7 @@ function fitsDeck(c,L,ts){const ms=Object.keys(L).map(k=>CARDS[k]).filter(isMon)
  if(/Stage 2/.test(tx)&&!has(m=>m.stage===2)||/Terastal/.test(tx)&&!has(m=>m.tera)||/Evolusi Mega/.test(tx)&&!has(m=>m.mega)||/Pokémon Evolusi/.test(tx)&&!has(m=>m.stage>0))return false;
  if(/Pokémon \{ex\} dari Deck/.test(tx)&&!has(rule)||/HP ≤70|HP 70 atau kurang/.test(tx)&&!has(m=>isBasic(m)&&m.hp<=70)||/tanpa Rule Box|selain Pokémon yang memiliki Peraturan/.test(tx)&&!has(m=>!rule(m)))return false;
  const t=c.k==='stadium'?null:tx.match(/(?:Pokémon|Energi Dasar) \{(Daun|Api|Air|Listrik|Psychic|Petarung|Kegelapan|Logam|Naga|Bening)\}/);
- return !(t&&!(ts&&/^Energi/.test(t[0])?ts.has(TXT[t[1]]):has(m=>m.type===TXT[t[1]]))||c.k==='tool'&&/Racun/.test(tx)&&!has(m=>m.atk.some(a=>/Racun/.test(a.tx||''))))}
+ return !(t&&!(ts&&(c.k==='senergy'||/^Energi/.test(t[0]))?ts.has(TXT[t[1]]):has(m=>m.type===TXT[t[1]]))||c.k==='tool'&&/Racun/.test(tx)&&!has(m=>m.atk.some(a=>/Racun/.test(a.tx||''))))}
 function buildRecDeck(fmt='std'){const M=typeof META_POLA==='undefined'?null:META_POLA,F=genFams();if(!M||!F.length)return null;
  const pick=a=>{let r=Math.random()*a.reduce((s,x)=>s+x[x.length-1],0);for(const x of a)if((r-=x[x.length-1])<=0)return x;return a[a.length-1]};   // acak berbobot; bobot = elemen terakhir
  const own=n=>(n.match(/<([^>]+)>/)||[])[1],rusak=new Set(Object.values(CARDS).filter(c=>c.from===c.n).map(c=>own(c.n)).filter(Boolean));   // shortcut: asal evolusi sebagian kartu milik pelatih masih tercatat sebagai namanya sendiri, jadi hasEvo tidak melihat Basic-nya; Basic milik pelatih itu dilewati. Hapus setelah from di data kartu diperbaiki
@@ -700,7 +703,7 @@ function buildRecDeck(fmt='std'){const M=typeof META_POLA==='undefined'?null:MET
  for(let tries=0;tries<40;tries++){const cap=pick(M.et)[0];let ET=new Set();const L={},names=new Set(),q=(k,n)=>{if(n>0){L[k]=(L[k]||0)+n;names.add(CARDS[k].n)}},free=k=>!names.has(CARDS[k].n),lines=[];let ok=true;
   for(const s of pick(M.sh)[0].split(' ').map(x=>x.split('-').map(Number))){if(s[0]<s[1])[s[0],s[1]]=[s[1],s[0]];   // lini acak butuh Basic sebanyak Stage 1-nya (di data ada 3-4 karena Ability Stage 1 tertentu)
    const fam=s.length>1||s[0]>=3,ab=Math.random()<M.tech[0],rb=Math.random()<M.tech[1];   // lini (atau Basic penyerang 3-4 lembar) vs Basic tunggal
-   const cp=fam?cap:ET.size||1,muat=k=>enSet(CARDS[k],ET,cp);   // tipe Energi Dasar: lini boleh menambah tipe sampai batas dari data (META_POLA.et); Basic tunggal harus bisa menyerang dengan tipe yang sudah ada
+   const cp=fam?cap:ET.size||1,muat=k=>enSet(CARDS[k],ET,cp,fam);   // tipe Energi Dasar: lini boleh menambah tipe sampai batas dari data (META_POLA.et); Basic tunggal harus bisa menyerang dengan tipe yang sudah ada
    let pool=fam?F.filter(f=>f.length===s.length&&f.every(free)&&muat(f[f.length-1])):techs.filter(k=>free(k)&&!!CARDS[k].ab===ab&&(CARDS[k].prize>1)===rb&&muat(k)).map(k=>[k]);
    if(!fam&&!pool.length)pool=techs.filter(k=>free(k)&&!!CARDS[k].ab===ab&&muat(k)).map(k=>[k]);
    if(!pool.length){ok=false;break}const f=pool[rnd(pool.length)];f.forEach((k,j)=>q(k,s[j]));ET=muat(f[f.length-1]);if(fam)lines.push(f)}
