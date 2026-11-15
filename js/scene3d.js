@@ -12,11 +12,11 @@ const BACKT=ctex(252,352,(x,w,h)=>{rr(x,0,0,w,h,16);const g=x.createLinearGradie
  x.beginPath();x.arc(w/2,h/2,48,0,7);x.lineWidth=7;x.strokeStyle='#fde68a';x.stroke();x.beginPath();x.moveTo(w/2-48,h/2);x.lineTo(w/2+48,h/2);x.stroke();x.beginPath();x.arc(w/2,h/2,13,0,7);x.fillStyle='#fde68a';x.fill()});
 const GEO=new THREE.PlaneGeometry(1,1.4);
 /* ---------- tata letak: HP (portrait, ala Pocket) & desktop (landscape) dipisah ---------- */
-let BENCHN=5;
-const L_PORT={act:m=>[0,1.55*m,1.15],ben:(i,m)=>{const n=BENCHN,big=n>5;return[(i-(n-1)/2)*(big?.74:1.2),3.62*m,big?.7:.98]},pri:(i,m)=>[-m*(2.55-(i%3)*.58),(1.18+((i/3)|0)*.76)*m,.46],dk:m=>[m*1.5,1.55*m,.7],dis:m=>[m*2.4,1.55*m,.7],stad:[-1.32,0,.55],
+let BENCHN={1:5,'-1':5};   // slot Cadangan per sisi (m=1 kamu, m=-1 Bot)
+const L_PORT={act:m=>[0,1.55*m,1.15],ben:(i,m)=>{const n=BENCHN[m],big=n>5;return[(i-(n-1)/2)*(big?.74:1.2),3.62*m,big?.7:.98]},pri:(i,m)=>[-m*(2.55-(i%3)*.58),(1.18+((i/3)|0)*.76)*m,.46],dk:m=>[m*1.5,1.55*m,.7],dis:m=>[m*2.4,1.55*m,.7],stad:[-1.32,0,.55],
  W:6.3,Hg:10.9,elev:1.5,zc:.15,hs:1.3,ohs:.7,hvis:.62,ovis:.45,hsp:1.05,
  labels:T=>{for(const m of[1,-1]){T('ACTIVE',0,.36*m,'center',11);T('BENCH',-2.25,2.68*m,'center',11);T('PRIZE',-2.05,.7*m,'center',10);T('DECK',1.5,2.15*m,'center',10);T('DISCARD',2.4,2.1*m,'center',9);T('TRASH',2.4,2.28*m,'center',9)}T('STADIUM',2.35,0,'center',10)}};
-const L_LAND={act:m=>[0,1.6*m,1.3],ben:(i,m)=>{const n=BENCHN,big=n>5;return[(i-(n-1)/2)*(big?.9:1.32),3.72*m,big?.82:1.06]},pri:(i,m)=>{const b=BENCHN>5;return[-m*((b?4.45:4.35)-(i%2)*.7),((b?.83:.95)+(i>>1)*.92)*m,.56]},dk:m=>[m*4.25,1.95*m,.8],dis:m=>[m*4.25,3.4*m,.8],stad:[-1.45,0,.7],   // Bench 8: lebih rapat & Prize bergeser agar tak bertabrakan
+const L_LAND={act:m=>[0,1.6*m,1.3],ben:(i,m)=>{const n=BENCHN[m],big=n>5;return[(i-(n-1)/2)*(big?.9:1.32),3.72*m,big?.82:1.06]},pri:(i,m)=>{const b=BENCHN[m]>5;return[-m*((b?4.45:4.35)-(i%2)*.7),((b?.83:.95)+(i>>1)*.92)*m,.56]},dk:m=>[m*4.25,1.95*m,.8],dis:m=>[m*4.25,3.4*m,.8],stad:[-1.45,0,.7],   // Bench 8: lebih rapat & Prize bergeser agar tak bertabrakan
  W:10.6,Hg:10.5,elev:1.25,zc:.15,hs:1.7,ohs:.8,hvis:.64,ovis:.5,hsp:1.3,
  labels:T=>{for(const m of[1,-1]){T('ACTIVE',-1.2,1.6*m,'right',13);T('BENCH',-3.75,3.72*m,'center',13);T('PRIZE',-4.05,.5*m,'center',12);T('DECK',4.25,1.28*m,'center',12);T('DISCARD',4.25,4.12*m,'center',11);T('TRASH',4.25,4.32*m,'center',11)}T('STADIUM',4.1,0,'center',12)}};
 let LAY=L_PORT,LAYMODE=null;
@@ -33,7 +33,7 @@ function drawSlots(){
  const R=([cx,cz,s])=>{const l=cx-s/2,r=cx+s/2,t=cz-.7*s,b=cz+.7*s;dashEdge(l,t,r,t);dashEdge(r,t,r,b);dashEdge(r,b,l,b);dashEdge(l,b,l,t)};
  const ring=(rad,w)=>{const i=rad-w/2,o=rad+w/2;for(let k=0;k<48;k++){const a=k*Math.PI/24,b=a+Math.PI/24,ca=Math.cos(a),sa=Math.sin(a),cb=Math.cos(b),sb=Math.sin(b);q(ca*i,sa*i,ca*o,sa*o,cb*o,sb*o,cb*i,sb*i)}};
  const F=m=>{const g=prizeBox(m);dashEdge(g.l,g.t,g.r,g.t);dashEdge(g.r,g.t,g.r,g.b);dashEdge(g.r,g.b,g.l,g.b);dashEdge(g.l,g.b,g.l,g.t)};   // 6 slot Kartu Point rapat: satu bingkai untuk kelompoknya (garis per slot terlihat patah)
- for(const m of[1,-1]){R(Z.act(m));for(let i=0;i<BENCHN;i++)R(Z.ben(i,m));R(Z.dk(m));R(Z.dis(m));F(m)}R(LAY.stad);
+ for(const m of[1,-1]){R(Z.act(m));for(let i=0;i<BENCHN[m];i++)R(Z.ben(i,m));R(Z.dk(m));R(Z.dis(m));F(m)}R(LAY.stad);
  const hw=LAY.W/2+3;seg(-hw,0,-.8,0,.08);seg(.8,0,hw,0,.08);ring(.68,.08);ring(.2,.08);
  SLM.geometry.dispose();SLM.geometry=new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(P,3));drawLabels()}
 /* nama slot kosong (istilah kartu Indonesia), rata di meja tepat di bawah posisi kartu: tertutup kartu begitu slot terisi.
@@ -44,7 +44,7 @@ const slTex=t=>SLT[t]||(SLT[t]=ctex(512,128,(x,w,h)=>{x.font='700 76px "Chakra P
 const prizeBox=m=>{let l=1e9,r=-1e9,t=1e9,b=-1e9;for(let i=0;i<6;i++){const[x,z,s]=Z.pri(i,m);l=Math.min(l,x-s/2);r=Math.max(r,x+s/2);t=Math.min(t,z-.7*s);b=Math.max(b,z+.7*s)}return{l:l-.1,r:r+.1,t:t-.1,b:b+.1}};
 function drawLabels(){for(const c of[...SLB.children]){c.geometry.dispose();c.material.dispose();SLB.remove(c)}
  const L=(t,[cx,cz,s],k=.84)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(s*k,s*k/4),new THREE.MeshBasicMaterial({map:slTex(t),transparent:true,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.set(cx,0,cz);SLB.add(m)};
- for(const m of[1,-1]){L('BERTARUNG',Z.act(m));for(let i=0;i<BENCHN;i++)L('CADANGAN',Z.ben(i,m));L('DECK',Z.dk(m));L('TRASH',Z.dis(m));
+ for(const m of[1,-1]){L('BERTARUNG',Z.act(m));for(let i=0;i<BENCHN[m];i++)L('CADANGAN',Z.ben(i,m));L('DECK',Z.dk(m));L('TRASH',Z.dis(m));
   const g=prizeBox(m),w=g.r-g.l;L('KARTU POINT',[(g.l+g.r)/2,m>0?g.b+w*.13:g.t-w*.13,w],.8)}   // di luar bingkai: sisi luar meja, tak tertutup kartu
  L('STADIUM',LAY.stad,.96)}
 if(document.fonts)document.fonts.load('700 50px "Chakra Petch"').then(()=>{for(const k in SLT){SLT[k].dispose();delete SLT[k]}if(LAYMODE!==null)drawLabels()});   // gambar ulang setelah font termuat
@@ -282,7 +282,7 @@ function flyStep(g,f,now,x,y,z,s,up){const p=(now-f.t0)/f.dur;if(p<0)return fals
  g.position.set(f.from.x+(x-f.from.x)*e,f.from.y+(y-f.from.y)*e+Math.sin(Math.PI*q)*f.h,f.from.z+(z-f.from.z)*e);g.scale.setScalar(f.s0+(s-f.s0)*e);
  g.rotation.x=f.r0+((up?-Math.PI/2:Math.PI/2)-f.r0)*e;g.rotation.z=f.z0*(1-e)+Math.sin(Math.PI*q)*.35;return q>=1}
 function sync(){
- if(!G||!G.p)return;{const bn=Math.max(bmax('p'),bmax('o'));if(bn!==BENCHN){BENCHN=bn;drawSlots()}}
+ if(!G||!G.p)return;{const a=bmax('p'),b=bmax('o');if(a!==BENCHN[1]||b!==BENCHN[-1]){BENCHN={1:a,'-1':b};drawSlots()}}
  const L=lay(),seen=new Set(),now=performance.now(),fly=[];LI=new Map();
  for(const it of L){seen.add(it.id);LI.set(it.id,it);let g=M.get(it.id),nw=0;
   if(!g){nw=1;g=newCardMesh();M.set(it.id,g);scene.add(g);const m=it.sd==='o'?-1:1,dp=Z.dk(m);g.position.set(dp[0],1.5,dp[1]);g.scale.setScalar(.3);g.rotation.x=Math.PI/2}

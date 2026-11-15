@@ -468,7 +468,7 @@ const PL0=new THREE.Plane(new THREE.Vector3(0,1,0),-.06);
 function slotAt(px,pz){const hit=p=>Math.abs(px-p[0])<=p[2]/2+.07&&Math.abs(pz-p[1])<=.7*p[2]+.07;
  for(const m of[1,-1]){const sd=m===1?'p':'o',nm=m===1?'kamu':'Bot',S=G[sd],nmon=mn=>mn&&!(G.hidden&&sd==='o')?`: ${cname(mn.card)}`:'';
   if(hit(Z.act(m)))return{t:`Arena Bertarung ${nm}${nmon(S.active)}\nPokémon yang sedang bertarung`,p:Z.act(m),mon:S.active};
-  for(let i=0;i<BENCHN;i++)if(hit(Z.ben(i,m)))return{t:`Cadangan ${nm} ${i+1}/${BENCHN}${nmon(S.bench[i])}`,p:Z.ben(i,m),mon:S.bench[i]};
+  for(let i=0;i<BENCHN[m];i++)if(hit(Z.ben(i,m)))return{t:`Cadangan ${nm} ${i+1}/${BENCHN[m]}${nmon(S.bench[i])}`,p:Z.ben(i,m),mon:S.bench[i]};
   if(hit(Z.dk(m)))return{t:`Deck ${nm}: ${S.deck.length} kartu`,p:Z.dk(m)};
   if(hit(Z.dis(m)))return{t:`Trash ${nm}: ${S.discard.length} kartu${S.discard.length?'\nKlik untuk melihat isinya':''}`,p:Z.dis(m)};
   for(let i=0;i<6;i++)if(hit(Z.pri(i,m)))return{t:`Kartu Point ${nm}: ${S.prizes.length} tersisa\nDiambil saat membuat KO`,p:Z.pri(i,m)}}
