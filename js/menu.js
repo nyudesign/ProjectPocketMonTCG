@@ -43,7 +43,7 @@ function renderPre(){
  else{const e=document.createElement('div');e.className='empty-st';e.innerHTML=`<p class="note">Belum ada deck tersimpan. Susun deck sendiri, atau main dulu dengan deck ${BUILTINS.length?'bawaan':'acak'} di bawah.</p>`;
   const a=document.createElement('button');a.className='b go';a.innerHTML=ic('deck')+' Susun deck';a.onclick=()=>{DB.list={};DB.art={};DB.id=null;DB.name='';renderDB();showScr('db')};e.append(a);box.append(e)}
  if(BUILTINS.length){lbl('Deck bawaan');item(BUILTIN,'Mega Sharpedo ex');item(BUILTIN_TERA,'Archetype Tera');item(BUILTIN_DRAGA,'Archetype Dragapult')}
- lbl('Deck acak');const r=document.createElement('button');r.className='dk';r.innerHTML=`${ic('dice')}<span style="flex:1;min-width:0">Deck acak<small>Pokémon acak, pola deck juara, selalu sah</small></span><span class="go1">MAIN ${ic('play')}</span>`;r.onclick=()=>startBattle(randomDeck(PRE.fmt),PRE.fmt);box.append(r)}
+ lbl('Deck acak');const r=document.createElement('button');r.className='dk';r.innerHTML=`${ic('dice')}<span style="flex:1;min-width:0">Deck acak<small>Pokémon acak, pola deck turnamen, selalu sah</small></span><span class="go1">MAIN ${ic('play')}</span>`;r.onclick=()=>startBattle(randomDeck(PRE.fmt),PRE.fmt);box.append(r)}
 $('pre-back').onclick=()=>showScr('menu');
 /* ----- susun deck ----- */
 const DB={list:{},art:{},id:null,fmt:'std',shut:new Set(),only:false};   // list: total salinan per kartu; art: kunci kartu -> {id gambar varian lain: jumlah}, sisanya cetakan utama; shut: kategori yang dilipat; only: tampilan Deck Anda
@@ -184,7 +184,7 @@ function updDB(){
  $('db-del').disabled=!DB.id||isBuiltin(DB.id);$('db-clear').disabled=!n;if(DB.only)dbFilter()}
 $('db-back').onclick=()=>showScr('menu');
 $('db-side').addEventListener('click',e=>{const t=e.target.closest('.dtog');if(!t)return;t.setAttribute('aria-expanded',$('db-side').classList.toggle('open'))});   // HP: panel deck jadi bilah tipis (jumlah + sah/belum); Kelola membuka rincian, nama, simpan
-$('db-rec').onclick=()=>{const d=!total()&&(buildRecDeck(DB.fmt)||buildGenDeck(DB.fmt)||buildDeck(DB.fmt));DB.list=d?d.L:recommend(DB.list);updDB();$('db-chk').insertAdjacentHTML('afterbegin',`<div class="chk ok">${ic('spark')} ${d?`Deck rekomendasi dimuat: ${esc(d.name)}.${d.pola?` Pola susunan: ${esc(d.pola)}.`:''}`:'Dilengkapi jadi 60 kartu: Trainer staple dan Energi.'}</div>`)};   // deck kosong: Pokémon acak, susunan mengikuti pola list juara Limitless (fx.js)
+$('db-rec').onclick=()=>{const d=!total()&&(buildRecDeck(DB.fmt)||buildGenDeck(DB.fmt)||buildDeck(DB.fmt));DB.list=d?d.L:recommend(DB.list);updDB();$('db-chk').insertAdjacentHTML('afterbegin',`<div class="chk ok">${ic('spark')} ${d?`Deck rekomendasi dimuat: ${esc(d.name)}.`:'Dilengkapi jadi 60 kartu: Trainer staple dan Energi.'}</div>`)};   // deck kosong: Pokémon acak, susunan mengikuti pola list turnamen Limitless (fx.js)
 $('db-clear').onclick=()=>{DB.list={};DB.art={};DB.id=null;DB.name='';$('db-name').value='';$('db-load').value='';updDB()};
 $('db-save').onclick=()=>{const name=$('db-name').value.trim();if(!name){$('db-name').focus();$('db-chk').insertAdjacentHTML('afterbegin','<div class="chk no">Isi nama deck dulu.</div>');return}
  const a=store.get();let id=DB.id&&!isBuiltin(DB.id)?DB.id:null;const rec={id:id||('d'+Date.now()),name,list:{...DB.list},art:cpArt(DB.art)};const i=a.findIndex(x=>x.id===rec.id);if(i>=0)a[i]=rec;else a.push(rec);store.set(a);DB.id=rec.id;DB.name=name;renderDB();

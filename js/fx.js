@@ -521,9 +521,10 @@ async function onAttachFx(sd,c,m){const S=G[sd];for(const s of c.g||[]){
  if(s.op==='onAttach'&&s.call&&m.card.type===s.t){const r=await pickDeck(sd,c,{title:`Pilih s/d ${s.call} Pokémon Basic ${TYPES[s.t][0]} untuk Cadangan`,pred:x=>isBasic(x)&&x.type===s.t,max:Math.min(s.call,bmax(sd)-S.bench.length),pref:x=>x.hp});r.forEach(x=>toBench(sd,x));await shuffleDeck(sd)}}}
 /* ---------- deck acak dari seluruh pool yang didukung (Bot mode "acak"; cadangan bila deck berpola juara gagal disusun) ----------
    1 keluarga evolusi utama (semua tahapnya didukung) + 1 pendamping, Trainer staple & umum, Energi Dasar sesuai biaya serangan; selalu dicek legal() */
-let FAMS=null;
+let FAMS=null,EVO=null;
+const hasEvo=n=>(EVO||(EVO=new Set(Object.values(CARDS).map(c=>c.from).filter(Boolean)))).has(n);   // nama ini masih punya evolusi di seluruh CARDS, termasuk kartu yang efeknya belum didukung
 function genFams(){if(FAMS)return FAMS;const P=Object.keys(CARDS).filter(k=>CARDS[k].k==='pokemon'&&!CARDS[k].hide),by={};P.forEach(k=>(by[CARDS[k].n]=by[CARDS[k].n]||[]).push(k));
- FAMS=[];for(const k of P){const c=CARDS[k];if(c.stage===0&&!(c.prize>1||c.hp>=110))continue;const ch=[k];let cur=c,ok=1;
+ FAMS=[];for(const k of P){const c=CARDS[k];if(hasEvo(c.n)||c.stage===0&&!(c.prize>1||c.hp>=110))continue;const ch=[k];let cur=c,ok=1;   // lini utuh saja: Dreepy-Drakloak tanpa Dragapult bukan lini
   while(cur.stage>0){const pre=by[cur.from];if(!pre){ok=0;break}const pk=pre.find(x=>CARDS[x].stage===cur.stage-1);if(!pk){ok=0;break}ch.unshift(pk);cur=CARDS[pk]}
   if(ok&&c.atk.some(a=>a.dmg>=60||a.g))FAMS.push(ch)}
  return FAMS}
@@ -543,9 +544,10 @@ function buildGenDeck(fmt='std'){const F=genFams();if(!F.length)return null;
   if(countDeck(L)!==60||!legal(L,fmt).ok)continue;
   const top=[main,part].map(f=>CARDS[f[f.length-1]].ni).filter((v,i,a)=>a.indexOf(v)===i);return{L,name:top.join(' + ')}}
  return null}
-/* ---------- deck rekomendasi: pola susunan list juara Limitless (js/decks-meta.js), Pokémon diacak ----------
-   1 list juara jadi cetakan: bentuk tiap lini (mis. 4-4-3, tech 1 lembar), Trainer & jumlahnya, jumlah Energi. Tiap lini diganti keluarga
-   acak dengan tahap sama (tech 70% Basic ber-Ability, seperti di data). Trainer yang syaratnya tak cocok diganti staple terpopuler semua list. */
+/* ---------- Deck rekomendasi, Deck acak, racikan Bot: pola susunan semua list turnamen Limitless (META_POLA di js/decks-meta.js), Pokémon diacak ----------
+   Pola = statistik berbobot peringkat, bukan cetakan satu list: bentuk lini (mis. 4-4-3, 2-2, Basic tunggal), jumlah per jenis Trainer/Energi menurut
+   jumlah Pokémon, seberapa sering tiap Trainer dipakai (dibedakan deck dengan/tanpa lini Stage 2), dan jumlah tipe Energi Dasar.
+   Pokémonnya acak tapi masuk akal: lini evolusi utuh (genFams), Basic tunggal hanya yang tidak berevolusi. Trainer yang syaratnya tak cocok dilewati (fitsDeck). */
 const TXT={Daun:'G',Api:'R',Air:'W',Listrik:'L',Psychic:'P',Petarung:'F',Kegelapan:'D',Logam:'M',Naga:'N',Bening:'C'};
 function fitsDeck(c,L){const ms=Object.keys(L).map(k=>CARDS[k]).filter(isMon),has=f=>ms.some(f),tx=c.tx||'',anti=(c.g||[]).find(s=>['stHp','stTeraCost','stNoAb'].includes(s.op));
  if(anti)return !(anti.op==='stHp'&&anti.n<0&&has(m=>m.stage===anti.stage)||anti.op==='stTeraCost'&&has(m=>m.tera)||anti.op==='stNoAb'&&has(m=>m.type===anti.t&&m.ab));   // Stadium yang merugikan Pokémon sendiri
@@ -555,30 +557,29 @@ function fitsDeck(c,L){const ms=Object.keys(L).map(k=>CARDS[k]).filter(isMon),ha
  if(/Pokémon \{ex\} dari Deck/.test(tx)&&!has(rule)||/HP ≤70|HP 70 atau kurang/.test(tx)&&!has(m=>isBasic(m)&&m.hp<=70)||/tanpa Rule Box|selain Pokémon yang memiliki Peraturan/.test(tx)&&!has(m=>!rule(m)))return false;
  const t=c.k==='stadium'?null:tx.match(/(?:Pokémon|Energi Dasar) \{(Daun|Api|Air|Listrik|Psychic|Petarung|Kegelapan|Logam|Naga|Bening)\}/);
  return !(t&&!has(m=>m.type===TXT[t[1]])||c.k==='tool'&&/Racun/.test(tx)&&!has(m=>m.atk.some(a=>/Racun/.test(a.tx||''))))}
-function buildRecDeck(fmt='std'){const D=typeof META_DECKS==='undefined'?[]:META_DECKS,F=genFams();if(!D.length||!F.length)return null;
- const use={};D.forEach(d=>Object.entries(d.L).forEach(([k,n])=>{if(CARDS[k]&&isTrainer(CARDS[k]))(use[k]=use[k]||[]).push(n)}));
- const staple=Object.keys(use).sort((a,b)=>use[b].length-use[a].length),med=k=>[...use[k]].sort((a,b)=>a-b)[use[k].length>>1];
+function buildRecDeck(fmt='std'){const M=typeof META_POLA==='undefined'?null:META_POLA,F=genFams();if(!M||!F.length)return null;
+ const pick=a=>{let r=Math.random()*a.reduce((s,x)=>s+x[x.length-1],0);for(const x of a)if((r-=x[x.length-1])<=0)return x;return a[a.length-1]};   // acak berbobot; bobot = elemen terakhir
  const EN={};for(const k of Object.keys(CARDS)){const c=CARDS[k];if(c.k==='energy'&&c.t&&!c.hide&&(!EN[c.t]||!/^h/.test(k)))EN[c.t]=k}
- const techs=Object.keys(CARDS).filter(k=>isBasic(CARDS[k])&&!CARDS[k].hide&&!CARDS[k].fossil);
- for(let tries=0;tries<40;tries++){const t=D[rnd(D.length)],L={},names=new Set(),q=(k,n)=>{if(n>0){L[k]=(L[k]||0)+n;names.add(CARDS[k].n)}},
-   cnt=f=>Object.keys(L).filter(k=>f(CARDS[k])).reduce((a,k)=>a+L[k],0),by={},grp={};
-  for(const[k,n]of Object.entries(t.L)){const c=CARDS[k];if(isMon(c))(by[c.n]=by[c.n]||[]).push([k,n])}
-  const root=k=>{let c=CARDS[k],i=0;while(c.from&&by[c.from]&&i++<3)c=CARDS[by[c.from][0][0]];return c.n};
-  for(const a of Object.values(by))for(const[k,n]of a)(grp[root(k)]=grp[root(k)]||[0,0,0])[CARDS[k].stage]+=n;
-  const shapes=Object.values(grp).map(a=>{const s=a.slice(0,a[2]?3:a[1]?2:1);for(let i=s.length-2;i>=0;i--)s[i]=Math.max(s[i],1);return s})   // lini tanpa Basic di cetakan tetap utuh
-   .sort((a,b)=>b.length-a.length||b.reduce((x,y)=>x+y)-a.reduce((x,y)=>x+y));
-  const lines=[];let ok=true;
-  for(const s of shapes){const ab=Math.random()<.7,pool=s.length>1||s[0]>=3?F.filter(f=>f.length===s.length&&f.every(k=>!names.has(CARDS[k].n))):techs.filter(k=>!names.has(CARDS[k].n)&&!!CARDS[k].ab===ab).map(k=>[k]);
-   if(!pool.length){ok=false;break}const f=pool[rnd(pool.length)];f.forEach((k,j)=>q(k,s[j]));if(s.length>1||s[0]>=3)lines.push(f)}
+ const own=n=>(n.match(/<([^>]+)>/)||[])[1],rusak=new Set(Object.values(CARDS).filter(c=>c.from===c.n).map(c=>own(c.n)).filter(Boolean));   // shortcut: asal evolusi sebagian kartu milik pelatih masih tercatat sebagai namanya sendiri, jadi hasEvo tidak melihat Basic-nya; Basic milik pelatih itu dilewati. Hapus setelah from di data kartu diperbaiki
+ const techs=Object.keys(CARDS).filter(k=>isBasic(CARDS[k])&&!CARDS[k].hide&&!CARDS[k].fossil&&!hasEvo(CARDS[k].n)&&!rusak.has(own(CARDS[k].n))),   // Basic tunggal: hanya yang memang tidak berevolusi (Abra sendirian tanpa Kadabra bukan tech)
+  trs=Object.keys(M.tr).filter(k=>CARDS[k]&&!CARDS[k].hide);   // Trainer & Energi Spesial, urut dari yang paling sering dipakai
+ for(let tries=0;tries<40;tries++){const L={},names=new Set(),q=(k,n)=>{if(n>0){L[k]=(L[k]||0)+n;names.add(CARDS[k].n)}},free=k=>!names.has(CARDS[k].n),lines=[];let ok=true;
+  for(const s of pick(M.sh)[0].split(' ').map(x=>x.split('-').map(Number))){if(s[0]<s[1])[s[0],s[1]]=[s[1],s[0]];   // lini acak butuh Basic sebanyak Stage 1-nya (di data ada 3-4 karena Ability Stage 1 tertentu)
+   const fam=s.length>1||s[0]>=3,ab=Math.random()<M.tech[0],rb=Math.random()<M.tech[1];   // lini (atau Basic penyerang 3-4 lembar) vs Basic tunggal
+   let pool=fam?F.filter(f=>f.length===s.length&&f.every(free)):techs.filter(k=>free(k)&&!!CARDS[k].ab===ab&&(CARDS[k].prize>1)===rb).map(k=>[k]);
+   if(!fam&&!pool.length)pool=techs.filter(k=>free(k)&&!!CARDS[k].ab===ab).map(k=>[k]);
+   if(!pool.length){ok=false;break}const f=pool[rnd(pool.length)];f.forEach((k,j)=>q(k,s[j]));if(fam)lines.push(f)}
   if(!ok||!lines.length)continue;
-  const T=Object.keys(t.L).filter(k=>CARDS[k]&&isTrainer(CARDS[k])).reduce((a,k)=>a+t.L[k],0);let ace=0;
-  for(const[k,n]of Object.entries(t.L)){const c=CARDS[k];if(c&&(isTrainer(c)||c.k==='senergy')&&!c.hide&&!(c.ace&&ace)&&fitsDeck(c,L)){q(k,c.ace?1:n);if(c.ace)ace=1}}
-  for(const k of staple){const c=CARDS[k],left=T-cnt(isTrainer);if(left<=0)break;if(c.hide||L[k]||c.ace&&ace||!fitsDeck(c,L))continue;q(k,Math.min(left,med(k)));if(c.ace)ace=1}
-  const E=60-countDeck(L);if(E<4||E>20)continue;
-  const need={};for(const k of Object.keys(L)){const c=CARDS[k];if(isMon(c))for(const a of c.atk)for(const ty of a.cost)if(ty!=='C'&&EN[ty])need[ty]=(need[ty]||0)+L[k]}
-  const ts=Object.keys(need);if(!ts.length)ts.push(Object.keys(EN)[rnd(Object.keys(EN).length)]);
+  const nP=countDeck(L),cv=pick(M.cnt[Object.keys(M.cnt).sort((a,b)=>Math.abs(a-nP)-Math.abs(b-nP))[0]]),s2=+Object.keys(L).some(k=>CARDS[k].stage===2);let ace=0;   // jumlah per jenis: dari list yang jumlah Pokémonnya paling dekat
+  ['supporter','item','tool','stadium','senergy'].forEach((kd,i)=>{let left=cv[i];const cand=trs.filter(k=>CARDS[k].k===kd&&fitsDeck(CARDS[k],L)),bisa=k=>free(k)&&!(CARDS[k].ace&&ace),
+    isi=k=>{const n=Math.min(left,CARDS[k].ace?1:M.tr[k][2]);q(k,n);left-=n;if(CARDS[k].ace)ace=1};
+   for(const k of cand)if(left>0&&bisa(k)&&Math.random()<M.tr[k][s2])isi(k);   // tiap kartu ikut menurut tingkat pemakaiannya
+   while(left>0){const r=cand.filter(bisa).map(k=>[k,M.tr[k][s2]+.001]);if(!r.length)break;isi(pick(r)[0])}});   // sisa slot: undian berbobot tingkat pemakaian. Diisi berurutan, kartu teratas jenis kecil (Stadium) masuk ke hampir semua deck
+  const E=60-countDeck(L);if(E<3||E>22)continue;
+  const need={};for(const k of lines.flat())for(const a of CARDS[k].atk)for(const ty of a.cost)if(ty!=='C'&&EN[ty])need[ty]=(need[ty]||0)+L[k];   // Energi untuk lini penyerang; Basic tunggal jarang menyerang
+  let ts=Object.keys(need).sort((a,b)=>need[b]-need[a]).slice(0,pick(M.et)[0]);if(!ts.length)ts=[Object.keys(EN)[rnd(Object.keys(EN).length)]];   // berapa tipe Energi Dasar: mengikuti data (kebanyakan 1-2)
   const tot=ts.reduce((a,x)=>a+(need[x]||1),0);let left=E;
-  ts.sort((a,b)=>(need[b]||1)-(need[a]||1)).forEach((x,i)=>{const n=i===ts.length-1?left:Math.min(left,Math.max(2,Math.round(E*(need[x]||1)/tot)));if(n>0)L[EN[x]]=(L[EN[x]]||0)+n;left-=n});
+  ts.forEach((x,i)=>{const n=i===ts.length-1?left:Math.min(left,Math.max(2,Math.round(E*(need[x]||1)/tot)));if(n>0)L[EN[x]]=(L[EN[x]]||0)+n;left-=n});
   if(countDeck(L)!==60||!legal(L,fmt).ok)continue;
-  return{L,name:lines.slice(0,2).map(f=>CARDS[f[f.length-1]].ni).join(' + '),pola:t.name}}
+  return{L,name:lines.slice(0,2).map(f=>CARDS[f[f.length-1]].ni).join(' + ')}}
  return null}
