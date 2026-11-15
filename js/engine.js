@@ -424,11 +424,12 @@ function recommend(cur){
  const add=(k,q)=>{const c=CARDS[k],have=Object.entries(L).filter(([x])=>CARDS[x].n===c.n).reduce((a,[,v])=>a+v,0),cap=c.k==='energy'?99:c.ace?(Object.keys(L).some(x=>CARDS[x].ace&&x!==k)?0:1):4;const m=Math.max(0,Math.min(q,cap-have,60-countDeck(L)));if(m)L[k]=(L[k]||0)+m};
  for(const k of Object.keys(L)){const c=CARDS[k];if(c.from){const pre=Object.keys(CARDS).find(x=>CARDS[x].n===c.from);if(pre&&!L[pre])add(pre,L[k]+1)}}
  const basics=()=>Object.keys(L).filter(k=>CARDS[k].stage===0&&CARDS[k].k==='pokemon').reduce((a,k)=>a+L[k],0);
- if(basics()<6)['carvanha','toxel','minccino','munkidori'].forEach(k=>basics()<8&&add(k,2));
+ let ts=new Set();for(const k of Object.keys(L))if(isMon(CARDS[k])&&!Object.keys(L).some(x=>CARDS[x].from===CARDS[k].n))ts=enSet(CARDS[k],ts,9);if(!ts.size)ts.add(anyTy(L));   // tipe Energi dari serangan Pokémon yang sudah dipilih (tahap tertinggi tiap lini)
+ if(basics()<6)shuf(Object.keys(CARDS).filter(k=>isBasic(CARDS[k])&&!CARDS[k].hide&&!CARDS[k].fossil&&!hasEvo(CARDS[k].n)&&enSet(CARDS[k],ts,ts.size))).forEach(k=>basics()<8&&add(k,2));
  [['ultra',4],['pad',3],['poffin',3],['lillie',4],['boss',2],['stretcher',2],['iris',2],['hilda',2],['balloon',2],['helmet',1],['eretrieval',1],['prime',1]].forEach(([k,q])=>{if(countDeck(L)<60-12)add(k,q)});
- const en=Object.keys(L).filter(k=>CARDS[k].k==='energy'||CARDS[k].k==='senergy').reduce((a,k)=>a+L[k],0);if(!en||en<10)add('denergy',60-countDeck(L)>10?10-en:60-countDeck(L));
+ const en=Object.keys(L).filter(k=>CARDS[k].k==='energy'||CARDS[k].k==='senergy').reduce((a,k)=>a+L[k],0);
  add('prism',1);
- const pool=['ultra','pad','poffin','lillie','boss','carvanha','toxel'];let g=0;while(countDeck(L)<60&&g++<200)add(pool[g%pool.length],1);add('denergy',60-countDeck(L));
+ const pool=['ultra','pad','poffin','lillie','boss'];let g=0;while(countDeck(L)<60-Math.max(0,10-en)&&g++<200)add(pool[g%pool.length],1);fillEn(L,ts,60-countDeck(L));   // Energi Dasar sekali di akhir: minimal 10 Energi
  return L}
 /* deck kustom cadangan (bila buildGenDeck di js/fx.js gagal): disusun sendiri dari seluruh pool, bukan hanya archetype. 1 lini penyerang utama + 0-2 pendamping
    yang cocok, Trainer staple sesuai isi deck (Permen Langka hanya bila ada Stage 2, Gua Besar Zero & Briar hanya bila ada Terastal, Helm Punk
