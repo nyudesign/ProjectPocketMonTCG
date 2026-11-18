@@ -46,6 +46,7 @@ function renderPre(){
  lbl('Deck acak');const r=document.createElement('button');r.className='dk';r.innerHTML=`${ic('dice')}<span style="flex:1;min-width:0">Deck acak<small>Pokémon acak, pola deck turnamen, selalu sah</small></span><span class="go1">MAIN ${ic('play')}</span>`;r.onclick=()=>startBattle(randomDeck(PRE.fmt),PRE.fmt);box.append(r)}
 $('pre-back').onclick=()=>showScr('menu');
 /* ----- susun deck ----- */
+for(const t of['load','error'])document.addEventListener(t,e=>{const i=e.target;if(i.classList&&i.classList.contains('sk'))i.classList.remove('sk')},true);   // skeleton kartu hilang begitu gambar siap (atau gagal)
 const DB={list:{},art:{},id:null,fmt:'std',shut:new Set(),shutD:new Set(),only:false};   // list: total salinan per kartu; art: kunci kartu -> {id gambar varian lain: jumlah}, sisanya cetakan utama; shut/shutD: kategori yang dilipat di Semua kartu / Deck Anda; only: tampilan Deck Anda
 const dbShut=()=>DB.only?DB.shutD:DB.shut;   // lipatan per tampilan: melipat Pokémon di Semua kartu jangan membuat rekap Deck Anda tampil tidak lengkap
 const copiesByName=(n)=>Object.entries(DB.list).filter(([k])=>CARDS[k].n===n).reduce((a,[,v])=>a+v,0);
@@ -69,7 +70,7 @@ function renderDB(){
   h.firstChild.onclick=()=>{const s=!h.classList.contains('shut'),y=t.getBoundingClientRect().top-g.getBoundingClientRect().top-h.offsetHeight-8;   // kategori dilipat/dibuka; isinya tetap di DOM
    h.classList.toggle('shut',s);dbShut()[s?'add':'delete'](name);h.firstChild.setAttribute('aria-expanded',!s);if(s&&y<0)g.scrollTop+=y};   // dilipat saat judulnya menempel di atas: kembali ke awal kategori, supaya kategori berikutnya langsung terlihat
   keys.forEach((k,i)=>{if(S&&(!i||sub(keys[i-1])!==sub(k))){const s=document.createElement('h4');s.className='dbsub';s.textContent=(S[sub(k)]||['',''])[1];t.append(s)}   // sub-judul jenis
-   const c=CARDS[k],d=document.createElement('div'),nA=(c.alt||[]).length;d.className='tile';d.id='t-'+k;d.innerHTML=`<img src="${IMG[shownV(k)]}" alt="${cname(c)}" loading="lazy" width="250" height="350">${nA?`<button class="skb" aria-label="${esc(cname(c))}: ${nA+1} varian" title="Varian kartu">${ic('layers')}<b>${nA+1}</b></button>`:''}<div class="ctl"><button aria-label="Kurangi ${cname(c)}">${ic('minus')}</button><span aria-live="polite">0</span><button aria-label="Tambah ${cname(c)}">${ic('plus')}</button></div>`;
+   const c=CARDS[k],d=document.createElement('div'),nA=(c.alt||[]).length;d.className='tile';d.id='t-'+k;d.innerHTML=`<img class="sk" src="${IMG[shownV(k)]}" alt="${cname(c)}" loading="lazy" width="250" height="350">${nA?`<button class="skb" aria-label="${esc(cname(c))}: ${nA+1} varian" title="Varian kartu">${ic('layers')}<b>${nA+1}</b></button>`:''}<div class="ctl"><button aria-label="Kurangi ${cname(c)}">${ic('minus')}</button><span aria-live="polite">0</span><button aria-label="Tambah ${cname(c)}">${ic('plus')}</button></div>`;
    d.querySelector('img').onclick=()=>dbZoom(k);if(nA)d.querySelector('.skb').onclick=()=>dbZoom(k);const[bm,,bp]=d.querySelectorAll('.ctl button, .ctl span');
    bm.onclick=()=>vAdd(k,shownV(k),-1);bp.onclick=()=>vAdd(k,shownV(k),1);t.append(d)});g.append(t)}
  g.insertAdjacentHTML('beforeend','<p class="note dbempty" hidden>Tidak ada kartu yang cocok. Ubah kata kunci atau filter.</p>');
@@ -100,13 +101,13 @@ function crSize(){CR.W=CR.el.clientWidth;CR.step=CR.W+Math.max(12,CR.W*.04);CR.p
 function crOpen(k){const ks=[...$('db-grid').querySelectorAll('.tile')].filter(t=>!t.hidden&&t.offsetParent).map(t=>t.id.slice(2));   // daftar = tile yang tampil sekarang (filter ikut, kategori yang dilipat tidak)
  CR.keys=ks.includes(k)?ks:[k];CR.i=CR.keys.indexOf(k);CR.sl.forEach(e=>e.remove());CR.sl.clear();CR.pd=CR.drag=CR.wh=null;crMv(false);crSize()}
 function crSync(open){const k=DB.z.k;if(!open)crOpen(k);else if(CR.keys[CR.i]!==k){const i=CR.keys.indexOf(k);if(i<0)crOpen(k);else crGo(CR.i=i)}
- const im=CR.sl.get(CR.i)?.querySelector('img');if(im&&im.getAttribute('src')!==IMG[DB.z.v])im.src=IMG[DB.z.v]}   // slide aktif menampilkan varian yang dipilih
+ const im=CR.sl.get(CR.i)?.querySelector('img');if(im&&im.getAttribute('src')!==IMG[DB.z.v]){im.classList.add('sk');im.src=IMG[DB.z.v]}}   // slide aktif menampilkan varian yang dipilih
 function crDraw(){const{el,sl,keys,step,W}=CR,c=Math.round(CR.pos/step),half=(innerWidth+W)/2;
  for(const[i,e]of sl)if(Math.abs(i-c)>3){e.remove();sl.delete(i)}
  for(let i=Math.max(0,c-3);i<=Math.min(keys.length-1,c+3);i++){let e=sl.get(i);const k=keys[i];
-  if(!e){e=document.createElement('div');e.className='zs';e.dataset.i=i;e.innerHTML=`<div class="zc"><img draggable="false" alt="${esc(cname(CARDS[k]))}" src="${IMG[i===CR.i&&DB.z.k===k?DB.z.v:shownV(k)]}"></div>`;el.append(e);sl.set(i,e)}
-  const d=i*step-CR.pos,a=Math.min(1,Math.abs(d)/half),pf=800/(800+80*a),o=Math.max(0,1-1.1*a);   // coverflow 2D: makin jauh dari tengah makin kecil, rapat ke tengah, dan gelap (latar hitam pekat, jadi pudar = gelap)
-  e.style.transform=`translate3d(${(d*pf).toFixed(2)}px,0,0) scale(${(pf*(1-.4*a)).toFixed(4)})`;e.style.opacity=o.toFixed(3);e.style.visibility=o>.04?'':'hidden';e.style.zIndex=Math.round(100-40*a);   // kartu yang sudah tak terlihat jangan bisa diklik
+  if(!e){e=document.createElement('div');e.className='zs';e.dataset.i=i;e.innerHTML=`<div class="zc"><img class="sk" draggable="false" alt="${esc(cname(CARDS[k]))}" src="${IMG[i===CR.i&&DB.z.k===k?DB.z.v:shownV(k)]}"></div>`;el.append(e);sl.set(i,e)}
+  const d=i*step-CR.pos,a=Math.min(1,Math.abs(d)/half),pf=800/(800+80*a),o=Math.max(0,1-1.1*a);   // coverflow 2D: makin jauh dari tengah makin kecil, rapat ke tengah, dan gelap. Gelap lewat brightness (kartu tetap pekat, tekstur latar tidak tembus); opacity hanya untuk yang hampir keluar layar
+  e.style.transform=`translate3d(${(d*pf).toFixed(2)}px,0,0) scale(${(pf*(1-.4*a)).toFixed(4)})`;e.style.opacity=Math.min(1,o/.2).toFixed(3);e.style.filter=o<.995?`brightness(${o.toFixed(3)})`:'';e.style.visibility=o>.04?'':'hidden';e.style.zIndex=Math.round(100-40*a);   // kartu yang sudah tak terlihat jangan bisa diklik
   e.classList.toggle('act',i===CR.i);e.setAttribute('aria-hidden',i!==CR.i)}}
 const crSnap=v=>{CR.tgt=crClamp(Math.round((CR.tgt+v)/CR.step))*CR.step;CR.v=0};   // flick 1: sasaran = posisi + kecepatan x 1 dtk, dibulatkan ke kartu
 const crRun=()=>{if(!CR.raf){CR.t=performance.now();CR.raf=requestAnimationFrame(crTick)}};
@@ -178,7 +179,7 @@ function dbView(only){DB.only=only;[...$('db-view').children].forEach((b,i)=>{b.
  for(const h of $('db-grid').querySelectorAll('h3')){const s=dbShut().has(h.dataset.n);h.classList.toggle('shut',s);h.firstChild.setAttribute('aria-expanded',!s)}   // tiap tampilan memakai lipatannya sendiri
  dbFilter();$('db-grid').scrollTop=0}
 function updDB(){
- for(const k of Object.keys(CARDS)){const t=$('t-'+k);if(!t)continue;const n=DB.list[k]||0,im=t.querySelector('img'),src=IMG[shownV(k)],sk=t.querySelector('.skb');if(im.getAttribute('src')!==src)im.src=src;if(sk)sk.classList.toggle('on',!!DB.art[k]);t.querySelector('span').textContent=n;t.classList.toggle('on',n>0);const[bm,bp]=t.querySelectorAll('.ctl button');bm.disabled=!n;bp.disabled=!canAdd(k)}
+ for(const k of Object.keys(CARDS)){const t=$('t-'+k);if(!t)continue;const n=DB.list[k]||0,im=t.querySelector('img'),src=IMG[shownV(k)],sk=t.querySelector('.skb');if(im.getAttribute('src')!==src){im.classList.add('sk');im.src=src}if(sk)sk.classList.toggle('on',!!DB.art[k]);t.querySelector('span').textContent=n;t.classList.toggle('on',n>0);const[bm,bp]=t.querySelectorAll('.ctl button');bm.disabled=!n;bp.disabled=!canAdd(k)}
  for(const[name,fn]of CLUSTERS){const e=$('cc-'+name);if(e)e.textContent=Object.entries(DB.list).filter(([k])=>fn(CARDS[k])).reduce((a,[,v])=>a+v,0)}
  const n=total(),ok=legal(DB.list,DB.fmt).ok;let sum=`<div class="dcount"><b>${n}/60</b><span>kartu di deck</span><em class="${ok?'ok':'no'}">${ic(ok?'check':'x')} ${ok?'Sah':'Belum sah'}</em><button class="dtog" aria-controls="db-side" aria-expanded="${$('db-side').classList.contains('open')}">Kelola</button></div><div class="bar${n===60?' full':''}"><i style="width:${n/60*100}%"></i></div><div class="kinds">`;
  for(const[name,fn]of CLUSTERS){const v=Object.entries(DB.list).filter(([k])=>fn(CARDS[k])).reduce((a,[,q])=>a+q,0);sum+=`<span>${name}</span><b>${v}</b>`}
