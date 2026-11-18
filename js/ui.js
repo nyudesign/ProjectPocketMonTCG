@@ -87,8 +87,9 @@ function cardText(c){if(c.k!=='pokemon')return`<div><span class="chip">${KIND[c.
  (c.ab?`<div><b>Ability: ${c.ab.n}</b><br>${c.ab.tx}</div>`:'')+c.atk.map(a=>`<div><b>${a.n}</b> <span class="cost" style="display:inline-flex;vertical-align:middle">${costIcons(a.cost)}</span> ${a.dmg?a.dmg+(a.plus?'+':a.times?'×':''):''}<br>${a.tx}</div>`).join('')+
  `<div>Kelemahan: ${c.weak?TYPES[c.weak][0]+' ×2':'-'} · Resistansi: ${c.res?TYPES[c.res][0]+' −30':'-'} · Mundur: ${c.retreat}</div>`}
 function zoomCard(c){if(zOut)zEnd();{const z=$('zimg'),u=imgOf(c);if(z.getAttribute('src')!==u){z.classList.add('sk');z.src=u}}$('zimg').alt=cname(c);$('zinfo').innerHTML=`<div><b>${cname(c)}</b></div>`+cardText(c);$('zbtn').innerHTML='';$('zoom').classList.remove('db','info');$('zoom').classList.add('on')}   // kartu tangan/discard/Stadium; Pokémon di arena: monMenu
-let zOut=0;const zEnd=()=>{clearTimeout(zOut);zOut=0;const z=$('zoom');z.classList.remove('on','out','pull','rel');z.style.cssText=''};   // style = sisa tarik-untuk-menutup (--zy/--zp/--zop)
-const closeZoom=()=>{if(!$('zoom').matches('.on.db')||RMO)return zEnd();if(!zOut){$('zoom').classList.add('out');zOut=setTimeout(zEnd,240)}};   // zoom Susun Deck: memudar + buram + gelap dulu (#zoom.out), baru ditutup
+let zOut=0;const zEnd=()=>{clearTimeout(zOut);zOut=0;const z=$('zoom');z.classList.remove('on','out','pull','rel','fly');z.style.cssText=''};   // style = sisa tarik-untuk-menutup / terbang ke tile (--zy/--zp/--zop/--f*)
+const closeZoom=()=>{if(!$('zoom').matches('.on.db')||RMO)return zEnd();if(zOut)return;$('zoom').classList.add('out');zOut=setTimeout(zEnd,240);
+ requestAnimationFrame(()=>{if(!zOut)return;const i=$('t-'+DB.z.k)?.querySelector('img');zFly(i&&i.getBoundingClientRect())})};   // zoom Susun Deck: kartu kembali mengecil ke tile-nya lalu ditutup. rAF: grid baru tampil lagi (observer zbuka, microtask) sebelum tile diukur
 $('zx').onclick=closeZoom;$('zoom').onclick=e=>{if(e.target.id==='zoom'&&!$('zoom').classList.contains('db'))closeZoom()};   // zoom Susun Deck hanya ditutup lewat ✕ atau Escape: latarnya dipakai untuk menyeret carousel
 /* --- Discard --- */
 function openDisc(sd){
