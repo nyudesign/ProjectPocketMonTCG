@@ -109,12 +109,11 @@ const ISTILAH=[[/\bTidur\b/,'Tidur','tidak bisa menyerang atau Mundur. Tiap perg
  [/\bEnergi Spesial\b/,'Energi Spesial','Energi dengan efek tambahan'],
  [/\bPokémon Tool\b/,'Pokémon Tool','kartu alat yang dipasang ke Pokémon, 1 per Pokémon'],
  [/\bSupporter\b/,'Supporter','kartu Trainer kuat, hanya 1 per giliran'],
- [/\bStadium\b/,'Stadium','kartu lapangan yang berlaku untuk kedua pemain'],
- [/\bsisi (depan|belakang)\b/i,'Sisi depan / belakang','dua sisi koin yang dilempar']];   // urutan = prioritas, paling banyak 4 per kartu, tanpa istilah jenis kartu itu sendiri
+ [/\bStadium\b/,'Stadium','kartu lapangan yang berlaku untuk kedua pemain']];   // urutan = prioritas, paling banyak 4 per kartu, tanpa istilah jenis kartu itu sendiri
 const TOK={Bening:'C',Air:'W',Api:'R',Daun:'G',Kegelapan:'D',Listrik:'L',Logam:'M',Petarung:'F',Psychic:'P',Naga:'N'};
 const cardTx=t=>String(t||'').replace(/\{(\w+)\}/g,(m,k)=>TOK[k]?costIcons(TOK[k]):k==='ex'||k==='V'?k:m);   // simbol di teks resmi: {Api} = ikon Energi, {ex}/{V} = tulisan biasa
 const costTx=cost=>{const g={};[...cost].forEach(t=>g[t]=(g[t]||0)+1);const ks=Object.keys(g).sort((x,y)=>(x==='C')-(y==='C')),nm=t=>t==='C'?'apa saja':(TYPES[t]||['?'])[0];
- return!cost.length?'Tanpa Energi.':ks.length===1?`Butuh ${cost.length} Energi ${nm(ks[0])}.`:`Butuh ${cost.length} Energi: ${ks.map(t=>g[t]+' '+nm(t)).join(' + ')}.`};
+ return!cost.length?'Tanpa Energi.':ks.length===1?`Butuh ${cost.length} Energi ${nm(ks[0])}.`:`Butuh Energi: ${ks.map(t=>g[t]+' '+nm(t)).join(' + ')}.`};
 function cardText(c){const P=c.k==='pokemon',T=P?TYB[c.type]||TYB.C:c.k==='energy'?TYB[c.t]||TYB.C:['#363a44','#252830','#f2efe8'],
   rule=(i,b,t)=>`<p class="zr">${ic(i)}<span><b>${b}:</b> ${t}</span></p>`,tx=t=>t?`<p>${cardTx(t)}</p>`:'',
   head=`<h2 class="amh" style="--b1:${T[0]};--b2:${T[1]};--tt:${T[2]};--hk:${T[2]==='#fff'?18:0}%"><b>${cname(c)}</b><span>${P?'HP '+c.hp+costIcons(c.type):c.k==='energy'||c.k==='senergy'?'Energi'+(c.t?costIcons(c.t):''):'Trainer'}</span></h2>`;
@@ -125,10 +124,17 @@ function cardText(c){const P=c.k==='pokemon',T=P?TYB[c.type]||TYB.C:c.k==='energ
   (c.ab?`<div class="amr ab info"><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p class="zk">Kemampuan khusus, bukan serangan.</p>${tx(c.ab.tx)}</div>`:'')+
   c.atk.map(a=>`<div class="amr info"><span class="amt"><span class="cost">${costIcons(a.cost)}</span><b>${a.n}</b><i>${a.dmg?a.dmg+(a.plus?'+':a.times?'×':''):''}</i></span><p class="zk">${costTx(a.cost)}${a.dmg?` Memberi ${a.dmg} kerusakan${a.plus?' atau lebih':a.times?' dikali jumlah di teks':''}.`:''}</p>${tx(a.tx)}</div>`).join('')+'</div>';
  const plain=h.replace(/<[^>]+>/g,' '),g=ISTILAH.filter(([re,t])=>t!==KIND[c.k]&&re.test(plain)).slice(0,4),W=c.weak,R=c.res,n=c.retreat,
-  st=(l,v,k)=>`<div><dt>${l}</dt><dd>${v}${k?`<small>${k}</small>`:''}</dd></div>`;
+  st=(l,v,k)=>`<div><dt>${l}</dt><dd><span>${v}</span>${k?`<small>${k}</small>`:''}</dd></div>`;
  return h+(P?`<dl class="zst">${st('Kelemahan',W?costIcons(W)+'×2':'–',W?'kena 2× kerusakan':'tidak ada')}${st('Resistansi',R?costIcons(R)+'−30':'–',R?'kena −30 kerusakan':'tidak ada')}${st('Mundur',n>2?costIcons('C')+'×'+n:n?costIcons('C'.repeat(n)):'Gratis',n?`buang ${n} Energi`:'tanpa Energi')}</dl>`:'')+
   (g.length?`<div class="zg"><p class="zl">Arti istilah</p><dl>${g.map(([,t,d])=>`<div><dt>${t}:</dt><dd>${d}</dd></div>`).join('')}</dl></div>`:'')}
-function zoomCard(c){if(zOut)zEnd();{const z=$('zimg'),u=imgOf(c);if(z.getAttribute('src')!==u){z.classList.add('sk');z.src=u}}$('zimg').alt=cname(c);$('zinfo').innerHTML=cardText(c);$('zbtn').innerHTML='';$('zoom').classList.remove('db','info');$('zoom').classList.add('on')}   // kartu tangan/discard/Stadium; Pokémon di arena: monMenu
+function zFit(){const s=$('zside'),z=$('zinfo'),Z=$('zoom'),g=[...z.querySelectorAll('.zg dl>div')],sm=[...z.querySelectorAll('.zst small')],box=z.querySelector('.zg'),over=()=>s.scrollHeight>s.clientHeight+1,
+  ph=matchMedia('(max-width:760px)').matches,db=Z.classList.contains('db');   // deskripsi tanpa scroll: langkah demi langkah sampai muat. Teks resmi tidak pernah dipotong
+ z.style.zoom='';s.style.bottom=s.style.maxHeight='';Z.style.removeProperty('--zih');[...g,...sm].forEach(d=>d.hidden=false);if(box)box.hidden=false;
+ if(ph&&db){const c=CR.el.getBoundingClientRect(),x=$('zx').getBoundingClientRect();s.style.bottom=innerHeight-c.bottom+8+'px';s.style.maxHeight=c.bottom-x.bottom-16+'px'}   // HP, Susun Deck: lembar selebar layar dari bawah ✕ sampai dasar kartu
+ const hide=d=>()=>{d.hidden=true;if(!box.querySelector('dl>div:not([hidden])'))box.hidden=true};
+ for(const f of[()=>z.style.zoom=.95,()=>z.style.zoom=.9,...(ph&&!db?['36dvh','28dvh'].map(v=>()=>Z.style.setProperty('--zih',v)):[]),...g.reverse().map(hide),()=>z.style.zoom=.85,()=>z.style.zoom=.8,()=>sm.forEach(e=>e.hidden=true)]){if(!over())break;f()}}   // urutan: huruf 95/90%, gambar zoom pertandingan HP mengecil, arti istilah paling bawah disembunyikan, huruf 85/80%, catatan Kelemahan/Resistansi/Mundur. shortcut: di layar sangat pendek (HP mendatar) bisa tetap tidak muat, overflow:auto jadi cadangan
+addEventListener('resize',()=>{if($('zoom').classList.contains('on'))zFit()});
+function zoomCard(c){if(zOut)zEnd();{const z=$('zimg'),u=imgOf(c);if(z.getAttribute('src')!==u){z.classList.add('sk');z.src=u}}$('zimg').alt=cname(c);$('zinfo').innerHTML=cardText(c);$('zbtn').innerHTML='';$('zoom').classList.remove('db','info');$('zoom').classList.add('on');zFit()}   // kartu tangan/discard/Stadium; Pokémon di arena: monMenu
 let zOut=0;const zEnd=()=>{clearTimeout(zOut);zOut=0;const z=$('zoom');z.classList.remove('on','out','pull','rel','fly');z.style.cssText=''};   // style = sisa tarik-untuk-menutup / terbang ke tile (--zy/--zp/--zop/--f*)
 const closeZoom=()=>{if(!$('zoom').matches('.on.db')||RMO)return zEnd();if(zOut)return;$('zoom').classList.add('out');zOut=setTimeout(zEnd,240);
  requestAnimationFrame(()=>{if(!zOut)return;const i=$('t-'+DB.z.k)?.querySelector('img');zFly(i&&i.getBoundingClientRect())})};   // zoom Susun Deck: kartu kembali mengecil ke tile-nya lalu ditutup. rAF: grid baru tampil lagi (observer zbuka, microtask) sebelum tile diukur
@@ -506,7 +512,7 @@ function tap(id){
  if(it.zone==='hand')return zoomCard(it.c);
  if(it.mon)return monMenu(it.mon,it.sd);
  if(it.zone==='att'&&it.par)return monMenu(it.par,it.sd,it.c);   // Energi/Tool yang menempel: menu Pokémon-nya, kartu itu terpilih
- if(it.zone==='stad'){zoomCard(it.c);if(canAct()&&stUseOf()){const w=whyStadium('p');$('zbtn').innerHTML=`<button class="b go"${w?' disabled':''}>${ic('play')} Pakai efek Stadium</button>${w?`<small>${w}</small>`:''}`;if(!w)$('zbtn').querySelector('button').onclick=()=>{closeZoom();run(()=>actStadium('p'))}}return}   // Stadium yang bisa dipakai
+ if(it.zone==='stad'){zoomCard(it.c);if(canAct()&&stUseOf()){const w=whyStadium('p');$('zbtn').innerHTML=`<button class="b go"${w?' disabled':''}>${ic('play')} Pakai efek Stadium</button>${w?`<small>${w}</small>`:''}`;zFit();if(!w)$('zbtn').querySelector('button').onclick=()=>{closeZoom();run(()=>actStadium('p'))}}return}   // Stadium yang bisa dipakai
  if(it.zone==='dis')return openDisc(it.sd);
  if(it.zone==='ohand')return say(`Kartu Pegangan Bot: ${G.o.hand.length}`,1500);
  if(it.zone==='dk')return say(`Deck ${it.sd==='p'?'kamu':'Bot'}: ${G[it.sd].deck.length} kartu`,1500);

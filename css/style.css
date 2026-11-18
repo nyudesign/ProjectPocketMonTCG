@@ -135,24 +135,25 @@ body.bt .hud{display:flex}
 .zbox{position:relative;display:flex;gap:16px;align-items:center;max-height:96dvh;max-width:96vw;overflow:auto}.zbox .x{position:absolute;top:0;right:0;z-index:2}
 #zimg{height:min(80dvh,720px);max-width:46vw;width:auto;border-radius:4.5%/3.2%;box-shadow:0 18px 44px rgb(0 0 0/.6)}
 #zside{width:min(360px,44vw);display:flex;flex-direction:column;gap:12px;max-height:90dvh;overflow:auto;padding:10px;background:var(--paper);color:var(--tx);clip-path:var(--notch);font-size:14px;line-height:1.45;scrollbar-width:thin;scrollbar-color:var(--paper3) transparent}
-/* deskripsi kartu (cardText di js/ui.js), pola menu Pokémon (.amh, .amr/.amt): identitas, serangan, Kelemahan/Resistansi/Mundur, arti istilah. Rapat di dalam kelompok (6px), lega antar kelompok (14px) */
-#zinfo{display:flex;flex-direction:column;gap:14px;container-type:inline-size}#zinfo p,#zinfo dl,#zinfo dd{margin:0}#zinfo .zid,#zinfo .zmv{display:flex;flex-direction:column;gap:6px}
-#zinfo .amh{--hb:color-mix(in oklab,var(--b2),#000 var(--hk,0%));margin:0;padding:10px 12px;background:linear-gradient(100deg,var(--hb) 55%,color-mix(in oklab,var(--hb),var(--b1) 20%));font-size:19px;line-height:1.15}   /* warna tipe gelap (--hk = digelapkan untuk teks putih): kontras teks min. 4,6:1 di semua tipe */
+/* deskripsi kartu (cardText di js/ui.js), pola menu Pokémon (.amh, .amr/.amt): identitas, serangan, Kelemahan/Resistansi/Mundur, arti istilah. Rapat di dalam kelompok (5px), lega antar kelompok (12px). Tanpa scroll: zFit di js/ui.js */
+#zinfo{display:flex;flex-direction:column;gap:12px;container-type:inline-size}#zinfo p,#zinfo dl,#zinfo dd{margin:0}#zinfo .zid,#zinfo .zmv{display:flex;flex-direction:column;gap:5px}
+#zinfo .amh{--hb:color-mix(in oklab,var(--b2),#000 var(--hk,0%));margin:0;padding:9px 12px;background:linear-gradient(100deg,var(--hb) 55%,color-mix(in oklab,var(--hb),var(--b1) 20%));font-size:19px;line-height:1.15}   /* warna tipe gelap (--hk = digelapkan untuk teks putih): kontras teks min. 4,6:1 di semua tipe */
 #zinfo .amh,#zinfo .amt{flex-wrap:wrap;row-gap:4px}#zinfo .amt i{margin-left:auto}#zinfo{overflow-wrap:break-word}   /* panel sempit: nama/kerusakan turun baris, tidak meluber */
 #zinfo .amh span{display:flex;align-items:center;gap:6px;flex:none;margin-left:auto;font-size:14px;white-space:nowrap}#zinfo .zj{padding:0 2px;color:var(--tx2);font-size:13.5px}
 .zr{display:flex;gap:8px;align-items:flex-start;padding:0 2px;font-size:13px;line-height:1.4}.zr .ic{flex:none;width:18px;height:18px;margin-top:1px;color:var(--tx2)}.zr b{font:700 13px var(--fd);margin-right:2px}
 #zinfo .amr p{color:var(--tx);font-size:14px}#zinfo .amr .zk{color:var(--tx2);font-size:12.5px}#zinfo .amr .zk:not(:last-child){padding-bottom:0}#zinfo .amr .zk+p{padding-top:4px}#zinfo .amr>p:only-child{padding:10px 12px}
 #zinfo p .ci{width:1.2em;height:1.2em;margin:0 1px;vertical-align:-.27em}
-.zst{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--paper3);box-shadow:0 0 0 1px var(--paper3)}.zst>div{display:flex;flex-direction:column;gap:4px;padding:7px 8px 8px;background:#fff}
-.zst dt{font:600 11px/1 var(--fd);letter-spacing:.06em;text-transform:uppercase;color:var(--tx2)}.zst dd{display:flex;flex-wrap:wrap;align-items:center;gap:2px 3px;font:700 15px/1.2 var(--fd)}.zst .ci{width:18px;height:18px}
+.zst{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--paper3);box-shadow:0 0 0 1px var(--paper3)}.zst>div{display:flex;flex-wrap:wrap;align-items:center;gap:3px;padding:7px 8px;background:#fff}
+.zst dt{margin-right:auto;font:600 11px/1 var(--fd);letter-spacing:.06em;text-transform:uppercase;color:var(--tx2)}.zst dd{display:contents;font:700 15px/1.2 var(--fd)}.zst dd>span{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}.zst .ci{width:18px;height:18px}
 .zst small{flex-basis:100%;font:500 12px/1.3 var(--fb);color:var(--tx2)}
-@container (max-width:300px){.zst{grid-template-columns:1fr}.zst>div{flex-direction:row;align-items:center;justify-content:space-between;gap:8px}.zst dd{justify-content:flex-end;gap:2px 6px}.zst small{flex-basis:auto}
+@container (max-width:420px){.zst>div{flex-direction:column;align-items:flex-start;gap:4px}.zst small{flex-basis:auto}}   /* kolom sempit: label, nilai, catatan bertumpuk */
+@container (max-width:300px){.zst{grid-template-columns:1fr}.zst>div{flex-direction:row;align-items:center}.zst small{margin-left:3px}
  #zinfo .amh{font-size:17px}#zinfo .amr p{font-size:13px}#zinfo .amr .zk{font-size:12px}#zinfo .amt b{font-size:15px}#zinfo .amt i{min-width:40px;font-size:21px}}   /* panel sempit (HP): satu baris per nilai, huruf sedikit lebih kecil */
 .zg{padding:10px 12px 12px;background:var(--paper2)}#zinfo .zg dl{display:flex;flex-direction:column;gap:6px;margin-top:8px}.zl{font:600 11px/1 var(--fd);letter-spacing:.08em;text-transform:uppercase;color:var(--tx2)}
 .zg dl>div{font-size:13px;line-height:1.4}.zg dt{display:inline;font:700 13px/1.4 var(--fd)}#zinfo .zg dd{display:inline;margin-left:4px;color:var(--tx2)}
 .chip{display:inline-block;margin:1px 3px 1px 0;padding:2px 7px;background:var(--paper2);color:var(--tx);font:700 11px var(--fd);letter-spacing:.04em}
 #zbtn{display:flex;flex-direction:column;gap:6px}#zbtn .b{width:100%;justify-content:flex-start}
-@media (max-width:760px){.zbox{flex-direction:column;overflow:auto}#zimg{height:44dvh;max-width:70vw}#zside{width:min(92vw,420px);max-height:44dvh}}
+@media (max-width:760px){.zbox{flex-direction:column;overflow:auto}#zimg{height:var(--zih,44dvh);max-width:70vw}#zside{width:min(92vw,420px);max-height:calc(96dvh - var(--zih,44dvh) - 16px)}}   /* --zih: zFit mengecilkan gambar bila deskripsi panjang (tanpa scroll) */
 /* zoom susun deck (#zoom.db): tombol ‹ › di tepi kartu, info efek muncul di atas kartu lewat scroll/geser, baris varian + jumlah per varian di bawah */
 .znav,#zdb{display:none}
 #zoom.db .zbox{--zw:min(514px,calc((100dvh - 150px)*5/7),calc(100vw - 80px));display:grid;grid-template-columns:var(--zw);gap:12px;max-width:none;max-height:none;overflow:visible}
@@ -163,7 +164,8 @@ body.bt .hud{display:flex}
 .zs{position:absolute;inset:0;cursor:pointer;will-change:transform,opacity}.zs.act{cursor:grab}.zs.act:active{cursor:grabbing}#zoom.db.info .zs.act{cursor:auto}
 .zc{position:relative;width:100%;height:100%;isolation:isolate;transition:opacity .3s}
 .zc img{display:block;width:100%;height:100%;border-radius:4.5%/3.2%;background:var(--ink2);box-shadow:0 18px 44px rgb(0 0 0/.6);transition:filter .18s}
-#zoom.db #zside{z-index:1;align-self:center;justify-self:center;width:min(360px,calc(var(--zw) - 56px));max-height:calc(var(--zw)*1.4 - 64px);visibility:hidden;opacity:0;transform:translateY(10px);transition:opacity .18s,transform .18s,visibility .18s}
+#zoom.db #zside{z-index:1;align-self:center;justify-self:center;width:calc(var(--zw) - 56px);max-height:calc(var(--zw)*1.4 - 24px);visibility:hidden;opacity:0;transform:translateY(10px);transition:opacity .18s,transform .18s,visibility .18s}
+@media (max-width:760px){#zoom.db #zside{position:fixed;left:12px;right:12px;width:auto;justify-self:auto;align-self:auto}#zoom.db.info .znav{visibility:hidden}}   /* HP: info = lembar selebar layar, bottom/max-height dari zFit; ‹ › diganti geser kiri/kanan di panel */
 #zoom.db.info #zside{visibility:visible;opacity:1;transform:none}#zoom.db.info .zc img{filter:brightness(.42)}#zoom.db #zbtn{display:none}
 #zoom.db .znav{display:grid;place-items:center;align-self:center;z-index:2;width:48px;height:48px;border:0;border-radius:50%;background:var(--paper);color:var(--ink);box-shadow:0 6px 18px rgb(0 0 0/.45)}
 #zoom.db #zprev{justify-self:start;transform:translateX(-50%)}#zoom.db #znext{justify-self:end;transform:translateX(50%)}
