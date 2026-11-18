@@ -85,7 +85,7 @@ function renderDB(){
  const sel=$('db-load');sel.innerHTML='<option value="">Pilih deck…</option>';[...BUILTINS,...store.get()].forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name+(isBuiltin(d.id)?' (bawaan)':'');sel.append(o)});sel.value=DB.id||'';
  $('db-name').value=DB.name||'';updDB()}
 /* zoom susun deck: carousel kartu (urutan grid yang tampil), pilih varian, jumlah per varian; scroll/geser di kartu tengah = info efek */
-function dbZoom(k,v){const z=$('zoom'),open=z.matches('.on.db'),inf=open&&z.classList.contains('info');DB.z={k,v:v||shownV(k)};
+function dbZoom(k,v){if(zOut)zEnd();const z=$('zoom'),open=z.matches('.on.db'),inf=open&&z.classList.contains('info');DB.z={k,v:v||shownV(k)};
  zoomCard({...CARDS[k],img:DB.z.v});z.classList.add('db');z.classList.toggle('info',inf);$('zside').scrollTop=0;crSync(open);zRender();
  const t=$('t-'+k);if(t)t.scrollIntoView({block:'nearest'});if(!open)$('zx').focus({preventScroll:true})}
 function zRender(){const{k,v}=DB.z,c=CARDS[k],n=vCnt(k,v),vs=vars(k);
@@ -117,7 +117,7 @@ function crDraw(){const{el,sl,keys,step,W}=CR,c=Math.round(CR.pos/step),half=(in
 const crSnap=v=>{CR.tgt=crClamp(Math.round((CR.tgt+v)/CR.step))*CR.step;CR.v=0};   // flick 1: sasaran = posisi + kecepatan x 1 dtk, dibulatkan ke kartu
 const crRun=()=>{if(!CR.raf){CR.t=performance.now();CR.raf=requestAnimationFrame(crTick)}};
 const crGo=i=>{CR.tgt=crClamp(i)*CR.step;crRun()},crStep=d=>crGo(Math.round(CR.tgt/CR.step)+d);
-function crTick(t){if(!$('zoom').matches('.on.db')){CR.raf=0;CR.pd=CR.drag=CR.wh=null;crMv(false);return}   // zoom ditutup saat bergerak: berhenti, jangan sampai dbZoom membukanya lagi
+function crTick(t){if(!$('zoom').matches('.on.db:not(.out)')){CR.raf=0;CR.pd=CR.drag=CR.wh=null;crMv(false);return}   // zoom ditutup saat bergerak: berhenti, jangan sampai dbZoom membukanya lagi
  const dt=Math.min((t-CR.t)/1e3,1/30),end=(CR.keys.length-1)*CR.step,w=CR.wh;CR.t=t;
  if(w&&!CR.drag&&t-w.t>60){CR.wh=null;crSnap(w.v*.5*w.fl);if(Math.round(CR.tgt/CR.step)===w.i&&Math.abs(w.sum)>=w.min)CR.tgt=crClamp(w.i+Math.sign(w.sum))*CR.step}   // putaran roda selesai: minimal pindah 1 kartu
  const rb=CR.drag?5:30;if(CR.tgt<0)CR.tgt=crDamp(CR.tgt,0,rb,dt);else if(CR.tgt>end)CR.tgt=crDamp(CR.tgt,end,rb,dt);   // karet di ujung daftar
@@ -158,7 +158,7 @@ $('zoom').addEventListener('wheel',e=>{if(!$('zoom').classList.contains('db'))re
  const d=(ax>ay?e.deltaX:e.deltaY)*(e.deltaMode===1?100/3:e.deltaMode===2?100:1),nk=ay>=ax||e.shiftKey,u=CR.step/100;if(Math.abs(d)<.5)return;
  e.preventDefault();nk?crWheel(d*u,3.5*u,0):crWheel(d,30,1)},{passive:false});   // roda gaya mouse (vertikal di luar kartu tengah, atau Shift): 100 px = 1 kartu dan takik kecil pun pindah 1 kartu. Geser horizontal trackpad: ikut jari 1:1 lalu snap
 let zT=null;$('zoom').addEventListener('touchstart',e=>{zT=$('zoom').classList.contains('db')&&e.target.closest('.zs.act,#zside')?[e.touches[0].clientY,$('zside').scrollTop]:null},{passive:true});
-$('zoom').addEventListener('touchend',e=>{if(!zT)return;const dy=e.changedTouches[0].clientY-zT[0];if(dy<-40)zInfo(true);else if(dy>40&&zT[1]<=0)zInfo(false);zT=null});
+$('zoom').addEventListener('touchend',e=>{if(!zT)return;const dy=e.changedTouches[0].clientY-zT[0];if(dy<-40)zInfo(true);else if(dy>40&&zT[1]<=0)$('zoom').classList.contains('info')?zInfo(false):closeZoom();zT=null});   // geser ke bawah: tutup info, atau tutup zoom bila info tidak terbuka
 addEventListener('keydown',e=>{if(!$('zoom').matches('.on.db')||e.ctrlKey||e.metaKey||e.altKey||HL.to&&e.key!=='Escape')return;   // G kosong di layar ini, jadi Escape dari ui.js tidak berlaku
  const f={Escape:closeZoom,ArrowLeft:()=>$('zprev').click(),ArrowRight:()=>$('znext').click(),ArrowDown:()=>zInfo(true),ArrowUp:()=>zInfo(false)}[e.key];if(f){e.preventDefault();f()}});
 /* holo per rarity: tekan-tahan kartu tengah. Tiga lapisan .hl dipindah ke kartu aktif saat holo mulai; selama ditahan (#zoom.hold) tombol dan kartu lain memudar.

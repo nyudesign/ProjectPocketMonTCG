@@ -200,6 +200,7 @@ body.bt .hud{display:flex}
 /* holo ditahan (#zoom.hold): tombol dan kartu lain memudar pelan, lalu kembali saat dilepas. Digeser lewat seret/roda (#zoom.mv): tombol memudar cepat, kembali saat carousel diam */
 #zoom.db .znav,#zoom.db #zdb,#zoom.db .zbox .x{transition:opacity .3s}
 #zoom.db.mv .znav,#zoom.db.mv #zdb,#zoom.db.mv .zbox .x{opacity:0;pointer-events:none;transition:opacity .15s}
+#zoom.db.out{opacity:0;filter:blur(14px) brightness(.55);pointer-events:none;transition:opacity .22s ease-in,filter .22s ease-in}   /* tutup zoom: hilang sambil makin buram dan gelap, grid di belakangnya timbul */
 #zoom.db.hold .znav,#zoom.db.hold #zdb,#zoom.db.hold .zbox .x,#zoom.db.hold .zs:not(.act) .zc{opacity:0;pointer-events:none;transition:opacity .5s}
 /* panel pilih kartu (efek Trainer / mundur) */
 .pbox{width:min(1000px,100%);max-height:96dvh;overflow:auto;overflow-x:hidden;padding:14px;background:var(--ink2);clip-path:var(--notch);box-shadow:inset 0 0 0 1px var(--line),var(--shadow)}.ptop{display:flex;gap:14px;align-items:flex-start}
