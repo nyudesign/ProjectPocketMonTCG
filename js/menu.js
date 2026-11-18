@@ -46,7 +46,9 @@ function renderPre(){
  lbl('Deck acak');const r=document.createElement('button');r.className='dk';r.innerHTML=`${ic('dice')}<span style="flex:1;min-width:0">Deck acak<small>Pokémon acak, pola deck turnamen, selalu sah</small></span><span class="go1">MAIN ${ic('play')}</span>`;r.onclick=()=>startBattle(randomDeck(PRE.fmt),PRE.fmt);box.append(r)}
 $('pre-back').onclick=()=>showScr('menu');
 /* ----- susun deck ----- */
-for(const t of['load','error'])document.addEventListener(t,e=>{const i=e.target;if(i.classList&&i.classList.contains('sk'))i.classList.remove('sk')},true);   // skeleton kartu hilang begitu gambar siap (atau gagal)
+if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});   // cache gambar kartu di perangkat (sw.js)
+for(const t of['load','error'])document.addEventListener(t,e=>{const i=e.target;if(!i.classList||!i.classList.contains('sk'))return;if(t==='load'){i.classList.remove('sk');return}
+ const n=+(i.dataset.ulang||0),u=i.getAttribute('src').split('#')[0];if(n<6){i.dataset.ulang=n+1;setTimeout(()=>{if(i.isConnected&&i.classList.contains('sk'))i.src=u+'#u'+(n+1)},1500*2**Math.min(n,4))}},true);   // skeleton kartu hilang begitu gambar siap; gagal (sinyal lemah) = skeleton tetap + coba ulang dengan jeda
 const DB={list:{},art:{},id:null,fmt:'std',shut:new Set(),shutD:new Set(),only:false};   // list: total salinan per kartu; art: kunci kartu -> {id gambar varian lain: jumlah}, sisanya cetakan utama; shut/shutD: kategori yang dilipat di Semua kartu / Deck Anda; only: tampilan Deck Anda
 const dbShut=()=>DB.only?DB.shutD:DB.shut;   // lipatan per tampilan: melipat Pokémon di Semua kartu jangan membuat rekap Deck Anda tampil tidak lengkap
 const copiesByName=(n)=>Object.entries(DB.list).filter(([k])=>CARDS[k].n===n).reduce((a,[,v])=>a+v,0);

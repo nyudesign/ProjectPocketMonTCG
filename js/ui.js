@@ -3,8 +3,11 @@ let BACKURL='';const backUrl=()=>BACKURL||(BACKURL=(BACKT.image&&BACKT.image.toD
 const px2=(wx,wy,wz)=>{const v=new THREE.Vector3(wx,wy,wz).project(cam);return[(v.x+1)/2*innerWidth,(1-v.y)/2*innerHeight]};
 /* Trainer lawan ala PTCGL: kartu meluncur pelan dari tangan lawan (atas, miring, memudar masuk), tampil besar sesaat di tengah layar,
    lalu mengecil tepat ke tempat kartu dimainkan (playSpot). Dibuat pelan agar tidak mengagetkan (permintaan user) */
-async function cardFlyIn(c,sd){
- const box=$('cfx'),cf=document.createElement('div');cf.className='cf';cf.innerHTML=`<div class="face fr"><img src="${imgOf(c)}" alt="${cname(c)}"></div>`;box.append(cf);box.style.display='block';
+/* gambar kartu harus sudah siap sebelum tampil (tidak ada kartu kosong). Sinyal lemah: coba ulang dengan jeda; hasilnya masuk cache browser + Service Worker (sw.js) */
+const muatGambar=(u,n=3)=>new Promise(r=>{const i=new Image();i.onload=()=>i.decode().then(r,r);i.onerror=()=>n?setTimeout(()=>muatGambar(u,n-1).then(r),1200*(4-n)):r();i.src=u}),
+ imgReady=(urls,ms=2500)=>Promise.race([Promise.all([...new Set(urls)].map(u=>muatGambar(u))),sleep(ms)]);   // lewat batas waktu: tampil skeleton kartu (img.sk), bukan bingkai kosong
+async function cardFlyIn(c,sd){await imgReady([imgOf(c)]);
+ const box=$('cfx'),cf=document.createElement('div');cf.className='cf';cf.innerHTML=`<div class="face fr"><img class="sk" src="${imgOf(c)}" alt="${cname(c)}"></div>`;box.append(cf);box.style.display='block';
  const P=playSpot(sd),[sx,sy]=px2(0,.4,LAY.ohandZ||-5),[tx,ty]=px2(P[0],P[1],P[2]),th=Math.abs(px2(P[0],P[1],P[2]+.7*P[3])[1]-px2(P[0],P[1],P[2]-.7*P[3])[1]),
   ch=cf.offsetHeight||400,cx=innerWidth/2,cy=innerHeight/2,f=[1,.75,.45][UI.si];
  const A=(kf,o)=>cf.animate(kf,{fill:'forwards',...o}).finished;
@@ -14,8 +17,8 @@ async function cardFlyIn(c,sd){
  cf.remove();box.style.display='none'}
 /* kartu diperlihatkan menghadap layar (DOM, selalu lurus ke layar): terbang dari 'from' sambil berbalik, berjajar besar di tengah
    (HP: 3 per baris, desktop: 2 baris bila >5), lalu terbang ke 'to' sambil berbalik lagi menjadi punggung kartu */
-async function cardShow(cards,from,to,hold,o={}){const box=$('cfx'),n=cards.length,cx=innerWidth/2,cy=innerHeight/2;box.style.display='block';   // to: [x,y] (kembali tertutup) atau i=>({x,y,h}) (tetap terbuka, tinggi h px); o.dy/o.hk: geser & batas tinggi grid
- const els=cards.map(c=>{const e=document.createElement('div');e.className='cf';e.innerHTML=`<div class="face fr"><img src="${imgOf(c)}" alt="${cname(c)}"></div><div class="face bk"><img src="${backUrl()}" alt=""></div>`;box.append(e);return e}),
+async function cardShow(cards,from,to,hold,o={}){await imgReady(cards.map(imgOf));const box=$('cfx'),n=cards.length,cx=innerWidth/2,cy=innerHeight/2;box.style.display='block';   // to: [x,y] (kembali tertutup) atau i=>({x,y,h}) (tetap terbuka, tinggi h px); o.dy/o.hk: geser & batas tinggi grid
+ const els=cards.map(c=>{const e=document.createElement('div');e.className='cf';e.innerHTML=`<div class="face fr"><img class="sk" src="${imgOf(c)}" alt="${cname(c)}"></div><div class="face bk"><img src="${backUrl()}" alt=""></div>`;box.append(e);return e}),
   ch=els[0].offsetHeight||400,w=ch*5/7,cols=portrait()?Math.min(n,3):n>5?Math.ceil(n/2):n,rows=Math.ceil(n/cols),k=Math.min(1,(innerWidth-40)/(cols*(w+12)),innerHeight*(o.hk||.78)/(rows*(ch+12))),
   X=i=>{const r=(i/cols)|0,m=Math.min(cols,n-r*cols);return(i%cols-(m-1)/2)*(w+12)*k},Y=i=>(((i/cols)|0)-(rows-1)/2)*(ch+12)*k+(o.dy||0),T=i=>typeof to==='function'?to(i):{x:to[0],y:to[1],h:ch*.12,back:1};
  await Promise.all(els.map((e,i)=>e.animate([{transform:`translate(${from[0]-cx}px,${from[1]-cy}px) scale(.14) rotateY(180deg)`},{transform:`translate(${X(i)}px,${Y(i)}px) scale(${k}) rotateY(0)`}],{duration:560,delay:i*90,easing:'cubic-bezier(.2,.8,.25,1)',fill:'both'}).finished));
@@ -83,7 +86,7 @@ function cardText(c){if(c.k!=='pokemon')return`<div><span class="chip">${KIND[c.
  return`<div><span class="chip">${c.stage===0?'Basic':'Stage '+c.stage+(c.from?' dari '+c.from:'')}</span><span class="chip">${t[0]}</span><span class="chip">HP ${c.hp}</span>${c.mega?'<span class="chip">Mega ex · 3 Kartu Point</span>':c.prize>1?'<span class="chip">ex · 2 Kartu Point</span>':''}</div>`+
  (c.ab?`<div><b>Ability: ${c.ab.n}</b><br>${c.ab.tx}</div>`:'')+c.atk.map(a=>`<div><b>${a.n}</b> <span class="cost" style="display:inline-flex;vertical-align:middle">${costIcons(a.cost)}</span> ${a.dmg?a.dmg+(a.plus?'+':a.times?'×':''):''}<br>${a.tx}</div>`).join('')+
  `<div>Kelemahan: ${c.weak?TYPES[c.weak][0]+' ×2':'-'} · Resistansi: ${c.res?TYPES[c.res][0]+' −30':'-'} · Mundur: ${c.retreat}</div>`}
-function zoomCard(c){$('zimg').src=imgOf(c);$('zimg').alt=cname(c);$('zinfo').innerHTML=`<div><b>${cname(c)}</b></div>`+cardText(c);$('zbtn').innerHTML='';$('zoom').classList.remove('db','info');$('zoom').classList.add('on')}   // kartu tangan/discard/Stadium; Pokémon di arena: monMenu
+function zoomCard(c){{const z=$('zimg'),u=imgOf(c);if(z.getAttribute('src')!==u){z.classList.add('sk');z.src=u}}$('zimg').alt=cname(c);$('zinfo').innerHTML=`<div><b>${cname(c)}</b></div>`+cardText(c);$('zbtn').innerHTML='';$('zoom').classList.remove('db','info');$('zoom').classList.add('on')}   // kartu tangan/discard/Stadium; Pokémon di arena: monMenu
 const closeZoom=()=>$('zoom').classList.remove('on');
 $('zx').onclick=closeZoom;$('zoom').onclick=e=>{if(e.target.id==='zoom'&&!$('zoom').classList.contains('db'))closeZoom()};   // zoom Susun Deck hanya ditutup lewat ✕ atau Escape: latarnya dipakai untuk menyeret carousel
 /* --- Discard --- */
@@ -94,7 +97,7 @@ function openDisc(sd){
  const cnt={Pokémon:0,Trainer:0,Energi:0};S.discard.forEach(c=>cnt[c.k==='pokemon'?'Pokémon':isEn(c)?'Energi':'Trainer']++);
  $('disc-b').innerHTML=`<div class="dsum">${S.discard.length} kartu · Pokémon ${cnt.Pokémon} · Trainer ${cnt.Trainer} · Energi ${cnt.Energi}</div>`;
  if(!S.discard.length)$('disc-b').innerHTML+='<div class="empty">Trash masih kosong. Kartu yang dibuang atau Pokémon yang KO masuk ke sini.</div>';
- [...mp.values()].sort((a,b)=>b.n-a.n).forEach(({c,n})=>{const d=document.createElement('button');d.className='dc';d.setAttribute('aria-label',`${cname(c)}, ${n} lembar`);d.innerHTML=`<img src="${imgOf(c)}" alt=""><i>×${n}</i>`;d.onclick=()=>{$('disc').classList.remove('on');zoomCard(c)};$('disc-b').append(d)});
+ [...mp.values()].sort((a,b)=>b.n-a.n).forEach(({c,n})=>{const d=document.createElement('button');d.className='dc';d.setAttribute('aria-label',`${cname(c)}, ${n} lembar`);d.innerHTML=`<img class="sk" src="${imgOf(c)}" alt=""><i>×${n}</i>`;d.onclick=()=>{$('disc').classList.remove('on');zoomCard(c)};$('disc-b').append(d)});
  $('disc').classList.add('on');$('disc-x').focus({preventScroll:true})}
 $('disc-x').onclick=()=>$('disc').classList.remove('on');
 /* --- Dialog --- */
@@ -112,7 +115,7 @@ function panelPick(o){return new Promise(res=>{
  done.textContent=o.okTx?(min?`${o.okTx} ${sel.size}/${min}`:`${o.okTx} (${sel.size})`):cost?`Buang ${sel.size}/${min}`:(sel.size?`Ambil ${sel.size} kartu`:(min?'Pilih kartu':'Selesai tanpa memilih'))};
  /* filter ala PTCGL: "Sesuai" = kartu yang boleh dipilih, "Semua" = seluruh isi Deck/discard (yang tak sesuai diredupkan, tak bisa dipilih) */
  const render=all_=>{car.innerHTML='';const list=all_?all:cards;if(!list.length){car.innerHTML='<div class="empty">Tidak ada kartu yang cocok.</div>';return}
-  list.forEach(c=>{const d=document.createElement('div');d._c=c;d.className='cc'+(sel.has(c)?' sel':'');d.innerHTML=`<img src="${imgOf(c)}" alt="${cname(c)}">`;if(!valid.has(c)){d.classList.add('no');d.title='Tidak bisa dipilih';d.setAttribute('aria-disabled','true');car.append(d);return}d.onclick=()=>{if(sel.has(c)){sel.delete(c);d.classList.remove('sel')}else if(sel.size<max){sel.add(c);d.classList.add('sel')}else if(max===1){car.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));sel.clear();sel.add(c);d.classList.add('sel')}upd()};car.append(d)})};
+  list.forEach(c=>{const d=document.createElement('div');d._c=c;d.className='cc'+(sel.has(c)?' sel':'');d.innerHTML=`<img class="sk" src="${imgOf(c)}" alt="${cname(c)}">`;if(!valid.has(c)){d.classList.add('no');d.title='Tidak bisa dipilih';d.setAttribute('aria-disabled','true');car.append(d);return}d.onclick=()=>{if(sel.has(c)){sel.delete(c);d.classList.remove('sel')}else if(sel.size<max){sel.add(c);d.classList.add('sel')}else if(max===1){car.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));sel.clear();sel.add(c);d.classList.add('sel')}upd()};car.append(d)})};
  if(all){fl.innerHTML=`<span>Filter</span><button class="on" data-m="">Sesuai <b>${valid.size}</b></button><button data-m="1">Semua <b>${all.length}</b></button>`;fl.querySelectorAll('button').forEach(b=>b.onclick=()=>{fl.querySelectorAll('button').forEach(q=>q.classList.toggle('on',q===b));render(!!b.dataset.m);upd()})}
  render(false);upd();
  if(cost){cancel.style.display='';cancel.onclick=()=>{panelClose();res(null)}}
@@ -124,7 +127,7 @@ function panelPay(o){return new Promise(res=>{
  const m=o.mon,sel=new Set();panelOpen(m.card,`Mundur ke ${cname(o.to.card)}. Pilih ${o.cost} Energi untuk dibuang ke Trash.`);
  const car=$('pcar'),done=$('p-done'),cancel=$('p-cancel');done.style.display='';cancel.style.display='';
  const upd=()=>{done.disabled=sel.size!==o.cost;done.textContent=`Buang ${sel.size}/${o.cost}`};
- m.en.forEach(c=>{const d=document.createElement('div');d.className='cc';d.innerHTML=`<img src="${imgOf(c)}" alt="${cname(c)}">`;d.onclick=()=>{if(sel.has(c)){sel.delete(c);d.classList.remove('sel')}else if(sel.size<o.cost){sel.add(c);d.classList.add('sel')}upd()};car.append(d)});
+ m.en.forEach(c=>{const d=document.createElement('div');d.className='cc';d.innerHTML=`<img class="sk" src="${imgOf(c)}" alt="${cname(c)}">`;d.onclick=()=>{if(sel.has(c)){sel.delete(c);d.classList.remove('sel')}else if(sel.size<o.cost){sel.add(c);d.classList.add('sel')}upd()};car.append(d)});
  cancel.onclick=()=>{panelClose();res(null)};done.onclick=()=>{panelClose();res([...sel])};upd()})}
 /* --- Pickbar (petunjuk + tombol Batal di dalam pop-up, bukan di arena) --- */
 const attachTxt=()=>{const a=UI.attach;if(a)pickShow(`${cname(a.card)}: seret Energi ke Pokémon yang menyala (${a.total-a.list.length}/${a.total})`,null)};   // penghitung pasang Energi dari efek
@@ -236,7 +239,7 @@ Object.assign(FX,{
   await sleep(1100)},
  abend:()=>$('abt').classList.remove('on'),
  revealPrizes:async(sd,ch)=>{if(sd!=='p'){await sleep(500);return}   // kartu Prize di meja tetap tertutup; hanya ditampilkan di depan layar
-  $('ann').innerHTML=`<div class="prz">${ch.map(c=>`<img src="${imgOf(c)}" alt="${cname(c)}">`).join('')}</div><b>Kartu Point yang kamu ambil</b>`;$('ann').classList.add('on');await sleep(2400);$('ann').classList.remove('on');await sleep(250)},
+  $('ann').innerHTML=`<div class="prz">${ch.map(c=>`<img class="sk" src="${imgOf(c)}" alt="${cname(c)}">`).join('')}</div><b>Kartu Point yang kamu ambil</b>`;$('ann').classList.add('on');await sleep(2400);$('ann').classList.remove('on');await sleep(250)},
  /* kartu yang diambil Bot & wajib diperlihatkan (mis. hasil PokéPad): keluar dari deck Bot sambil berbalik, berjajar besar di tengah, lalu terbang ke tangan Bot (ala PTCGL) */
  reveal:async(sd,cards,src)=>{if(sd==='p')return;const dk=Z.dk(-1);say(`Bot memperlihatkan ${cards.map(cname).join(', ')} (${cname(src)})`,3400,'bot');
   await cardShow(cards,px2(dk[0],.1,dk[1]),px2(0,.4,LAY.ohandZ||-5),Math.round((900+SPD[UI.si][1])*[1,.75,.45][UI.si]))},
@@ -260,7 +263,7 @@ Object.assign(FX,{
   const hb=banner(`<i>${ic(me?'user':'bot')}</i><span><b>MULLIGAN!</b><small>${me?'Kamu':'Bot'} tidak punya Pokémon Basic${k>1?` · ke-${k}`:''}</small></span>`,sd);
   await cardShow(G[sd].hand,me?px2(0,.95,LAY.handZ||5):px2(0,.4,LAY.ohandZ||-5),D,1700,{dy:innerHeight*.06,hk:.7});hb();UI.mull=null},
  mulligan:async(sd,hands)=>{const me=sd==='p',bx=$('dlg-b');bx.classList.add('mlw');   // panel lebar; daftar kartu bergulir sendiri, tombol Selesai selalu terlihat
-  await dlg(`<div class="mlh ${sd}"><small>${me?'Kamu':'Bot'}</small><b>Mulligan ${hands.length}×</b></div><p>${me?'Kamu':'Bot'} mulligan ${hands.length} kali sebelum mendapat Pokémon Basic. Ini kartu yang diperlihatkan:</p><div class="mlsc">${hands.map((h,i)=>`<div class="mls"><b>Mulligan ${i+1}</b><div class="mlg">${h.map(c=>`<img src="${imgOf(c)}" alt="${cname(c)}">`).join('')}</div></div>`).join('')}</div>`,[['Lanjut',1,'go']]);bx.classList.remove('mlw')},
+  await dlg(`<div class="mlh ${sd}"><small>${me?'Kamu':'Bot'}</small><b>Mulligan ${hands.length}×</b></div><p>${me?'Kamu':'Bot'} mulligan ${hands.length} kali sebelum mendapat Pokémon Basic. Ini kartu yang diperlihatkan:</p><div class="mlsc">${hands.map((h,i)=>`<div class="mls"><b>Mulligan ${i+1}</b><div class="mlg">${h.map(c=>`<img class="sk" src="${imgOf(c)}" alt="${cname(c)}">`).join('')}</div></div>`).join('')}</div>`,[['Lanjut',1,'go']]);bx.classList.remove('mlw')},
  dealPrizes:async()=>{say(`Menaruh ${G.prizeN} Kartu Point…`,1500);await sleep(900)},
  /* pertandingan dimulai: logo garis MULAI! dirakit di pita HUD pada garis tengah + garis kecepatan + lampu samping dua warna (merah Bot, biru kamu); turnstart menggantinya */
  revealSetup:async()=>{const l=$('tl'),go=$('go');l.className='';void l.offsetWidth;l.className='start';
@@ -325,7 +328,7 @@ function monMenu(mon,sd,pick){const c=mon.card,el=$('am'),me=sd==='p',my=me&&can
   ab=c.ab&&!c.ab.passive&&!c.ab.setup,abw=my&&ab?abWhy('p',mon):null,rw=my&&isAct?whyRetreat('p'):null,rc=rcost(mon),
   row=(a,k)=>{const w=my&&isAct?whyAttack('p',k):null,h=`<span class="amt"><span class="cost">${costIcons(a.cost)}</span><b>${a.n}</b><i>${dm(a)}</i></span>${a.src?`<p>Dari ${esc(a.src)} di Cadangan</p>`:''}${a.tx?`<p>${a.tx}</p>`:''}`;   // a.src: serangan Pokémon Cadangan (Mew ex)
    return w===null?`<div class="amr info">${h}</div>`:`<button class="amr${w?' off':''}" data-a="${k}"${w?' disabled':''}>${h}${w?`<small>${w}</small>`:''}</button>`};
- el.innerHTML=`<div class="amw"><div class="amc"><img src="${imgOf(st[si][0])}" alt="${cname(c)}">${st.length>1?`<div class="ams">${st.map(([cd,l],i)=>`<button class="zt${i===si?' on':''}" data-i="${i}"><img src="${imgOf(cd)}" alt="${cname(cd)}"><span>${l}</span></button>`).join('')}</div>`:''}</div>
+ el.innerHTML=`<div class="amw"><div class="amc"><img class="sk" src="${imgOf(st[si][0])}" alt="${cname(c)}">${st.length>1?`<div class="ams">${st.map(([cd,l],i)=>`<button class="zt${i===si?' on':''}" data-i="${i}"><img class="sk" src="${imgOf(cd)}" alt="${cname(cd)}"><span>${l}</span></button>`).join('')}</div>`:''}</div>
  <div class="amp"><div class="amh" style="--b1:${T[0]};--b2:${T[1]};--tt:${T[2]}"><b>${cname(c)}</b><span>HP ${Math.max(0,hp(mon))}/${maxHp(mon)}</span></div>${sc.length?`<div class="amchips">${sc.map(q=>`<span class="chip">${q}</span>`).join('')}</div>`:''}
  ${c.ab?(abw===null?`<div class="amr ab info"><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p>${c.ab.tx}</p></div>`:`<button class="amr ab${abw?' off':''}" data-a="ab"${abw?' disabled':''}><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p>${c.ab.tx}</p>${abw?`<small>${abw}</small>`:''}</button>`):''}
  ${(isAct?atkList(mon):c.atk).map(row).join('')}
@@ -567,5 +570,7 @@ async function startBattle(list,fmt,opt){
  UI.themeI=(UI.themeI+1+rnd(2))%THEMES.length;const tn=setTheme(UI.themeI);
  DEC.p=UIDEC;DEC.o={...BOT,turn:s=>botTurn(s)};
  const bd=opt?.bot||botDeck(fmt,botRecent().slice(0,2+rnd(2)));if(!opt?.bot)botRecent(bd.name);UI.last.bot=bd;say(`Arena: ${tn} · Deck Bot: ${esc(bd.name)}`,3400);   // deck Bot 2-3 pertandingan terakhir tidak diulang; Sudden Death memakai deck yang sama
+ const ids=[...new Set([[list,opt&&opt.art],[bd.L]].flatMap(([L,A])=>Object.keys(L).filter(k=>CARDS[k]).flatMap(k=>[CARDS[k].img,...Object.keys((A||{})[k]||{}).map(Number)])))];let ok=0;const t0=Date.now(),tm=setInterval(()=>{if(Date.now()-t0>700)say(`Memuat gambar kartu ${ok}/${ids.length}…`,1200)},700);
+ await Promise.race([Promise.all(ids.map(i=>muatGambar(IMG[i]).then(()=>ok++))),sleep(30000)]);clearInterval(tm);   // semua gambar kartu kedua deck diunduh dulu (maks 30 dtk), jadi tak ada kartu kosong di tengah pertandingan
  try{await setup(list,bd.L,opt)}catch(e){console.error(e);say('⛔ Terjadi galat: '+e.message,8000)}}
 function toMenu(){closeAll();document.body.classList.remove('bt');resetScene();G=null;showScr('menu')}

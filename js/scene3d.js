@@ -7,7 +7,8 @@ const rr=(x,a,b,w,h,r)=>{x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);
 const FONT='ui-rounded,system-ui,"Apple Color Emoji","Segoe UI Emoji",sans-serif';
 const rng=s=>()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
 const TL=new THREE.TextureLoader(),TX={};
-const cardTex=c=>{if(!TX[c.img]){const t=TL.load(IMG[c.img],()=>{for(const o of OV.values())if(o.img===c.img)drawHp(o)});t.anisotropy=4;TX[c.img]=t}return TX[c.img]};   // panel HP mengambil warna dari gambar ini
+const cardTex=c=>{if(!TX[c.img]){const k=c.img,ok=()=>{for(const o of OV.values())if(o.img===k)drawHp(o)},t=TL.load(IMG[k],ok,undefined,()=>ulang(4));t.anisotropy=4;TX[k]=t;
+  const ulang=n=>n&&setTimeout(()=>TL.load(IMG[k],x=>{t.image=x.image;t.needsUpdate=true;ok()},undefined,()=>ulang(n-1)),1500*(5-n))}return TX[c.img]};   // sinyal lemah: tekstur gagal dimuat dicoba ulang (jeda makin panjang)   // panel HP mengambil warna dari gambar ini
 const BACKT=ctex(252,352,(x,w,h)=>{rr(x,0,0,w,h,16);const g=x.createLinearGradient(0,0,w,h);g.addColorStop(0,'#2563eb');g.addColorStop(1,'#1e1b4b');x.fillStyle=g;x.fill();rr(x,9,9,w-18,h-18,11);x.lineWidth=4;x.strokeStyle='#fde68a';x.stroke();
  x.beginPath();x.arc(w/2,h/2,48,0,7);x.lineWidth=7;x.strokeStyle='#fde68a';x.stroke();x.beginPath();x.moveTo(w/2-48,h/2);x.lineTo(w/2+48,h/2);x.stroke();x.beginPath();x.arc(w/2,h/2,13,0,7);x.fillStyle='#fde68a';x.fill()});
 const GEO=new THREE.PlaneGeometry(1,1.4);
