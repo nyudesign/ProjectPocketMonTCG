@@ -381,26 +381,29 @@ function setupPlace(sd,c,spot){const S=G[sd];if(spot==='active'&&S.active)return
 function setupRemove(sd,m){const S=G[sd];if(S.active===m){S.bench.forEach(b=>S.hand.push(b.card));S.bench=[];S.active=null}else S.bench=S.bench.filter(x=>x!==m);S.hand.push(m.card);fx('sync')}
 async function setup(deckP,deckO,opt={}){
  G={p:newSide('p',deckP,opt.art),o:newSide('o',deckO),cur:null,first:null,phase:'setup',over:0,log:[],limbo:null,stadium:null,busy:0,prizeN:opt.prizes||6,hidden:1};fx('sync');
- const d=await fx('decideFirst')||{first:Math.random()<.5?'p':'o'};G.first=d.first;log(d.msg||`${who(G.first)} jalan duluan`);
+ const g=G,X={},chk=()=>{if(G!==g||g.over)throw X};   // pertandingan ini: persiapan berhenti bila pemain menyerah atau pertandingan baru dimulai saat masih menunggu (tanpa ini alur lama ikut membagi kartu ke pertandingan baru)
+ try{
+ const d=await fx('decideFirst')||{first:Math.random()<.5?'p':'o'};chk();G.first=d.first;log(d.msg||`${who(G.first)} jalan duluan`);
  const mull={p:0,o:0},mh={p:[],o:[]},hasB=sd=>G[sd].hand.some(isBasic);
  for(const sd of['p','o'])for(let i=0;i<7;i++)G[sd].hand.push(G[sd].deck.pop());
- await fx('deal',['p','o']);
+ await fx('deal',['p','o']);chk();
  /* mulligan (rulebook, Advanced Rules "Full details of taking a mulligan"): bila keduanya tanpa Basic, keduanya membuka tangan & mulai ulang;
     bila hanya satu, pemain itu menunggu lawannya selesai bersiap, baru membuka tangan & mengulang sampai dapat Basic */
  const redo=async sd=>{const S=G[sd];mull[sd]++;mh[sd].push([...S.hand]);log(`⚠️ ${who(sd)} mulligan #${mull[sd]} (tidak ada Pokémon Basic)`);
-  await fx('mullShow',sd,mull[sd]);S.deck.push(...S.hand.splice(0));shuf(S.deck);fx('sync');await fx('shuffle',sd);for(let i=0;i<7;i++)S.hand.push(S.deck.pop());await fx('deal',[sd])};
+  await fx('mullShow',sd,mull[sd]);chk();S.deck.push(...S.hand.splice(0));shuf(S.deck);fx('sync');await fx('shuffle',sd);chk();for(let i=0;i<7;i++)S.hand.push(S.deck.pop());await fx('deal',[sd]);chk()};
  while(!hasB('p')&&!hasB('o')){await redo('p');await redo('o')}
  const late=['p','o'].find(sd=>!hasB(sd)),order=late?[opp(late),late]:['o','p'];
- if(late){log(`${who(late)} tidak punya Pokémon Basic: menunggu ${who(opp(late))} selesai bersiap`);await fx('mullWait',late)}
- for(const sd of order){while(!hasB(sd))await redo(sd);if(mull[sd])await fx('mulligan',sd,mh[sd]);fx('sync');await ask(sd,'place',sd)}
+ if(late){log(`${who(late)} tidak punya Pokémon Basic: menunggu ${who(opp(late))} selesai bersiap`);await fx('mullWait',late);chk()}
+ for(const sd of order){while(!hasB(sd))await redo(sd);if(mull[sd]){await fx('mulligan',sd,mh[sd]);chk()}fx('sync');await ask(sd,'place',sd);chk()}
  /* kartu ekstra (Tournament Handbook 7.4.1): baru boleh diambil sesudah pemain yang mulligan menaruh Active, jumlahnya diumumkan dulu,
     Active pengambil tidak berubah, dan Pokémon Basic yang terambil boleh ditaruh ke Bench */
- for(const sd of order){const ex=mull[opp(sd)]-mull[sd];if(ex>0){const n=await ask(sd,'mullDraw',{max:ex,opp:opp(sd),mine:mull[sd],theirs:mull[opp(sd)]});
-  if(n>0){const S=G[sd],k=await drawShow(sd,n);log(`${who(sd)} mengambil ${k} kartu ekstra karena mulligan lawan`);const bs=S.hand.slice(-k).filter(isBasic);
-   if(bs.length&&S.bench.length<bmax(sd))await ask(sd,'benchExtra',{cards:bs,sd})}}}
- for(const sd of['p','o']){G[sd].prizes=G[sd].deck.splice(-G.prizeN)}fx('sync');await fx('dealPrizes');
- G.hidden=0;G.phase='play';log('Semua Pokémon dibuka. Pertandingan dimulai!');fx('sync');await fx('revealSetup');
- G.cur=G.first;const g=G;   // pertandingan ini; perulangan berhenti bila pertandingan baru dimulai (G diganti)
+ for(const sd of order){const ex=mull[opp(sd)]-mull[sd];if(ex>0){const n=await ask(sd,'mullDraw',{max:ex,opp:opp(sd),mine:mull[sd],theirs:mull[opp(sd)]});chk();
+  if(n>0){const S=G[sd],k=await drawShow(sd,n);chk();log(`${who(sd)} mengambil ${k} kartu ekstra karena mulligan lawan`);const bs=S.hand.slice(-k).filter(isBasic);
+   if(bs.length&&S.bench.length<bmax(sd)){await ask(sd,'benchExtra',{cards:bs,sd});chk()}}}}
+ for(const sd of['p','o']){G[sd].prizes=G[sd].deck.splice(-G.prizeN)}fx('sync');await fx('dealPrizes');chk();
+ G.hidden=0;G.phase='play';log('Semua Pokémon dibuka. Pertandingan dimulai!');fx('sync');await fx('revealSetup');chk();
+ }catch(e){if(e===X)return g.over;throw e}
+ G.cur=G.first;   // perulangan berhenti bila pertandingan baru dimulai (G diganti)
  while(G===g&&!G.over){const sd=G.cur,S=G[sd];S.tn++;S.en=S.sup=S.ret=S.stad=S.tookNow=0;S.used={};S.koFlag=S.koMark;S.koMark=0;S.koLastC=S.koCards||[];S.koCards=[];S.koAtk=S.koMarkAtk;S.koMarkAtk=0;S.koLastAtkC=S.koAtkCards||[];S.koAtkCards=[];S.endNow=0;S.supPlayed=null;inPlay(S).forEach(m=>m.used={});
   await fx('turnstart',sd);if(G!==g)return;
   if(!S.deck.length){endGame(opp(sd));break}
