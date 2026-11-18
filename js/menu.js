@@ -149,13 +149,13 @@ $('zoom').addEventListener('pointermove',e=>{if(HL.to)return hlAim(e);const p=CR
    Dilepas cukup jauh atau dilempar ke bawah: kartu meluncur turun sambil hilang lalu zoom tertutup. Kurang dari itu: kembali ke tengah. Gerak sesudah dilepas = transisi css (.rel) */
 let zPT=0;
 const zPullSet=(y,k,o=1)=>{const s=$('zoom').style;s.setProperty('--zy',y.toFixed(1)+'px');s.setProperty('--zp',k.toFixed(3));s.setProperty('--zop',o)};
-function zPullGo(e,p){clearTimeout(zPT);const dt=(e.timeStamp-p.t)/1e3;p.on=2;p.ys=p.y0+10;p.vy=dt>0?(e.clientY-p.y0)/dt:0;p.t=e.timeStamp;p.y=e.clientY;zT=null;   // dihitung dari titik sentuh + ambang: lemparan cepat (gerak pertama sudah jauh) tidak kehilangan jarak dan kecepatannya
+function zPullGo(e,p){clearTimeout(zPT);p.on=2;p.ys=p.y0+10;p.h=[[p.t,p.y0],[e.timeStamp,e.clientY]];p.y=e.clientY;zT=null;   // dihitung dari titik sentuh + ambang: lemparan cepat (gerak pertama sudah jauh) tidak kehilangan jarak dan kecepatannya
  (CR.cap=$('zoom')).setPointerCapture(p.id);$('zoom').classList.add('pull');const y=Math.max(0,p.y-p.ys);zPullSet(y,Math.min(1,y/(innerHeight*.35)))}
-function zPullMv(e,p){const dt=(e.timeStamp-p.t)/1e3;if(dt>0&&dt<.1)p.vy+=((e.clientY-p.y)/dt-p.vy)*.4;p.y=e.clientY;p.t=e.timeStamp;
+function zPullMv(e,p){const h=p.h;h.push([e.timeStamp,e.clientY]);while(h.length>2&&e.timeStamp-h[0][0]>100)h.shift();p.y=e.clientY;   // titik 100 md terakhir: kecepatan lempar
  const y=Math.max(0,p.y-p.ys);zPullSet(y,Math.min(1,y/(innerHeight*.35)));e.preventDefault()}
-function zPullEnd(e,p){const z=$('zoom'),y=Math.max(0,p.y-p.ys),v=e.timeStamp-p.t>80?0:p.vy,shut=e.type!=='pointercancel'&&(y>innerHeight*.18||v>700&&y>16);   // jari sempat diam sebelum diangkat: tidak dihitung lemparan
+function zPullEnd(e,p){const z=$('zoom'),y=Math.max(0,p.y-p.ys),[t0,y0]=p.h[0],[t1,y1]=p.h[p.h.length-1],v=e.timeStamp-t1>80?0:t1>t0?(y1-y0)/((t1-t0)/1e3):y1>y0?1e4:0,shut=e.type!=='pointercancel'&&(y>innerHeight*.18||v>700&&y>16);   // jari sempat diam sebelum diangkat: tidak dihitung lemparan
  if(RMO){if(shut)zEnd();else{z.classList.remove('pull');z.style.cssText=''}return}   // gerak dikurangi: langsung, tanpa luncuran
- z.classList.add('rel');if(shut){z.classList.add('out');zPullSet(y+Math.max(140,v*.2),1,0);zOut=setTimeout(zEnd,280)}   // zOut: dbZoom saat masih meluncur menyelesaikan tutupnya dulu
+ z.classList.add('rel');if(shut){z.classList.add('out');zPullSet(y+Math.max(140,Math.min(v*.2,innerHeight*.5)),1,0);zOut=setTimeout(zEnd,280)}   // zOut: dbZoom saat masih meluncur menyelesaikan tutupnya dulu
  else{zPullSet(0,0);zPT=setTimeout(()=>z.classList.remove('pull','rel'),300)}}
 for(const n of['pointerup','pointercancel','lostpointercapture'])$('zoom').addEventListener(n,crUp);   // lepas, batal, atau zoom ditutup
 CR.el.addEventListener('click',e=>{const s=e.target.closest('.zs');if(s&&!s.classList.contains('act'))crGo(+s.dataset.i)});

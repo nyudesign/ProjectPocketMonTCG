@@ -164,6 +164,7 @@ body.bt .hud{display:flex}
 .zctl button:hover:not(:disabled){background:var(--yel)}.zctl button:disabled{background:var(--ink3);color:#6e737d}
 .zctl span{display:grid;place-items:center;min-width:44px;height:40px;background:var(--ink);color:var(--paper);font:700 18px var(--fd);box-shadow:inset 0 0 0 1px var(--line)}
 #zoom.db .zbox .x{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));width:44px;height:44px;background:var(--paper);color:var(--ink)}#zoom.db .zbox .x:hover{background:var(--yel)}   /* ✕ di pojok kanan atas layar: tempatnya tetap, satu-satunya tombol tutup, jadi segaya tombol ‹ › (kertas di latar hitam) */
+@media (max-width:760px){#zoom.db .zbox .x{background:rgb(6 7 10/.5);color:var(--paper);box-shadow:inset 0 0 0 1px rgb(255 255 255/.24)}#zoom.db .zbox .x:hover{background:rgb(6 7 10/.5)}#zoom.db .zbox .x:active{background:rgb(255 255 255/.16)}}   /* HP: ✕ lebih tenang (tutup utama di HP = tarik kartu ke bawah). Ikon kertas di latar gelap tetap kontras tinggi; cincin tipis = batas tombol, 44 px tetap */
 /* HP: − n + di tengah tepat di bawah kartu, baris varian di bawahnya dan tingginya selalu dipesan, jadi posisi tombol sama ada varian atau tidak */
 @media (max-width:760px){#zoom.db #zdb{flex-direction:column;gap:8px}#zoom.db .zctl{order:-1;margin:0}#zoom.db #zvar,#zoom.db #zvar:empty{display:flex;flex:none;max-width:100%;min-height:40px}}
 /* ---- holo per rarity (zoom Susun Deck): tekan-tahan kartu ----
