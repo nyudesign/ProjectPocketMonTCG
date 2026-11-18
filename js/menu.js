@@ -86,7 +86,7 @@ function renderDB(){
  $('db-name').value=DB.name||'';updDB()}
 /* zoom susun deck: carousel kartu (urutan grid yang tampil), pilih varian, jumlah per varian; scroll/geser di kartu tengah = info efek */
 function dbZoom(k,v){if(zOut)zEnd();const z=$('zoom'),open=z.matches('.on.db'),inf=open&&z.classList.contains('info'),r=!open&&!RMO&&$('t-'+k)?.querySelector('img')?.getBoundingClientRect();DB.z={k,v:v||shownV(k)};
- zoomCard({...CARDS[k],img:DB.z.v},1);z.classList.add('db');z.classList.toggle('info',inf);zFit();$('zside').scrollTop=0;crSync(open);zRender();
+ zoomCard({...CARDS[k],img:DB.z.v},1);z.classList.add('db');z.classList.toggle('info',inf);if(inf)zFit();$('zside').scrollTop=0;crSync(open);zRender();
  const t=$('t-'+k);if(t)t.scrollIntoView({block:'nearest'});if(!open){$('zx').focus({preventScroll:true});if(r)zFly(r,1)}}
 function zRender(){const{k,v}=DB.z,c=CARDS[k],n=vCnt(k,v),vs=vars(k);
  $('zvar').innerHTML=vs.length>1?vs.map((id,i)=>{const q=vCnt(k,id),l=(c.altl||{})[id];return`<button data-v="${id}" class="${id===v?'on':''}" aria-pressed="${id===v}" aria-label="Varian ${i+1}${l?', '+esc(l):''}${q?`, ${q} di deck`:''}"${l?` title="${esc(l)}"`:''}>Varian ${i+1}${q?`<b>${q}</b>`:''}</button>`}).join(''):'';
@@ -95,7 +95,7 @@ function zRender(){const{k,v}=DB.z,c=CARDS[k],n=vCnt(k,v),vs=vars(k);
 $('zvar').onclick=e=>{const b=e.target.closest('button');if(!b)return;DB.z.v=+b.dataset.v;crSync(true);zRender()};
 $('zmin').onclick=()=>vAdd(DB.z.k,DB.z.v,-1);$('zplus').onclick=()=>vAdd(DB.z.k,DB.z.v,1);
 $('zprev').onclick=()=>crStep(-1);$('znext').onclick=()=>crStep(1);
-const zInfo=on=>$('zoom').classList.toggle('info',on);
+const zInfo=on=>{if(on&&!$('zoom').classList.contains('info'))zFit();$('zoom').classList.toggle('info',on)};   // panel diukur hanya saat akan tampil: mengukur saat buka zoom / geser kartu dengan info tertutup = tata letak paksa yang membuat animasi tersendat
 /* carousel: versi sendiri dari prototipe inertia-scroll jhey.dev dengan setelan user (snap, damping 50, flick 1; coverflow perspective 800, depth 80, rotate 0; skala .4 dan pudar 1.1 = kartu samping kecil dan gelap).
    Track digerakkan transform dan hanya indeks ±3 yang punya elemen, karena daftar bisa 1.500+ kartu. pos/tgt dalam px, satu kartu = CR.step.
    Zona: kartu tengah = periksa (tahan = holo, roda vertikal = info); di luar itu = jelajah (seret/lempar, roda, klik kartu samping) */
