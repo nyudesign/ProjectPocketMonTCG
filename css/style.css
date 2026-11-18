@@ -144,7 +144,7 @@ body.bt .hud{display:flex}
 #zoom.db .zbox{--zw:min(514px,calc((100dvh - 150px)*5/7),calc(100vw - 80px));display:grid;grid-template-columns:var(--zw);gap:12px;max-width:none;max-height:none;overflow:visible}
 #zoom.db #ztrack,#zoom.db #zside,#zoom.db .znav{grid-area:1/1}#zoom.db #zleft{display:none}
 /* carousel: #ztrack = sel kartu tengah. Slide .zs ditumpuk di sel itu lalu digeser, diskala, dan dipudarkan JS (coverflow 2D di js/menu.js); .zc = kartunya, yang dimiringkan holo */
-#ztrack{display:none}#zoom.db{overflow:hidden;background:var(--mesh),radial-gradient(85% 75% at 50% 42%,#1d2029 0%,#111318 45%,var(--ink) 80%),var(--ink)}   /* gradasi seperti menu utama (terang di belakang kartu, gelap ke tepi) + anyaman logam chevron samar */#zoom.db,#zoom.db .zbox,#zoom.db #ztrack{touch-action:none}#zoom.db #zside{touch-action:pan-y}#zoom.db #zvar{touch-action:pan-x}   /* tanpa ini browser membatalkan seret sentuh di kartu */
+#ztrack{display:none}#zoom.db{overflow:hidden;background:none}#zoom.db::before{content:'';position:absolute;inset:0;z-index:-1;background:var(--mesh),radial-gradient(85% 75% at 50% 42%,#1d2029 0%,#111318 45%,var(--ink) 80%),var(--ink);opacity:calc(1 - var(--zp,0)*var(--zp,0))}   /* gradasi seperti menu utama (terang di belakang kartu, gelap ke tepi) + anyaman logam chevron samar */#zoom.db,#zoom.db .zbox,#zoom.db #ztrack{touch-action:none}#zoom.db #zside{touch-action:pan-y}#zoom.db #zvar{touch-action:pan-x}   /* tanpa ini browser membatalkan seret sentuh di kartu */
 #zoom.db #ztrack{display:block;position:relative;z-index:0;width:var(--zw);aspect-ratio:5/7;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .zs{position:absolute;inset:0;cursor:pointer;will-change:transform,opacity}.zs.act{cursor:grab}.zs.act:active{cursor:grabbing}#zoom.db.info .zs.act{cursor:auto}
 .zc{position:relative;width:100%;height:100%;isolation:isolate;transition:opacity .3s}
@@ -200,7 +200,12 @@ body.bt .hud{display:flex}
 /* holo ditahan (#zoom.hold): tombol dan kartu lain memudar pelan, lalu kembali saat dilepas. Digeser lewat seret/roda (#zoom.mv): tombol memudar cepat, kembali saat carousel diam */
 #zoom.db .znav,#zoom.db #zdb,#zoom.db .zbox .x{transition:opacity .3s}
 #zoom.db.mv .znav,#zoom.db.mv #zdb,#zoom.db.mv .zbox .x{opacity:0;pointer-events:none;transition:opacity .15s}
-#zoom.db.out{opacity:0;filter:blur(14px) brightness(.55);pointer-events:none;transition:opacity .22s ease-in,filter .22s ease-in}   /* tutup zoom: hilang sambil makin buram dan gelap, grid di belakangnya timbul */
+#zoom.db.out{pointer-events:none}#zoom.db.out:not(.pull){opacity:0;filter:blur(14px) brightness(.55);transition:opacity .22s ease-in,filter .22s ease-in}   /* tutup lewat ✕/Escape: hilang sambil makin buram dan gelap, grid di belakangnya timbul */
+/* tarik ke bawah untuk menutup (HP, js/menu.js zPull*): --zy = jarak tarik, --zp = 0..1, --zop = pudar kartu saat meluncur keluar. Selama ditarik tanpa transisi (ikut jari); .rel = dilepas, sisanya transisi */
+#zoom.db.pull #ztrack{transform:translate3d(0,var(--zy),0) scale(calc(1 - .12*var(--zp)));opacity:var(--zop)}#zoom.db.pull .hexbg{opacity:calc(1 - var(--zp)*var(--zp))}   /* latar: 1 - zp² = pudar pelan di awal tarikan (lapisan gelap di atas grid terang sudah tampak tipis jauh sebelum opacity 0) */
+#zoom.db.pull .znav,#zoom.db.pull #zdb,#zoom.db.pull .zbox .x,#zoom.db.pull .zs:not(.act) .zc{opacity:calc(1 - 2.5*var(--zp));transition:none}#zoom.db.pull .znav:disabled{opacity:calc(.35 - 2.5*var(--zp))}
+#zoom.db.rel #ztrack{transition:transform .28s cubic-bezier(.22,1,.36,1),opacity .26s ease-out}
+#zoom.db.rel::before,#zoom.db.rel .hexbg,#zoom.db.rel .znav,#zoom.db.rel #zdb,#zoom.db.rel .zbox .x,#zoom.db.rel .zs:not(.act) .zc{transition:opacity .26s ease-out}
 #zoom.db.hold .znav,#zoom.db.hold #zdb,#zoom.db.hold .zbox .x,#zoom.db.hold .zs:not(.act) .zc{opacity:0;pointer-events:none;transition:opacity .5s}
 /* panel pilih kartu (efek Trainer / mundur) */
 .pbox{width:min(1000px,100%);max-height:96dvh;overflow:auto;overflow-x:hidden;padding:14px;background:var(--ink2);clip-path:var(--notch);box-shadow:inset 0 0 0 1px var(--line),var(--shadow)}.ptop{display:flex;gap:14px;align-items:flex-start}

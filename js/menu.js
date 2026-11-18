@@ -47,8 +47,8 @@ function renderPre(){
 $('pre-back').onclick=()=>showScr('menu');
 /* ----- susun deck ----- */
 if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});   // cache gambar kartu di perangkat (sw.js)
-new MutationObserver(()=>{const z=$('zoom'),on=z.classList.contains('on')&&z.classList.contains('db');const d=$('db'),g=$('db-grid');if(d.classList.contains('zbuka')===on)return;if(on)DB.gs=g.scrollTop;d.classList.toggle('zbuka',on);
- if(!on){g.scrollTop=DB.gs||0;const t=DB.z&&$('t-'+DB.z.k);if(t)t.scrollIntoView({block:'nearest'})}}).observe($('zoom'),{attributes:true,attributeFilter:['class']});   // grid tertutup zoom: skeleton tile berhenti berdenyut (tanpa :has, yang memicu hitung ulang style seluruh dokumen tiap kelas #zoom berubah)
+new MutationObserver(()=>{const z=$('zoom'),on=z.classList.contains('on')&&z.classList.contains('db')&&!z.classList.contains('pull');const d=$('db'),g=$('db-grid');if(d.classList.contains('zbuka')===on)return;if(on)DB.gs=g.scrollTop;d.classList.toggle('zbuka',on);
+ if(!on){g.scrollTop=DB.gs||0;const t=DB.z&&$('t-'+DB.z.k);if(t)t.scrollIntoView({block:'nearest'})}}).observe($('zoom'),{attributes:true,attributeFilter:['class']});   // grid tertutup zoom: skeleton tile berhenti berdenyut (tanpa :has, yang memicu hitung ulang style seluruh dokumen tiap kelas #zoom berubah). Saat kartu ditarik (.pull) grid tampil lagi: itulah yang timbul di belakang kartu
 const SKIO=new IntersectionObserver(es=>{for(const e of es)e.target.classList.toggle('skv',e.isIntersecting)},{rootMargin:'300px 0px'});   // skeleton tile Susun Deck berdenyut hanya saat (hampir) terlihat
 for(const t of['load','error'])document.addEventListener(t,e=>{const i=e.target;if(!i.classList||!i.classList.contains('sk'))return;if(t==='load'){i.classList.remove('sk');return}
  const n=+(i.dataset.ulang||0),u=i.getAttribute('src').split('#')[0];if(n<6){i.dataset.ulang=n+1;setTimeout(()=>{if(i.isConnected&&i.classList.contains('sk'))i.src=u+'#u'+(n+1)},1500*2**Math.min(n,4))}},true);   // skeleton kartu hilang begitu gambar siap; gagal (sinyal lemah) = skeleton tetap + coba ulang dengan jeda
@@ -131,10 +131,10 @@ const crMid=e=>{const m=CR.el.getBoundingClientRect();return e.clientX>=m.left&&
 const crStop=()=>{cancelAnimationFrame(CR.raf);CR.raf=0;CR.wh=null;CR.v=0;CR.pos=CR.tgt=CR.i*CR.step;crMv(false);crDraw()};
 function crUp(e){if(e.type==='lostpointercapture'&&e.target!==CR.cap)return;   // sentuh: capture bawaan di gambar ikut lepas saat capture dipindah, itu bukan jari diangkat
  clearTimeout(HL.tm);HL.tm=0;if(HL.to){HL.to=0;$('zoom').classList.remove('hold')}
- const p=CR.pd;if(!p||p.id!==e.pointerId)return;CR.pd=null;if(!p.on)return;   // belum jadi seret: biarkan klik biasa (kartu samping = lompat, latar = tutup)
+ const p=CR.pd;if(!p||p.id!==e.pointerId)return;CR.pd=null;if(!p.on)return;if(p.on===2)return zPullEnd(e,p);   // belum jadi seret: biarkan klik biasa (kartu samping = lompat, latar = tutup)
  CR.drag=null;crSnap(e.timeStamp-p.t>80?0:CR.v*.5);crRun();
  addEventListener('click',crEat,{capture:true,once:true});requestAnimationFrame(()=>requestAnimationFrame(()=>removeEventListener('click',crEat,true)))}   // klik sisa seret jangan menutup zoom
-$('zoom').addEventListener('pointerdown',e=>{const z=$('zoom');if(e.button||!z.classList.contains('db')||HL.to||CR.pd||e.target.closest('button,#zside,#zdb'))return;
+$('zoom').addEventListener('pointerdown',e=>{const z=$('zoom');if(e.button||!z.classList.contains('db')||z.classList.contains('pull')||HL.to||CR.pd||e.target.closest('button,#zside,#zdb'))return;
  const act=e.target.closest('.zs.act'),touch=e.pointerType==='touch';
  if(act&&CR.raf&&crMid(e))crStop();   // menekan kartu tengah saat sisa gerak/momentum: hentikan di kartu itu supaya holo tetap seketika
  if(act&&crIdle()&&!z.classList.contains('info')){HL.r=act.getBoundingClientRect();hlAim(e);   // kartu tengah yang diam: holo. Mouse seketika; sentuh setelah diam 130 md
@@ -142,9 +142,21 @@ $('zoom').addEventListener('pointerdown',e=>{const z=$('zoom');if(e.button||!z.c
  CR.pd={id:e.pointerId,x:e.clientX,x0:e.clientX,y0:e.clientY,t:e.timeStamp,on:0}});
 $('zoom').addEventListener('pointermove',e=>{if(HL.to)return hlAim(e);const p=CR.pd;if(!p||p.id!==e.pointerId)return;if(HL.tm)hlAim(e);
  if(!p.on){const ax=Math.abs(e.clientX-p.x0),ay=Math.abs(e.clientY-p.y0);if(Math.max(ax,ay)<=(e.pointerType==='touch'?10:8))return;
-  clearTimeout(HL.tm);HL.tm=0;if(ay>ax){CR.pd=null;return}   // gerak vertikal bukan seret carousel (di HP: geser buka-info)
+  clearTimeout(HL.tm);HL.tm=0;if(ay>ax){if(e.pointerType==='touch'&&e.clientY>p.y0&&!$('zoom').classList.contains('info'))return zPullGo(e,p);CR.pd=null;return}   // gerak vertikal bukan seret carousel. HP: ke bawah = tarik untuk menutup, ke atas = buka info (touchend)
   p.on=1;zT=null;CR.drag=p;CR.wh=null;CR.v=0;CR.tgt=CR.pos;p.x=e.clientX;p.t=e.timeStamp;(CR.cap=$('zoom')).setPointerCapture(p.id);crMv(true);return crRun()}
- const dx=e.clientX-p.x,dt=(e.timeStamp-p.t)/1e3;CR.tgt-=dx;if(dt>0&&dt<.1)CR.v+=(-dx/dt-CR.v)*.4;p.x=e.clientX;p.t=e.timeStamp;e.preventDefault()});
+ if(p.on===2)return zPullMv(e,p);const dx=e.clientX-p.x,dt=(e.timeStamp-p.t)/1e3;CR.tgt-=dx;if(dt>0&&dt<.1)CR.v+=(-dx/dt-CR.v)*.4;p.x=e.clientX;p.t=e.timeStamp;e.preventDefault()});
+/* HP: tarik kartu ke bawah untuk menutup. Kartu ikut jari dan sedikit mengecil; latar, tombol, dan kartu samping memudar sebanding jarak (--zp 0..1, css #zoom.pull).
+   Dilepas cukup jauh atau dilempar ke bawah: kartu meluncur turun sambil hilang lalu zoom tertutup. Kurang dari itu: kembali ke tengah. Gerak sesudah dilepas = transisi css (.rel) */
+let zPT=0;
+const zPullSet=(y,k,o=1)=>{const s=$('zoom').style;s.setProperty('--zy',y.toFixed(1)+'px');s.setProperty('--zp',k.toFixed(3));s.setProperty('--zop',o)};
+function zPullGo(e,p){clearTimeout(zPT);const dt=(e.timeStamp-p.t)/1e3;p.on=2;p.ys=p.y0+10;p.vy=dt>0?(e.clientY-p.y0)/dt:0;p.t=e.timeStamp;p.y=e.clientY;zT=null;   // dihitung dari titik sentuh + ambang: lemparan cepat (gerak pertama sudah jauh) tidak kehilangan jarak dan kecepatannya
+ (CR.cap=$('zoom')).setPointerCapture(p.id);$('zoom').classList.add('pull');const y=Math.max(0,p.y-p.ys);zPullSet(y,Math.min(1,y/(innerHeight*.35)))}
+function zPullMv(e,p){const dt=(e.timeStamp-p.t)/1e3;if(dt>0&&dt<.1)p.vy+=((e.clientY-p.y)/dt-p.vy)*.4;p.y=e.clientY;p.t=e.timeStamp;
+ const y=Math.max(0,p.y-p.ys);zPullSet(y,Math.min(1,y/(innerHeight*.35)));e.preventDefault()}
+function zPullEnd(e,p){const z=$('zoom'),y=Math.max(0,p.y-p.ys),v=e.timeStamp-p.t>80?0:p.vy,shut=e.type!=='pointercancel'&&(y>innerHeight*.18||v>700&&y>16);   // jari sempat diam sebelum diangkat: tidak dihitung lemparan
+ if(RMO){if(shut)zEnd();else{z.classList.remove('pull');z.style.cssText=''}return}   // gerak dikurangi: langsung, tanpa luncuran
+ z.classList.add('rel');if(shut){z.classList.add('out');zPullSet(y+Math.max(140,v*.2),1,0);zOut=setTimeout(zEnd,280)}   // zOut: dbZoom saat masih meluncur menyelesaikan tutupnya dulu
+ else{zPullSet(0,0);zPT=setTimeout(()=>z.classList.remove('pull','rel'),300)}}
 for(const n of['pointerup','pointercancel','lostpointercapture'])$('zoom').addEventListener(n,crUp);   // lepas, batal, atau zoom ditutup
 CR.el.addEventListener('click',e=>{const s=e.target.closest('.zs');if(s&&!s.classList.contains('act'))crGo(+s.dataset.i)});
 CR.el.addEventListener('contextmenu',e=>e.preventDefault());   // tekan lama di HP jangan membuka menu gambar
@@ -158,7 +170,7 @@ $('zoom').addEventListener('wheel',e=>{if(!$('zoom').classList.contains('db'))re
  const d=(ax>ay?e.deltaX:e.deltaY)*(e.deltaMode===1?100/3:e.deltaMode===2?100:1),nk=ay>=ax||e.shiftKey,u=CR.step/100;if(Math.abs(d)<.5)return;
  e.preventDefault();nk?crWheel(d*u,3.5*u,0):crWheel(d,30,1)},{passive:false});   // roda gaya mouse (vertikal di luar kartu tengah, atau Shift): 100 px = 1 kartu dan takik kecil pun pindah 1 kartu. Geser horizontal trackpad: ikut jari 1:1 lalu snap
 let zT=null;$('zoom').addEventListener('touchstart',e=>{zT=$('zoom').classList.contains('db')&&e.target.closest('.zs.act,#zside')?[e.touches[0].clientY,$('zside').scrollTop]:null},{passive:true});
-$('zoom').addEventListener('touchend',e=>{if(!zT)return;const dy=e.changedTouches[0].clientY-zT[0];if(dy<-40)zInfo(true);else if(dy>40&&zT[1]<=0)$('zoom').classList.contains('info')?zInfo(false):closeZoom();zT=null});   // geser ke bawah: tutup info, atau tutup zoom bila info tidak terbuka
+$('zoom').addEventListener('touchend',e=>{if(!zT)return;const dy=e.changedTouches[0].clientY-zT[0];if(dy<-40)zInfo(true);else if(dy>40&&zT[1]<=0)zInfo(false);zT=null});   // info tertutup: geser ke bawah = tarik untuk menutup (zPullGo)
 addEventListener('keydown',e=>{if(!$('zoom').matches('.on.db')||e.ctrlKey||e.metaKey||e.altKey||HL.to&&e.key!=='Escape')return;   // G kosong di layar ini, jadi Escape dari ui.js tidak berlaku
  const f={Escape:closeZoom,ArrowLeft:()=>$('zprev').click(),ArrowRight:()=>$('znext').click(),ArrowDown:()=>zInfo(true),ArrowUp:()=>zInfo(false)}[e.key];if(f){e.preventDefault();f()}});
 /* holo per rarity: tekan-tahan kartu tengah. Tiga lapisan .hl dipindah ke kartu aktif saat holo mulai; selama ditahan (#zoom.hold) tombol dan kartu lain memudar.
