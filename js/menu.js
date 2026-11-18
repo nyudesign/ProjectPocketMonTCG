@@ -86,7 +86,7 @@ function renderDB(){
  $('db-name').value=DB.name||'';updDB()}
 /* zoom susun deck: carousel kartu (urutan grid yang tampil), pilih varian, jumlah per varian; scroll/geser di kartu tengah = info efek */
 function dbZoom(k,v){if(zOut)zEnd();const z=$('zoom'),open=z.matches('.on.db'),inf=open&&z.classList.contains('info'),r=!open&&!RMO&&$('t-'+k)?.querySelector('img')?.getBoundingClientRect();DB.z={k,v:v||shownV(k)};
- zoomCard({...CARDS[k],img:DB.z.v});z.classList.add('db');z.classList.toggle('info',inf);zFit();$('zside').scrollTop=0;crSync(open);zRender();
+ zoomCard({...CARDS[k],img:DB.z.v},1);z.classList.add('db');z.classList.toggle('info',inf);zFit();$('zside').scrollTop=0;crSync(open);zRender();
  const t=$('t-'+k);if(t)t.scrollIntoView({block:'nearest'});if(!open){$('zx').focus({preventScroll:true});if(r)zFly(r,1)}}
 function zRender(){const{k,v}=DB.z,c=CARDS[k],n=vCnt(k,v),vs=vars(k);
  $('zvar').innerHTML=vs.length>1?vs.map((id,i)=>{const q=vCnt(k,id),l=(c.altl||{})[id];return`<button data-v="${id}" class="${id===v?'on':''}" aria-pressed="${id===v}" aria-label="Varian ${i+1}${l?', '+esc(l):''}${q?`, ${q} di deck`:''}"${l?` title="${esc(l)}"`:''}>Varian ${i+1}${q?`<b>${q}</b>`:''}</button>`}).join(''):'';
