@@ -47,6 +47,9 @@ function renderPre(){
 $('pre-back').onclick=()=>showScr('menu');
 /* ----- susun deck ----- */
 if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});   // cache gambar kartu di perangkat (sw.js)
+new MutationObserver(()=>{const z=$('zoom'),on=z.classList.contains('on')&&z.classList.contains('db');const d=$('db'),g=$('db-grid');if(d.classList.contains('zbuka')===on)return;if(on)DB.gs=g.scrollTop;d.classList.toggle('zbuka',on);
+ if(!on){g.scrollTop=DB.gs||0;const t=DB.z&&$('t-'+DB.z.k);if(t)t.scrollIntoView({block:'nearest'})}}).observe($('zoom'),{attributes:true,attributeFilter:['class']});   // grid tertutup zoom: skeleton tile berhenti berdenyut (tanpa :has, yang memicu hitung ulang style seluruh dokumen tiap kelas #zoom berubah)
+const SKIO=new IntersectionObserver(es=>{for(const e of es)e.target.classList.toggle('skv',e.isIntersecting)},{rootMargin:'300px 0px'});   // skeleton tile Susun Deck berdenyut hanya saat (hampir) terlihat
 for(const t of['load','error'])document.addEventListener(t,e=>{const i=e.target;if(!i.classList||!i.classList.contains('sk'))return;if(t==='load'){i.classList.remove('sk');return}
  const n=+(i.dataset.ulang||0),u=i.getAttribute('src').split('#')[0];if(n<6){i.dataset.ulang=n+1;setTimeout(()=>{if(i.isConnected&&i.classList.contains('sk'))i.src=u+'#u'+(n+1)},1500*2**Math.min(n,4))}},true);   // skeleton kartu hilang begitu gambar siap; gagal (sinyal lemah) = skeleton tetap + coba ulang dengan jeda
 const DB={list:{},art:{},id:null,fmt:'std',shut:new Set(),shutD:new Set(),only:false};   // list: total salinan per kartu; art: kunci kartu -> {id gambar varian lain: jumlah}, sisanya cetakan utama; shut/shutD: kategori yang dilipat di Semua kartu / Deck Anda; only: tampilan Deck Anda
@@ -74,7 +77,7 @@ function renderDB(){
   keys.forEach((k,i)=>{if(S&&(!i||sub(keys[i-1])!==sub(k))){const s=document.createElement('h4');s.className='dbsub';s.textContent=(S[sub(k)]||['',''])[1];t.append(s)}   // sub-judul jenis
    const c=CARDS[k],d=document.createElement('div'),nA=(c.alt||[]).length;d.className='tile';d.id='t-'+k;d.innerHTML=`<img class="sk" src="${IMG[shownV(k)]}" alt="${cname(c)}" loading="lazy" width="250" height="350">${nA?`<button class="skb" aria-label="${esc(cname(c))}: ${nA+1} varian" title="Varian kartu">${ic('layers')}<b>${nA+1}</b></button>`:''}<div class="ctl"><button aria-label="Kurangi ${cname(c)}">${ic('minus')}</button><span aria-live="polite">0</span><button aria-label="Tambah ${cname(c)}">${ic('plus')}</button></div>`;
    d.querySelector('img').onclick=()=>dbZoom(k);if(nA)d.querySelector('.skb').onclick=()=>dbZoom(k);const[bm,,bp]=d.querySelectorAll('.ctl button, .ctl span');
-   bm.onclick=()=>vAdd(k,shownV(k),-1);bp.onclick=()=>vAdd(k,shownV(k),1);t.append(d)});g.append(t)}
+   bm.onclick=()=>vAdd(k,shownV(k),-1);bp.onclick=()=>vAdd(k,shownV(k),1);SKIO.observe(d.firstChild);t.append(d)});g.append(t)}
  g.insertAdjacentHTML('beforeend','<p class="note dbempty" hidden>Tidak ada kartu yang cocok. Ubah kata kunci atau filter.</p>');
  if(!$('db-t').options.length)$('db-t').innerHTML='<option value="">Semua tipe</option>'+Object.entries(TYPES).map(([k,v])=>`<option value="${k}">Pokémon ${v[0]}</option>`).join('')+'<option value="T">Trainer</option><option value="E">Energi</option>';
  seg($('db-view'),[['','Semua kartu'],['deck','Deck Anda']],'',k=>dbView(!!k));dbView(DB.only&&total()>0);   // masuk lagi dengan deck kosong: kembali ke Semua kartu
