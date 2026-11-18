@@ -81,12 +81,54 @@ FX.sync=()=>sync();
 /* --- Zoom --- */
 const spChip=m=>[m.sp==='asleep'?ic('zzz')+' Tidur':'',m.sp==='confused'?ic('dizzy')+' Pusing':'',m.sp==='paralyzed'?ic('zap')+' Lumpuh':'',m.poison?ic('skull')+' Racun':'',m.burn?ic('flame')+' Luka Bakar':''].filter(Boolean);
 const KIND={item:'Item',supporter:'Supporter',tool:'Pokémon Tool',stadium:'Stadium',energy:'Energi Dasar',senergy:'Energi Spesial'};
-function cardText(c){if(c.k!=='pokemon')return`<div><span class="chip">${KIND[c.k]||c.k}</span>${c.ace?'<span class="chip">ACE SPEC</span>':''}</div><div>${c.tx||''}</div>`;
- const t=TYPES[c.type]||['',''];
- return`<div><span class="chip">${c.stage===0?'Basic':'Stage '+c.stage+(c.from?' dari '+c.from:'')}</span><span class="chip">${t[0]}</span><span class="chip">HP ${c.hp}</span>${c.mega?'<span class="chip">Mega ex · 3 Kartu Point</span>':c.prize>1?'<span class="chip">ex · 2 Kartu Point</span>':''}</div>`+
- (c.ab?`<div><b>Ability: ${c.ab.n}</b><br>${c.ab.tx}</div>`:'')+c.atk.map(a=>`<div><b>${a.n}</b> <span class="cost" style="display:inline-flex;vertical-align:middle">${costIcons(a.cost)}</span> ${a.dmg?a.dmg+(a.plus?'+':a.times?'×':''):''}<br>${a.tx}</div>`).join('')+
- `<div>Kelemahan: ${c.weak?TYPES[c.weak][0]+' ×2':'-'} · Resistansi: ${c.res?TYPES[c.res][0]+' −30':'-'} · Mundur: ${c.retreat}</div>`}
-function zoomCard(c){if(zOut)zEnd();{const z=$('zimg'),u=imgOf(c);if(z.getAttribute('src')!==u){z.classList.add('sk');z.src=u}}$('zimg').alt=cname(c);$('zinfo').innerHTML=`<div><b>${cname(c)}</b></div>`+cardText(c);$('zbtn').innerHTML='';$('zoom').classList.remove('db','info');$('zoom').classList.add('on')}   // kartu tangan/discard/Stadium; Pokémon di arena: monMenu
+/* deskripsi kartu untuk orang awam (zoom Susun Deck + zoom pertandingan), dengan pola menu Pokémon (#am: .amh, .amr/.amt): tiap bagian kartu diberi kalimat biasa, lalu arti istilah yang muncul di kartu itu.
+   Teks efek resmi tidak diubah. Arti Kondisi Khusus mengikuti engine.js (Pemeriksaan Pokémon; serangan saat Pusing) */
+const KINDTX={item:'boleh dimainkan berapa pun dalam satu giliran.',supporter:'hanya 1 per giliran. Pemain pertama tidak boleh memakainya di giliran pertama.',tool:'dipasang ke Pokémon. Satu Pokémon hanya memegang 1 Tool.',
+ stadium:'tetap di arena sampai diganti Stadium lain. Hanya 1 per giliran.',energy:'dipasang ke Pokémon untuk membayar serangan. Hanya 1 Energi per giliran.',senergy:'Energi dengan efek tambahan. Dipasang seperti Energi biasa, 1 per giliran.'};
+const ISTILAH=[[/\bTidur\b/,'Tidur','tidak bisa menyerang atau Mundur. Tiap pergantian giliran lempar koin, sisi depan = bangun'],
+ [/\bPusing\b/,'Pusing','saat menyerang lempar koin. Sisi belakang = serangan gagal dan Pokémon itu kena 3 Token Kerusakan'],
+ [/\bLumpuh\b/,'Lumpuh','tidak bisa menyerang atau Mundur, pulih di akhir giliran pemiliknya berikutnya'],
+ [/\bRacun\b/,'Racun','kena 1 Token Kerusakan tiap pergantian giliran'],
+ [/\bLuka Bakar\b/,'Luka Bakar','kena 2 Token Kerusakan tiap pergantian giliran, lalu lempar koin, sisi depan = pulih'],
+ [/\bKondisi Khusus\b/,'Kondisi Khusus','Tidur, Pusing, Lumpuh, Racun, atau Luka Bakar'],
+ [/\bToken Kerusakan\b/,'Token Kerusakan','penanda kerusakan, 1 token = 10 kerusakan'],
+ [/\bKartu Point\b/,'Kartu Point','6 kartu hadiah, diambil tiap membuat Pokémon lawan KO. Habis = menang'],
+ [/\b(Pokémon|Arena) Bertarung\b/,'Pokémon Bertarung','Pokémon di depan, yang menyerang dan diserang'],
+ [/\bCadangan\b/,'Cadangan','Pokémon yang menunggu di belakang'],
+ [/\bArena\b(?! Bertarung)/,'Arena','Pokémon Bertarung dan semua Pokémon Cadangan'],
+ [/\bKO\b/,'KO','tumbang saat kerusakan mencapai HP, lalu masuk Trash'],
+ [/\bKartu Pegangan\b/,'Kartu Pegangan','kartu di tangan'],
+ [/\bTrash\b/,'Trash','tumpukan kartu buangan'],
+ [/\bMundur\b/,'Mundur','tukar Pokémon Bertarung dengan Pokémon Cadangan, bayar dengan membuang Energi'],
+ [/\bPeraturan\b/,'Peraturan','aturan khusus Pokémon ex dan sejenisnya, misalnya lawan mengambil Kartu Point lebih banyak'],
+ [/\bPersiapan Bermain\b/,'Persiapan Bermain','sebelum giliran pertama, tiap pemain menaruh Pokémon Basic tertutup'],
+ [/\bTerastal\b/,'Terastal','tidak menerima kerusakan serangan selama di Cadangan'],
+ [/\bPokémon Basic\b/,'Pokémon Basic','Pokémon tahap awal, bisa langsung dimainkan'],
+ [/\bevolusi\b/i,'Evolusi','kartu Stage 1 atau 2 ditaruh di atas Pokémon sebelumnya. Energi dan kerusakannya tetap ikut'],
+ [/\bEnergi Dasar\b/,'Energi Dasar','Energi biasa satu tipe, tanpa efek tambahan'],
+ [/\bEnergi Spesial\b/,'Energi Spesial','Energi dengan efek tambahan'],
+ [/\bPokémon Tool\b/,'Pokémon Tool','kartu alat yang dipasang ke Pokémon, 1 per Pokémon'],
+ [/\bSupporter\b/,'Supporter','kartu Trainer kuat, hanya 1 per giliran'],
+ [/\bStadium\b/,'Stadium','kartu lapangan yang berlaku untuk kedua pemain'],
+ [/\bsisi (depan|belakang)\b/i,'Sisi depan / belakang','dua sisi koin yang dilempar']];   // urutan = prioritas, paling banyak 4 per kartu, tanpa istilah jenis kartu itu sendiri
+const TOK={Bening:'C',Air:'W',Api:'R',Daun:'G',Kegelapan:'D',Listrik:'L',Logam:'M',Petarung:'F',Psychic:'P',Naga:'N'};
+const cardTx=t=>String(t||'').replace(/\{(\w+)\}/g,(m,k)=>TOK[k]?costIcons(TOK[k]):k==='ex'||k==='V'?k:m);   // simbol di teks resmi: {Api} = ikon Energi, {ex}/{V} = tulisan biasa
+const costTx=cost=>{const g={};[...cost].forEach(t=>g[t]=(g[t]||0)+1);const ks=Object.keys(g).sort((x,y)=>(x==='C')-(y==='C')),nm=t=>t==='C'?'apa saja':(TYPES[t]||['?'])[0];
+ return!cost.length?'Tanpa Energi.':ks.length===1?`Butuh ${cost.length} Energi ${nm(ks[0])}.`:`Butuh ${cost.length} Energi: ${ks.map(t=>g[t]+' '+nm(t)).join(' + ')}.`};
+function cardText(c){const P=c.k==='pokemon',T=P?TYB[c.type]||TYB.C:c.k==='energy'?TYB[c.t]||TYB.C:['#363a44','#252830','#f2efe8'],
+  rule=(i,b,t)=>`<p class="zr">${ic(i)}<span><b>${b}:</b> ${t}</span></p>`,tx=t=>t?`<p>${cardTx(t)}</p>`:'',
+  head=`<h2 class="amh" style="--b1:${T[0]};--b2:${T[1]};--tt:${T[2]};--hk:${T[2]==='#fff'?18:0}%"><b>${cname(c)}</b><span>${P?'HP '+c.hp+costIcons(c.type):c.k==='energy'||c.k==='senergy'?'Energi'+(c.t?costIcons(c.t):''):'Trainer'}</span></h2>`;
+ let h;
+ if(!P)h=`<div class="zid">${head}${rule('rules',KIND[c.k]||c.k,KINDTX[c.k]||'')}${c.ace?rule('rules','ACE SPEC','hanya 1 kartu ACE SPEC per deck.'):''}</div>${c.tx?`<div class="amr info">${tx(c.tx)}</div>`:''}`;
+ else h=`<div class="zid">${head}<p class="zj">Pokémon ${(TYPES[c.type]||[''])[0]} · ${c.stage?`Stage ${c.stage}${c.from?`, evolusi dari ${c.from}`:''}`:'Basic, langsung dimainkan'}</p>`+
+  (c.prize>1?rule('ko',c.mega?'Mega ex':'Pokémon ex',`saat KO, lawan mengambil ${c.mega?3:c.prize} Kartu Point.`):'')+(c.tera?rule('shield','Terastal','selama di Cadangan, tidak menerima kerusakan dari serangan.'):'')+'</div><div class="zmv">'+
+  (c.ab?`<div class="amr ab info"><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p class="zk">Kemampuan khusus, bukan serangan.</p>${tx(c.ab.tx)}</div>`:'')+
+  c.atk.map(a=>`<div class="amr info"><span class="amt"><span class="cost">${costIcons(a.cost)}</span><b>${a.n}</b><i>${a.dmg?a.dmg+(a.plus?'+':a.times?'×':''):''}</i></span><p class="zk">${costTx(a.cost)}${a.dmg?` Memberi ${a.dmg} kerusakan${a.plus?' atau lebih':a.times?' dikali jumlah di teks':''}.`:''}</p>${tx(a.tx)}</div>`).join('')+'</div>';
+ const plain=h.replace(/<[^>]+>/g,' '),g=ISTILAH.filter(([re,t])=>t!==KIND[c.k]&&re.test(plain)).slice(0,4),W=c.weak,R=c.res,n=c.retreat,
+  st=(l,v,k)=>`<div><dt>${l}</dt><dd>${v}${k?`<small>${k}</small>`:''}</dd></div>`;
+ return h+(P?`<dl class="zst">${st('Kelemahan',W?costIcons(W)+'×2':'–',W?'kena 2× kerusakan':'tidak ada')}${st('Resistansi',R?costIcons(R)+'−30':'–',R?'kena −30 kerusakan':'tidak ada')}${st('Mundur',n>2?costIcons('C')+'×'+n:n?costIcons('C'.repeat(n)):'Gratis',n?`buang ${n} Energi`:'tanpa Energi')}</dl>`:'')+
+  (g.length?`<div class="zg"><p class="zl">Arti istilah</p><dl>${g.map(([,t,d])=>`<div><dt>${t}:</dt><dd>${d}</dd></div>`).join('')}</dl></div>`:'')}
+function zoomCard(c){if(zOut)zEnd();{const z=$('zimg'),u=imgOf(c);if(z.getAttribute('src')!==u){z.classList.add('sk');z.src=u}}$('zimg').alt=cname(c);$('zinfo').innerHTML=cardText(c);$('zbtn').innerHTML='';$('zoom').classList.remove('db','info');$('zoom').classList.add('on')}   // kartu tangan/discard/Stadium; Pokémon di arena: monMenu
 let zOut=0;const zEnd=()=>{clearTimeout(zOut);zOut=0;const z=$('zoom');z.classList.remove('on','out','pull','rel','fly');z.style.cssText=''};   // style = sisa tarik-untuk-menutup / terbang ke tile (--zy/--zp/--zop/--f*)
 const closeZoom=()=>{if(!$('zoom').matches('.on.db')||RMO)return zEnd();if(zOut)return;$('zoom').classList.add('out');zOut=setTimeout(zEnd,240);
  requestAnimationFrame(()=>{if(!zOut)return;const i=$('t-'+DB.z.k)?.querySelector('img');zFly(i&&i.getBoundingClientRect())})};   // zoom Susun Deck: kartu kembali mengecil ke tile-nya lalu ditutup. rAF: grid baru tampil lagi (observer zbuka, microtask) sebelum tile diukur
@@ -147,8 +189,8 @@ const UIDEC={
  cards:o=>panelPick({...o,max:o.max,min:o.min||0}),
  pay:o=>panelPay(o),
  cond:o=>dlg(`<h2>Pulihkan kondisi mana?</h2><p>${cname(o.mon.card)} sedang ${o.conds.map(k=>CONDN[k]).join(' dan ')}.</p>`,o.conds.map(k=>[`${ic(BADGE[k][0])} ${CONDN[k]}`,k,'go'])),   // Lumiose Galette
- confirm:o=>dlg(`<h2>${o.title}</h2><p>${o.tx}</p>`,[['Pakai',true,'go'],['Lewati',false,'ghost',1]]),
- choice:o=>dlg(`<h2>${o.title}</h2>${o.tx?`<p>${o.tx}</p>`:''}`,o.opts.map((t,i)=>[t,i,i?'ghost':'go'])),   // kartu "pilih salah satu efek"
+ confirm:o=>dlg(`<h2>${o.title}</h2><p>${cardTx(o.tx)}</p>`,[['Pakai',true,'go'],['Lewati',false,'ghost',1]]),
+ choice:o=>dlg(`<h2>${o.title}</h2>${o.tx?`<p>${cardTx(o.tx)}</p>`:''}`,o.opts.map((t,i)=>[t,i,i?'ghost':'go'])),   // kartu "pilih salah satu efek"
  num:async o=>dlg(`<h2>${o.title}</h2>`,Array.from({length:o.max-o.min+1},(_,i)=>[String(o.min+i),o.min+i])),
  moveDmg:async o=>{
   const src=await wantStart({title:'Pilih Pokémon-mu yang Token Kerusakan-nya mau dipindah',mons:o.srcs,sd:'p',ctx:'target',cancel:true},false);
@@ -308,7 +350,7 @@ function showEnd(r){const b=$('end-b'),t=r==='p'?'Kamu menang':r==='o'?(G.why===
    Koin pertama dilempar dari bawah ke tengah lalu pindah ke slotnya; koin berikutnya dilempar langsung di slotnya (3 per baris); hasil ditahan sebentar lalu tutup (tanpa layar biru muda: permintaan user) --- */
 const coinUrl=(()=>{const U={};return h=>U[h]||(U[h]=coinArt(h,256).toDataURL())})();
 async function pocketFlips(sd,rs,why,tx,slow){closeAm();if(slow)await sleep(350);const o=$('flp'),n=rs.length,f=slow?1.6:UI.si===2?.7:1,W=innerWidth,H=innerHeight,D=Math.round(Math.min(W*.27,H*.2,190)),gp=Math.round(D*.18),A=(e,kf,ms,ez)=>e.animate(kf,{duration:Math.round(ms*f),easing:ez||'ease-out',fill:'forwards'}).finished;
- o.innerHTML=`<div class="ftx"><small>${sd==='p'?'Koin kamu':'Koin Bot'} · ${why}</small>${tx||''}</div><div class="fpill"><span><img src="${coinUrl(1)}" alt="Sisi depan"><b class="fh">0</b></span><span><img src="${coinUrl(0)}" alt="Sisi belakang"><b class="ft">0</b></span><em>Lempar <b>${n}</b> kali</em></div>`;
+ o.innerHTML=`<div class="ftx"><small>${sd==='p'?'Koin kamu':'Koin Bot'} · ${why}</small>${cardTx(tx)}</div><div class="fpill"><span><img src="${coinUrl(1)}" alt="Sisi depan"><b class="fh">0</b></span><span><img src="${coinUrl(0)}" alt="Sisi belakang"><b class="ft">0</b></span><em>Lempar <b>${n}</b> kali</em></div>`;
  o.className='on '+sd;let hN=0,tN=0;
  const slot=i=>n===1?[W/2,H*.5]:[W/2+(i%3-1)*(D+gp),H*.42+((i/3)|0)*(D+gp)],pos=(x,y,k=1)=>`translate(${x-D/2}px,${y-D/2}px) scale(${k})`,
   bump=(c,v)=>{const b=o.querySelector('.'+c);b.textContent=v;b.classList.remove('pu');void b.offsetWidth;b.classList.add('pu')};
@@ -328,11 +370,11 @@ function monMenu(mon,sd,pick){const c=mon.card,el=$('am'),me=sd==='p',my=me&&can
   dm=a=>a.dmg?a.dmg+(a.plus?'+':a.times?'×':''):'',stg=k=>k.stage===2?'Stage 2':k.stage===1?'Stage 1':'Basic',T=TYB[c.type]||TYB.C,sc=spChip(mon),
   st=[[c,stg(c)],...[...mon.under].reverse().map(u=>[u,stg(u)]),...mon.en.map(e=>[e,'Energi']),...(mon.tool?[[mon.tool,'Tool']]:[])],si=Math.max(0,st.findIndex(x=>x[0]===pick)),
   ab=c.ab&&!c.ab.passive&&!c.ab.setup,abw=my&&ab?abWhy('p',mon):null,rw=my&&isAct?whyRetreat('p'):null,rc=rcost(mon),
-  row=(a,k)=>{const w=my&&isAct?whyAttack('p',k):null,h=`<span class="amt"><span class="cost">${costIcons(a.cost)}</span><b>${a.n}</b><i>${dm(a)}</i></span>${a.src?`<p>Dari ${esc(a.src)} di Cadangan</p>`:''}${a.tx?`<p>${a.tx}</p>`:''}`;   // a.src: serangan Pokémon Cadangan (Mew ex)
+  row=(a,k)=>{const w=my&&isAct?whyAttack('p',k):null,h=`<span class="amt"><span class="cost">${costIcons(a.cost)}</span><b>${a.n}</b><i>${dm(a)}</i></span>${a.src?`<p>Dari ${esc(a.src)} di Cadangan</p>`:''}${a.tx?`<p>${cardTx(a.tx)}</p>`:''}`;   // a.src: serangan Pokémon Cadangan (Mew ex)
    return w===null?`<div class="amr info">${h}</div>`:`<button class="amr${w?' off':''}" data-a="${k}"${w?' disabled':''}>${h}${w?`<small>${w}</small>`:''}</button>`};
  el.innerHTML=`<div class="amw"><div class="amc"><img class="sk" src="${imgOf(st[si][0])}" alt="${cname(c)}">${st.length>1?`<div class="ams">${st.map(([cd,l],i)=>`<button class="zt${i===si?' on':''}" data-i="${i}"><img class="sk" src="${imgOf(cd)}" alt="${cname(cd)}"><span>${l}</span></button>`).join('')}</div>`:''}</div>
  <div class="amp"><div class="amh" style="--b1:${T[0]};--b2:${T[1]};--tt:${T[2]}"><b>${cname(c)}</b><span>HP ${Math.max(0,hp(mon))}/${maxHp(mon)}</span></div>${sc.length?`<div class="amchips">${sc.map(q=>`<span class="chip">${q}</span>`).join('')}</div>`:''}
- ${c.ab?(abw===null?`<div class="amr ab info"><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p>${c.ab.tx}</p></div>`:`<button class="amr ab${abw?' off':''}" data-a="ab"${abw?' disabled':''}><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p>${c.ab.tx}</p>${abw?`<small>${abw}</small>`:''}</button>`):''}
+ ${c.ab?(abw===null?`<div class="amr ab info"><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p>${cardTx(c.ab.tx)}</p></div>`:`<button class="amr ab${abw?' off':''}" data-a="ab"${abw?' disabled':''}><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p>${cardTx(c.ab.tx)}</p>${abw?`<small>${abw}</small>`:''}</button>`):''}
  ${(isAct?atkList(mon):c.atk).map(row).join('')}
  <div class="amf"><span>Kelemahan ${c.weak?costIcons(c.weak)+' ×2':'–'}</span><span>Resistansi ${c.res?costIcons(c.res)+' −30':'–'}</span>${rw===null?`<span class="amri">Mundur ${rc?costIcons('C'.repeat(rc)):'0'}</span>`:`<button class="amret" data-a="ret"${rw?` disabled title="${rw}"`:''}>Mundur ${rc?costIcons('C'.repeat(rc)):'0'}</button>`}</div>${rw?`<small class="amri" style="padding:0 2px;font-size:12.5px">Mundur: ${rw}</small>`:''}
  ${setup?`<button class="b ghost" data-a="back">${ic('undo')} Kembalikan ke tangan</button>`:''}${my&&c.fossil?`<button class="b ghost" data-a="fout"${whyFossilOut('p',mon)?' disabled':''}>${ic('x')} Buang fosil ke Trash</button>`:''}</div></div>`;
