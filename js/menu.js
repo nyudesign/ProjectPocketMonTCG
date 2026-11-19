@@ -90,12 +90,13 @@ function dbZoom(k,v){if(zOut)zEnd();const z=$('zoom'),open=z.matches('.on.db'),i
  const t=$('t-'+k);if(t)t.scrollIntoView({block:'nearest'});if(!open){$('zx').focus({preventScroll:true});if(r)zFly(r,1)}}
 function zRender(){const{k,v}=DB.z,c=CARDS[k],n=vCnt(k,v),vs=vars(k);
  $('zvar').innerHTML=vs.length>1?vs.map((id,i)=>{const q=vCnt(k,id),l=(c.altl||{})[id];return`<button data-v="${id}" class="${id===v?'on':''}" aria-pressed="${id===v}" aria-label="Varian ${i+1}${l?', '+esc(l):''}${q?`, ${q} di deck`:''}"${l?` title="${esc(l)}"`:''}>Varian ${i+1}${q?`<b>${q}</b>`:''}</button>`}).join(''):'';
- $('zn').textContent=n;$('zmin').disabled=!n;$('zplus').disabled=!canAdd(k);$('zprev').disabled=CR.i<=0;$('znext').disabled=CR.i>=CR.keys.length-1;
+ $('zn').textContent=n;$('zmin').disabled=!n;$('zplus').disabled=!canAdd(k);zNav();
  const s=$('zvar').querySelector('.on');if(s)s.scrollIntoView({block:'nearest',inline:'nearest'})}
 $('zvar').onclick=e=>{const b=e.target.closest('button');if(!b)return;DB.z.v=+b.dataset.v;crSync(true);zRender()};
 $('zmin').onclick=()=>vAdd(DB.z.k,DB.z.v,-1);$('zplus').onclick=()=>vAdd(DB.z.k,DB.z.v,1);
 $('zprev').onclick=()=>crStep(-1);$('znext').onclick=()=>crStep(1);
-const zInfo=on=>{if(on&&!$('zoom').classList.contains('info'))zFit();$('zoom').classList.toggle('info',on)};   // panel diukur hanya saat akan tampil: mengukur saat buka zoom / geser kartu dengan info tertutup = tata letak paksa yang membuat animasi tersendat
+const zInfo=on=>{if(on&&!$('zoom').classList.contains('info')){zFit();CR.wh=null;if(CR.raf)crSnap(0)}$('zoom').classList.toggle('info',on);zNav()};   // info terbuka = kartu terkunci (permintaan user): sisa putaran roda tidak boleh memindah kartu
+const zNav=()=>{const inf=$('zoom').classList.contains('info');$('zprev').disabled=inf||CR.i<=0;$('znext').disabled=inf||CR.i>=CR.keys.length-1};   // ‹ › (juga panah kiri/kanan keyboard, yang menekan tombol ini) mati selama info terbuka   // panel diukur hanya saat akan tampil: mengukur saat buka zoom / geser kartu dengan info tertutup = tata letak paksa yang membuat animasi tersendat
 /* carousel: versi sendiri dari prototipe inertia-scroll jhey.dev dengan setelan user (snap, damping 50, flick 1; coverflow perspective 800, depth 80, rotate 0; skala .4 dan pudar 1.1 = kartu samping kecil dan gelap).
    Track digerakkan transform dan hanya indeks ±3 yang punya elemen, karena daftar bisa 1.500+ kartu. pos/tgt dalam px, satu kartu = CR.step.
    Zona: kartu tengah = periksa (tahan = holo, roda vertikal = info); di luar itu = jelajah (seret/lempar, roda, klik kartu samping) */
@@ -134,7 +135,7 @@ function crUp(e){if(e.type==='lostpointercapture'&&e.target!==CR.cap)return;   /
  const p=CR.pd;if(!p||p.id!==e.pointerId)return;CR.pd=null;if(!p.on)return;if(p.on===2)return zPullEnd(e,p);   // belum jadi seret: biarkan klik biasa (kartu samping = lompat, latar = tutup)
  CR.drag=null;crSnap(e.timeStamp-p.t>80?0:CR.v*.5);crRun();
  addEventListener('click',crEat,{capture:true,once:true});requestAnimationFrame(()=>requestAnimationFrame(()=>removeEventListener('click',crEat,true)))}   // klik sisa seret jangan menutup zoom
-$('zoom').addEventListener('pointerdown',e=>{const z=$('zoom');if(e.button||!z.classList.contains('db')||z.classList.contains('pull')||HL.to||CR.pd||e.target.closest('button,#zside,#zdb'))return;
+$('zoom').addEventListener('pointerdown',e=>{const z=$('zoom');if(e.button||!z.classList.contains('db')||z.classList.contains('pull')||z.classList.contains('info')||HL.to||CR.pd||e.target.closest('button,#zside,#zdb'))return;   // info terbuka: tidak ada seret carousel
  const act=e.target.closest('.zs.act'),touch=e.pointerType==='touch';
  if(act&&CR.raf&&crMid(e))crStop();   // menekan kartu tengah saat sisa gerak/momentum: hentikan di kartu itu supaya holo tetap seketika
  if(act&&crIdle()&&!z.classList.contains('info')){HL.r=act.getBoundingClientRect();hlAim(e);   // kartu tengah yang diam: holo. Mouse seketika; sentuh setelah diam 130 md
@@ -165,21 +166,20 @@ function zFly(r,enter){const z=$('zoom'),s=z.style,m=CR.el.getBoundingClientRect
  s.setProperty('--fs',ok?(r.width/m.width).toFixed(4):'.94');s.setProperty('--fo',ok?1:0);clearTimeout(zFT);
  if(!enter)return z.classList.add('rel','fly');z.classList.add('fly','nt');z.offsetWidth;z.classList.remove('fly','nt');z.classList.add('rel');zFT=setTimeout(()=>z.classList.remove('rel'),320)}   // titik awal (di tile) dipasang tanpa transisi (.nt) lalu dihitung (offsetWidth), baru transisi ke tengah. Tanpa .nt tombol yang sudah punya transisi ikut memudar lalu berbalik, jadi tampak penuh sejak awal
 for(const n of['pointerup','pointercancel','lostpointercapture'])$('zoom').addEventListener(n,crUp);   // lepas, batal, atau zoom ditutup
-CR.el.addEventListener('click',e=>{const s=e.target.closest('.zs');if(s&&!s.classList.contains('act'))crGo(+s.dataset.i)});
+CR.el.addEventListener('click',e=>{const s=e.target.closest('.zs');if(s&&!s.classList.contains('act')&&!$('zoom').classList.contains('info'))crGo(+s.dataset.i)});
 CR.el.addEventListener('contextmenu',e=>e.preventDefault());   // tekan lama di HP jangan membuka menu gambar
 addEventListener('resize',()=>{if($('zoom').matches('.on.db'))crSize()});
 $('zoom').addEventListener('wheel',e=>{if(!$('zoom').classList.contains('db'))return;if(HL.to)return e.preventDefault();   // holo ditahan: carousel dibekukan (momentum trackpad masih datang)
  const ax=Math.abs(e.deltaX),ay=Math.abs(e.deltaY),hor=ax>ay||e.shiftKey,zv=e.target.closest('#zvar');
  if(zv){if(!hor){zv.scrollLeft+=e.deltaY;e.preventDefault()}return}   // roda mouse biasa menggeser baris varian
- if(e.target.closest('#zside')&&hor)return;   // sedang membaca info: gerak horizontal kecil jangan mengganti kartu
- if(!hor&&(e.target.closest('#zside')||crMid(e))){const inf=$('zoom').classList.contains('info');
-  if(e.deltaY>0&&!inf||e.deltaY<0&&inf&&$('zside').scrollTop<=0){e.preventDefault();zInfo(e.deltaY>0)}return}   // info panjang: scroll isinya dulu, tutup saat sudah di atas
+ if($('zoom').classList.contains('info')){const inP=e.target.closest('#zside');   // info terbuka: kartu terkunci, roda/trackpad tidak menggeser carousel. Roda ke atas di panel/kartu menutup info
+  if(!hor&&inP&&(e.deltaY>0||$('zside').scrollTop>0))return;   // panel yang (jarang) masih perlu gulir: gulir isinya dulu
+  e.preventDefault();if(!hor&&e.deltaY<0&&(inP||crMid(e)))zInfo(false);return}
+ if(!hor&&(e.target.closest('#zside')||crMid(e))){if(e.deltaY>0){e.preventDefault();zInfo(true)}return}
  const d=(ax>ay?e.deltaX:e.deltaY)*(e.deltaMode===1?100/3:e.deltaMode===2?100:1),nk=ay>=ax||e.shiftKey,u=CR.step/100;if(Math.abs(d)<.5)return;
  e.preventDefault();nk?crWheel(d*u,3.5*u,0):crWheel(d,30,1)},{passive:false});   // roda gaya mouse (vertikal di luar kartu tengah, atau Shift): 100 px = 1 kartu dan takik kecil pun pindah 1 kartu. Geser horizontal trackpad: ikut jari 1:1 lalu snap
-let zT=null;$('zoom').addEventListener('touchstart',e=>{zT=$('zoom').classList.contains('db')&&e.target.closest('.zs.act,#zside')?[e.touches[0].clientY,$('zside').scrollTop,e.touches[0].clientX]:null},{passive:true});
-$('zoom').addEventListener('touchend',e=>{if(!zT)return;const t=e.changedTouches[0],dy=t.clientY-zT[0],dx=t.clientX-zT[2];
- if($('zoom').classList.contains('info')&&e.target.closest('#zside')&&Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5)crStep(dx<0?1:-1);   // info terbuka (di HP ‹ › tertutup panel): geser kiri/kanan di panel = kartu berikut/sebelumnya
- else if(dy<-40)zInfo(true);else if(dy>40&&zT[1]<=0)zInfo(false);zT=null});   // info tertutup: geser ke bawah = tarik untuk menutup (zPullGo)
+let zT=null;$('zoom').addEventListener('touchstart',e=>{zT=$('zoom').classList.contains('db')&&e.target.closest('.zs.act,#zside')?[e.touches[0].clientY,$('zside').scrollTop]:null},{passive:true});
+$('zoom').addEventListener('touchend',e=>{if(!zT)return;const dy=e.changedTouches[0].clientY-zT[0];if(dy<-40)zInfo(true);else if(dy>40&&zT[1]<=0)zInfo(false);zT=null});   // info tertutup: geser ke bawah = tarik untuk menutup (zPullGo)
 addEventListener('keydown',e=>{if(!$('zoom').matches('.on.db')||e.ctrlKey||e.metaKey||e.altKey||HL.to&&e.key!=='Escape')return;   // G kosong di layar ini, jadi Escape dari ui.js tidak berlaku
  const f={Escape:closeZoom,ArrowLeft:()=>$('zprev').click(),ArrowRight:()=>$('znext').click(),ArrowDown:()=>zInfo(true),ArrowUp:()=>zInfo(false)}[e.key];if(f){e.preventDefault();f()}});
 /* holo per rarity: tekan-tahan kartu tengah. Tiga lapisan .hl dipindah ke kartu aktif saat holo mulai; selama ditahan (#zoom.hold) tombol dan kartu lain memudar.
