@@ -105,7 +105,7 @@ const crMv=on=>$('zoom').classList.toggle('mv',on);   // #zoom.mv = sedang diges
 const crClamp=i=>Math.min(CR.keys.length-1,Math.max(0,i)),crDamp=(a,b,k,dt)=>a+(b-a)*(1-Math.exp(-k*dt)),crIdle=()=>!CR.raf&&!CR.drag;
 function crSize(){CR.W=CR.el.clientWidth;CR.step=CR.W+Math.max(12,CR.W*.04);CR.pos=CR.tgt=CR.i*CR.step;CR.v=0;crDraw()}
 function crOpen(k){const ks=[...$('db-grid').querySelectorAll('.tile')].filter(t=>!t.hidden&&t.offsetParent).map(t=>t.id.slice(2));   // daftar = tile yang tampil sekarang (filter ikut, kategori yang dilipat tidak)
- CR.keys=ks.includes(k)?ks:[k];CR.i=CR.keys.indexOf(k);CR.sl.forEach(e=>e.remove());CR.sl.clear();CR.pd=CR.drag=CR.wh=null;crMv(false);crSize()}
+ CR.keys=ks.includes(k)?ks:[k];CR.i=CR.keys.indexOf(k);CR.sl.forEach(e=>e.remove());CR.sl.clear();CR.pd=CR.drag=CR.wh=null;crMv(false);crSize();zWBack();zW.t=performance.now();zW.m=0}   // aliran roda yang sudah berjalan saat zoom dibuka (sisa gulir grid) diabaikan: tidak menutup, tidak menjelajah
 function crSync(open){const k=DB.z.k;if(!open)crOpen(k);else if(CR.keys[CR.i]!==k){const i=CR.keys.indexOf(k);if(i<0)crOpen(k);else crGo(CR.i=i)}
  const im=CR.sl.get(CR.i)?.querySelector('img');if(im&&im.getAttribute('src')!==IMG[DB.z.v]){im.classList.add('sk');im.src=IMG[DB.z.v]}}   // slide aktif menampilkan varian yang dipilih
 function crDraw(){const{el,sl,keys,step,W}=CR,c=Math.round(CR.pos/step),half=(innerWidth+W)/2;
@@ -154,10 +154,23 @@ function zPullGo(e,p){clearTimeout(zPT);$('zoom').classList.remove('rel');p.on=2
  (CR.cap=$('zoom')).setPointerCapture(p.id);$('zoom').classList.add('pull');const y=Math.max(0,p.y-p.ys);zPullSet(y,Math.min(1,y/(innerHeight*.35)))}
 function zPullMv(e,p){const h=p.h;h.push([e.timeStamp,e.clientY]);while(h.length>2&&e.timeStamp-h[0][0]>100)h.shift();p.y=e.clientY;   // titik 100 md terakhir: kecepatan lempar
  const y=Math.max(0,p.y-p.ys);zPullSet(y,Math.min(1,y/(innerHeight*.35)));e.preventDefault()}
-function zPullEnd(e,p){const z=$('zoom'),y=Math.max(0,p.y-p.ys),[t0,y0]=p.h[0],[t1,y1]=p.h[p.h.length-1],v=e.timeStamp-t1>80?0:t1>t0?(y1-y0)/((t1-t0)/1e3):y1>y0?1e4:0,shut=e.type!=='pointercancel'&&(y>innerHeight*.18||v>700&&y>16);   // jari sempat diam sebelum diangkat: tidak dihitung lemparan
+function zPullEnd(e,p){const y=Math.max(0,p.y-p.ys),[t0,y0]=p.h[0],[t1,y1]=p.h[p.h.length-1],v=e.timeStamp-t1>80?0:t1>t0?(y1-y0)/((t1-t0)/1e3):y1>y0?1e4:0,shut=e.type!=='pointercancel'&&(y>innerHeight*.18||v>700&&y>16);zPullFin(shut,y,v)}   // jari sempat diam sebelum diangkat: tidak dihitung lemparan
+function zPullFin(shut,y,v){const z=$('zoom');   // lepas tarikan (sentuh dan roda): meluncur turun lalu tutup, atau kembali ke tengah
  if(RMO){if(shut)zEnd();else{z.classList.remove('pull');z.style.cssText=''}return}   // gerak dikurangi: langsung, tanpa luncuran
  z.classList.add('rel');if(shut){z.classList.add('out');zPullSet(y+Math.max(140,Math.min(v*.2,innerHeight*.5)),1,0);zOut=setTimeout(zEnd,280)}   // zOut: dbZoom saat masih meluncur menyelesaikan tutupnya dulu
  else{zPullSet(0,0);zPT=setTimeout(()=>z.classList.remove('pull','rel'),300)}}
+/* desktop: roda/trackpad arah "tarik ke bawah" (deltaY<0) di kartu tengah = tarik untuk menutup. Satu aliran roda (event berjeda <200 md) = satu langkah:
+   aliran yang dimulai saat info terbuka, carousel bergerak, holo ditahan, atau sebelum zoom dibuka tidak pernah menarik (sisa inersia trackpad tidak boleh menutup info lalu zoom sekaligus) */
+const zW={t:0,m:1,d:'',p:0,y:0,n:0,tm:0};   // t = event terakhir, m 2 = aliran boleh menarik, 1 = tidak boleh menarik, 0 = aliran dari sebelum zoom dibuka, d = perangkat aliran, p = sedang menarik, y = jarak, n = jumlah event/takik
+const jenisRoda=e=>e.deltaMode===1||e.deltaX===0&&e.wheelDeltaY&&Math.abs(e.wheelDeltaY)%120===0&&e.wheelDeltaY!==-3*e.deltaY?'mouse':'trackpad';   // shortcut: trik umum yang belum diukur di perangkat user, setel dari tools/anim/roda-cek.html. Ragu = trackpad (trackpad terbaca mouse = tertutup terlalu cepat)
+const zWBack=()=>{clearTimeout(zW.tm);zW.p=0;if($('zoom').matches('.on.db.pull:not(.out)'))zPullFin(false,0,0)};
+const zWEat=e=>{if(e.timeStamp-zW.t>200)return removeEventListener('wheel',zWEat,true);zW.t=e.timeStamp;e.preventDefault()};   // sisa inersia sesudah tertutup jangan menggulir grid
+function zWPull(e){const z=$('zoom'),H=innerHeight,ms=zW.d==='mouse';clearTimeout(zW.tm);clearTimeout(zPT);if(!zW.p){zW.p=1;zW.y=zW.n=0}zW.n++;
+ if(ms){if(e.deltaY>0)return zWBack();zW.y=H*.06}else zW.y=Math.max(0,zW.y-e.deltaY*(e.deltaMode===1?100/3:e.deltaMode===2?100:1));   // mouse: hitung takik, bukan piksel (takik Mac 4 px dan Windows 100 px sama-sama 1). Trackpad: ikut 1:1
+ const y=ms?zW.y:Math.max(0,zW.y-10),shut=zW.n>1&&(ms||y>=H*.12);   // zona mati 10 px. Takik ke-2 dalam satu putaran, atau tarikan 12% tinggi layar = tutup. Satu event tidak pernah menutup
+ if(y&&(!z.classList.contains('pull')||z.classList.contains('rel')!==ms)){z.classList.add('pull');z.classList.toggle('rel',ms)}   // .pull baru sesudah zona mati (sentuhan kecil tidak membuka-tutup grid). Mouse: takik meluncur halus; trackpad ikut tanpa transisi
+ if(shut){zW.p=0;zW.m=1;addEventListener('wheel',zWEat,{capture:true,passive:false});return zPullFin(true,y,0)}
+ if(z.classList.contains('pull'))zPullSet(y,Math.min(1,y/(H*.35)));zW.tm=setTimeout(zWBack,ms?250:200)}   // aliran berhenti sebelum ambang: kembali ke tengah
 /* buka/tutup dari/ke tile-nya di grid (shared element): #ztrack di-transform supaya tepat menimpa gambar tile (--fx/--fy/--fs), latar dan tombol pudar (#zoom.fly).
    Buka: mulai di tile lalu transisi ke tengah. Tutup (closeZoom): transisi ke tile. Tile tidak terlihat: skala + pudar di tempat */
 let zFT=0;
@@ -169,13 +182,16 @@ for(const n of['pointerup','pointercancel','lostpointercapture'])$('zoom').addEv
 CR.el.addEventListener('click',e=>{const s=e.target.closest('.zs');if(s&&!s.classList.contains('act')&&!$('zoom').classList.contains('info'))crGo(+s.dataset.i)});
 CR.el.addEventListener('contextmenu',e=>e.preventDefault());   // tekan lama di HP jangan membuka menu gambar
 addEventListener('resize',()=>{if($('zoom').matches('.on.db'))crSize()});
-$('zoom').addEventListener('wheel',e=>{if(!$('zoom').classList.contains('db'))return;if(HL.to)return e.preventDefault();   // holo ditahan: carousel dibekukan (momentum trackpad masih datang)
+$('zoom').addEventListener('wheel',e=>{const z=$('zoom');if(!z.classList.contains('db'))return;const t=e.timeStamp,inf=z.classList.contains('info');
+ if(t-zW.t>200){zW.m=inf||HL.to||!crIdle()||z.matches('.out,.fly')?1:2;zW.d=jenisRoda(e)}else if(zW.d==='mouse'&&jenisRoda(e)!=='mouse')zW.d='trackpad';zW.t=t;   // aliran baru = jeda >200 md. Mouse hanya dari event pertama aliran; boleh turun ke trackpad, tidak pernah naik
+ if(HL.to||!zW.m||z.classList.contains('out'))return e.preventDefault();   // holo ditahan: carousel dibekukan (momentum trackpad masih datang). Aliran dari sebelum zoom dibuka, atau sedang meluncur keluar: abaikan
  const ax=Math.abs(e.deltaX),ay=Math.abs(e.deltaY),hor=ax>ay||e.shiftKey,zv=e.target.closest('#zvar');
+ if(zW.p){if(!hor){e.preventDefault();return zWPull(e)}zWBack();zW.m=1}   // sedang menarik: semua gerak vertikal ikut tarikan. Ternyata usapan ke samping: batal tarik, lanjut jelajah
  if(zv){if(!hor){zv.scrollLeft+=e.deltaY;e.preventDefault()}return}   // roda mouse biasa menggeser baris varian
- if($('zoom').classList.contains('info')){const inP=e.target.closest('#zside');   // info terbuka: kartu terkunci, roda/trackpad tidak menggeser carousel. Roda ke atas di panel/kartu menutup info
+ if(inf){const inP=e.target.closest('#zside');   // info terbuka: kartu terkunci, roda/trackpad tidak menggeser carousel. Roda ke atas di panel/kartu menutup info
   if(!hor&&inP&&(e.deltaY>0||$('zside').scrollTop>0))return;   // panel yang (jarang) masih perlu gulir: gulir isinya dulu
-  e.preventDefault();if(!hor&&e.deltaY<0&&(inP||crMid(e)))zInfo(false);return}
- if(!hor&&(e.target.closest('#zside')||crMid(e))){if(e.deltaY>0){e.preventDefault();zInfo(true)}return}
+  e.preventDefault();if(!hor&&e.deltaY<0&&(inP||crMid(e))){zInfo(false);zW.m=1}return}   // sisa aliran ini tidak boleh lanjut menutup zoom
+ if(!hor&&(e.target.closest('#zside')||crMid(e))){e.preventDefault();if(e.deltaY<0){if(zW.m===2&&crMid(e))zWPull(e)}else if(e.deltaY>0){zInfo(true);zW.m=1}return}   // kartu tengah: deltaY>0 = info, deltaY<0 (dua jari turun di trackpad, seperti tarik ke bawah) = tutup zoom
  const d=(ax>ay?e.deltaX:e.deltaY)*(e.deltaMode===1?100/3:e.deltaMode===2?100:1),nk=ay>=ax||e.shiftKey,u=CR.step/100;if(Math.abs(d)<.5)return;
  e.preventDefault();nk?crWheel(d*u,3.5*u,0):crWheel(d,30,1)},{passive:false});   // roda gaya mouse (vertikal di luar kartu tengah, atau Shift): 100 px = 1 kartu dan takik kecil pun pindah 1 kartu. Geser horizontal trackpad: ikut jari 1:1 lalu snap
 let zT=null;$('zoom').addEventListener('touchstart',e=>{zT=$('zoom').classList.contains('db')&&e.target.closest('.zs.act,#zside')?[e.touches[0].clientY,$('zside').scrollTop]:null},{passive:true});
