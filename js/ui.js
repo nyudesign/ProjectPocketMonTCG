@@ -531,7 +531,7 @@ cvs.addEventListener('pointerdown',e=>{
  {const ci=hitCoin(e);if(ci>=0){UI.drag={coin:1,ci,x:0,z:0,hi:null,txt:'',tgt:null};cvs.style.cursor='grabbing';UI.dn.coin=1;return}}
 
  const dn=UI.dn;if(!UI.drag)hideHv();
- {const it0=dn.i!==null&&LI.get(dn.i);if(it0&&it0.zone==='hand'&&e.pointerType==='touch'&&G&&!UI.panel&&!G.hidden){hov=dn.i;showHv(it0.c);dn.lpOn=1;dn.br=1;return}}
+ {const it0=dn.i!==null&&LI.get(dn.i);if(it0&&it0.zone==='hand'&&e.pointerType==='touch'&&G&&!UI.panel){hov=dn.i;showHv(it0.c);dn.lpOn=1;dn.br=1;return}}
  if(dn.i!==null)dn.lp=setTimeout(()=>{if(UI.dn===dn&&!UI.drag&&G){const it=LI.get(dn.i);if(canPrev(it)){showHv(it.c);dn.lpOn=1}}},420)});
 cvs.addEventListener('pointermove',e=>{
  if(UI.drag)return moveDrag(e);
