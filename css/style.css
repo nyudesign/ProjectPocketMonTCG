@@ -176,9 +176,15 @@ body.bt .hud{display:flex}
 #zvar button{flex:none;display:flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:0;background:var(--paper);color:var(--tx);font:700 12px var(--fd);letter-spacing:.03em;white-space:nowrap}
 #zvar button:hover{background:#fff}#zvar button.on{box-shadow:inset 0 0 0 3px var(--yel)}
 #zvar b{min-width:18px;padding:1px 5px;background:var(--ink);color:var(--paper);text-align:center}
-.zctl{flex:none;display:flex;gap:4px;margin-left:auto}
+.zctl{position:relative;flex:none;display:flex;gap:4px;margin-left:auto}
 .zctl button{display:grid;place-items:center;width:44px;height:40px;border:0;background:var(--paper);color:var(--ink)}
-.zctl button:hover:not(:disabled){background:var(--yel)}.zctl button:disabled{background:var(--ink3);color:#6e737d}
+.zctl button:hover:not(:disabled):not([aria-disabled=true]){background:var(--yel)}.zctl button:disabled,.zctl button[aria-disabled=true]{background:var(--ink3);color:#6e737d}
+/* alasan + tidak bisa (js/menu.js zRender): hover/fokus di desktop, ketuk di HP (.on). Hover hanya untuk perangkat yang bisa hover: di HP :hover menempel sesudah ketuk */
+#ztip{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);display:block;height:auto;min-width:0;width:max-content;max-width:min(260px,calc(100vw - 32px));padding:7px 10px 8px;background:var(--paper);color:var(--ink);font:600 12px/1.35 var(--fb);text-align:left;clip-path:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,0 100%);box-shadow:0 6px 18px rgb(0 0 0/.45);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .15s,visibility .15s;z-index:2}
+#zplus[aria-disabled=true]:focus-visible+#ztip,#ztip.on{opacity:1;visibility:visible}
+@media (hover:hover){#zplus[aria-disabled=true]:hover+#ztip{opacity:1;visibility:visible}}
+/* jumlah kartu deck di pojok kiri atas, sejajar ✕ (user 2026-11-22: angka utama saja, huruf paling kecil = gaya Label). Di dalam #zdb supaya ikut memudar bersama tombol */
+#zdk{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:calc(12px + env(safe-area-inset-left,0px));height:44px;display:flex;align-items:center;gap:6px;font:600 11px var(--fd);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);pointer-events:none}#zdk b{font:inherit;color:var(--paper)}
 .zctl span{display:grid;place-items:center;min-width:44px;height:40px;background:var(--ink);color:var(--paper);font:700 18px var(--fd);box-shadow:inset 0 0 0 1px var(--line)}
 #zoom.db .zbox .x{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));width:44px;height:44px;background:var(--paper);color:var(--ink)}#zoom.db .zbox .x:hover{background:var(--yel)}   /* ✕ di pojok kanan atas layar: tempatnya tetap, satu-satunya tombol tutup, jadi segaya tombol ‹ › (kertas di latar hitam) */
 @media (max-width:760px){#zoom.db .zbox .x{background:rgb(6 7 10/.5);color:var(--paper);box-shadow:inset 0 0 0 1px rgb(255 255 255/.24)}#zoom.db .zbox .x:hover{background:rgb(6 7 10/.5)}#zoom.db .zbox .x:active{background:rgb(255 255 255/.16)}}   /* HP: ✕ lebih tenang (tutup utama di HP = tarik kartu ke bawah). Ikon kertas di latar gelap tetap kontras tinggi; cincin tipis = batas tombol, 44 px tetap */
