@@ -62,6 +62,11 @@ const vars=k=>[CARDS[k].img,...(CARDS[k].alt||[])];
 const vCnt=(k,v)=>{const a=DB.art[k]||{};return v===CARDS[k].img?(DB.list[k]||0)-Object.values(a).reduce((s,n)=>s+n,0):a[v]||0};
 const shownV=k=>DB.list[k]&&vars(k).find(v=>vCnt(k,v)>0)||CARDS[k].img;   // tile: varian pertama yang ada di deck
 const canAdd=k=>{const c=CARDS[k];return total()<60&&(DB.list[k]||0)<maxFor(k)&&(c.k==='energy'||copiesByName(c.n)<4)};
+const noAdd=k=>canAdd(k)?'':total()>=60?'Deck sudah penuh: 60 kartu.':CARDS[k].ace?'Aturan resmi: ACE SPEC hanya boleh 1 kartu dalam 1 deck.':'Aturan resmi: maksimal 4 kartu bernama sama dalam 1 deck, semua varian ikut dihitung.';   // alasan + tidak bisa (zoom dan tile grid)
+/* tooltip bersama untuk + di tile grid (±1.700 tile: satu elemen, bukan satu per tile). Mouse: hover. HP: ketuk, hilang sendiri */
+const gTip=(b,k,tap)=>{const t=$('gtip'),m=noAdd(k);clearTimeout(t.tm);if(!m)return gHide();t.textContent=m;t.classList.add('on');b.setAttribute('aria-describedby','gtip');
+ const r=b.getBoundingClientRect(),w=t.offsetWidth,h=t.offsetHeight,top=r.top-h-8;t.style.left=Math.min(innerWidth-w-8,Math.max(8,r.left+r.width/2-w/2))+'px';t.style.top=(top<8?r.bottom+8:top)+'px';if(tap)t.tm=setTimeout(gHide,2500)};
+const gHide=()=>{const t=$('gtip');clearTimeout(t.tm);t.classList.remove('on')};addEventListener('scroll',gHide,{capture:true,passive:true});   // posisi fixed: grid digulir = sembunyikan
 const cpArt=a=>JSON.parse(JSON.stringify(a||{}));
 function vAdd(k,v,d){if(d>0?!canAdd(k):!(vCnt(k,v)>0))return;
  DB.list[k]=(DB.list[k]||0)+d;if(!DB.list[k])delete DB.list[k];
@@ -77,7 +82,8 @@ function renderDB(){
   keys.forEach((k,i)=>{if(S&&(!i||sub(keys[i-1])!==sub(k))){const s=document.createElement('h4');s.className='dbsub';s.textContent=(S[sub(k)]||['',''])[1];t.append(s)}   // sub-judul jenis
    const c=CARDS[k],d=document.createElement('div'),nA=(c.alt||[]).length;d.className='tile';d.id='t-'+k;d.innerHTML=`<img class="sk" src="${IMG[shownV(k)]}" alt="${cname(c)}" loading="lazy" width="250" height="350">${nA?`<button class="skb" aria-label="${esc(cname(c))}: ${nA+1} varian" title="Varian kartu">${ic('layers')}<b>${nA+1}</b></button>`:''}<div class="ctl"><button aria-label="Kurangi ${cname(c)}">${ic('minus')}</button><span aria-live="polite">0</span><button aria-label="Tambah ${cname(c)}">${ic('plus')}</button></div>`;
    d.querySelector('img').onclick=()=>dbZoom(k);if(nA)d.querySelector('.skb').onclick=()=>dbZoom(k);const[bm,,bp]=d.querySelectorAll('.ctl button, .ctl span');
-   bm.onclick=()=>vAdd(k,shownV(k),-1);bp.onclick=()=>vAdd(k,shownV(k),1);SKIO.observe(d.firstChild);t.append(d)});g.append(t)}
+   bm.onclick=()=>vAdd(k,shownV(k),-1);bp.onclick=()=>bp.getAttribute('aria-disabled')!=='true'?vAdd(k,shownV(k),1):matchMedia('(hover:hover)').matches||gTip(bp,k,1);
+   bp.onpointerenter=e=>{if(e.pointerType==='mouse'&&bp.getAttribute('aria-disabled')==='true')gTip(bp,k)};bp.onpointerleave=e=>{if(e.pointerType==='mouse')gHide()};bp.onfocus=()=>{if(bp.matches(':focus-visible')&&bp.getAttribute('aria-disabled')==='true')gTip(bp,k)};bp.onblur=gHide;SKIO.observe(d.firstChild);t.append(d)});g.append(t)}
  g.insertAdjacentHTML('beforeend','<p class="note dbempty" hidden>Tidak ada kartu yang cocok. Ubah kata kunci atau filter.</p>');
  if(!$('db-t').options.length)$('db-t').innerHTML='<option value="">Semua tipe</option>'+Object.entries(TYPES).map(([k,v])=>`<option value="${k}">Pokémon ${v[0]}</option>`).join('')+'<option value="T">Trainer</option><option value="E">Energi</option>';
  seg($('db-view'),[['','Semua kartu'],['deck','Deck Anda']],'',k=>dbView(!!k));dbView(DB.only&&total()>0);   // masuk lagi dengan deck kosong: kembali ke Semua kartu
@@ -90,7 +96,7 @@ function dbZoom(k,v){if(zOut)zEnd();const z=$('zoom'),open=z.matches('.on.db'),i
  const t=$('t-'+k);if(t)t.scrollIntoView({block:'nearest'});if(!open){$('zx').focus({preventScroll:true});if(r)zFly(r,1)}}
 function zRender(){const{k,v}=DB.z,c=CARDS[k],n=vCnt(k,v),vs=vars(k);
  $('zvar').innerHTML=vs.length>1?vs.map((id,i)=>{const q=vCnt(k,id),l=(c.altl||{})[id];return`<button data-v="${id}" class="${id===v?'on':''}" aria-pressed="${id===v}" aria-label="Varian ${i+1}${l?', '+esc(l):''}${q?`, ${q} di deck`:''}"${l?` title="${esc(l)}"`:''}>Varian ${i+1}${q?`<b>${q}</b>`:''}</button>`}).join(''):'';
- const no=canAdd(k)?'':total()>=60?'Deck sudah penuh: 60 kartu.':c.ace?'Aturan resmi: ACE SPEC hanya boleh 1 kartu dalam 1 deck.':'Aturan resmi: maksimal 4 kartu bernama sama dalam 1 deck, semua varian ikut dihitung.';
+ const no=noAdd(k);
  $('zn').textContent=n;$('zmin').disabled=!n;$('zplus').setAttribute('aria-disabled',!!no);$('ztip').textContent=no;if(!no)$('ztip').classList.remove('on');$('zdk').innerHTML=`<b>${total()}/60</b> kartu di deck`;zNav();   // + tidak memakai disabled: tombol mati tidak menerima hover/tap, padahal alasannya harus bisa dibaca (user 2026-11-22)
  const s=$('zvar').querySelector('.on');if(s)s.scrollIntoView({block:'nearest',inline:'nearest'})}
 $('zvar').onclick=e=>{const b=e.target.closest('button');if(!b)return;DB.z.v=+b.dataset.v;crSync(true);zRender()};
@@ -229,7 +235,7 @@ function dbView(only){DB.only=only;[...$('db-view').children].forEach((b,i)=>{b.
  for(const h of $('db-grid').querySelectorAll('h3')){const s=dbShut().has(h.dataset.n);h.classList.toggle('shut',s);h.firstChild.setAttribute('aria-expanded',!s)}   // tiap tampilan memakai lipatannya sendiri
  dbFilter();$('db-grid').scrollTop=0}
 function updDB(){
- for(const k of Object.keys(CARDS)){const t=$('t-'+k);if(!t)continue;const n=DB.list[k]||0,im=t.querySelector('img'),src=IMG[shownV(k)],sk=t.querySelector('.skb');if(im.getAttribute('src')!==src){im.classList.add('sk');im.src=src}if(sk)sk.classList.toggle('on',!!DB.art[k]);t.querySelector('span').textContent=n;t.classList.toggle('on',n>0);const[bm,bp]=t.querySelectorAll('.ctl button');bm.disabled=!n;bp.disabled=!canAdd(k)}
+ for(const k of Object.keys(CARDS)){const t=$('t-'+k);if(!t)continue;const n=DB.list[k]||0,im=t.querySelector('img'),src=IMG[shownV(k)],sk=t.querySelector('.skb');if(im.getAttribute('src')!==src){im.classList.add('sk');im.src=src}if(sk)sk.classList.toggle('on',!!DB.art[k]);t.querySelector('span').textContent=n;t.classList.toggle('on',n>0);const[bm,bp]=t.querySelectorAll('.ctl button');bm.disabled=!n;bp.setAttribute('aria-disabled',!canAdd(k))}   // + tidak memakai disabled: alasannya harus bisa di-hover/ketuk
  for(const[name,fn]of CLUSTERS){const e=$('cc-'+name);if(e)e.textContent=Object.entries(DB.list).filter(([k])=>fn(CARDS[k])).reduce((a,[,v])=>a+v,0)}
  const n=total(),ok=legal(DB.list,DB.fmt).ok;let sum=`<div class="dcount"><b>${n}/60</b><span>kartu di deck</span><em class="${ok?'ok':'no'}">${ic(ok?'check':'x')} ${ok?'Sah':'Belum sah'}</em><button class="dtog" aria-controls="db-side" aria-expanded="${$('db-side').classList.contains('open')}">Kelola</button></div><div class="bar${n===60?' full':''}"><i style="width:${n/60*100}%"></i></div><div class="kinds">`;
  for(const[name,fn]of CLUSTERS){const v=Object.entries(DB.list).filter(([k])=>fn(CARDS[k])).reduce((a,[,q])=>a+q,0);sum+=`<span>${name}</span><b>${v}</b>`}
