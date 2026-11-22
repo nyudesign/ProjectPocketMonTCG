@@ -384,7 +384,7 @@ function monMenu(mon,sd){const c=mon.card,el=$('am'),me=sd==='p',my=me&&canAct()
  let w,p=null;
  if(act){
  el.innerHTML=`<div class="amw${mon.en.length?' hasen':''}"><div class="am3"><div class="amc"><img class="sk" src="${imgOf(c)}" alt="${cname(c)}"></div>
- <div class="amhp" aria-label="HP ${Math.max(0,hp(mon))} dari ${maxHp(mon)}"><b>${Math.max(0,hp(mon))}</b>${costIcons(c.type||'C')}</div>${sc.length?`<div class="amchips">${sc.map(q=>`<span class="chip">${q}</span>`).join('')}</div>`:''}
+ <canvas class="amhpc" width="${HPW}" height="${HPH}" role="img" aria-label="HP ${Math.max(0,hp(mon))} dari ${maxHp(mon)}"></canvas>${sc.length?`<div class="amchips">${sc.map(q=>`<span class="chip">${q}</span>`).join('')}</div>`:''}
  <div class="amp" style="--b1:${T[0]};--b2:${T[1]};--tt:${T[2]};--hk:${T[2]==='#fff'?18:0}%">
  ${c.ab?(abw===null?`<div class="amr ab info"><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p>${cardTx(c.ab.tx)}</p></div>`:`<button class="amr ab${abw?' off':''}" data-a="ab"${abw?' disabled':''}><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p>${cardTx(c.ab.tx)}</p>${abw?`<small>${abw}</small>`:''}</button>`):''}
  ${mon.tool?info('Tool','tg-tool',cname(mon.tool),mon.tool.tx):''}${sp.map(({e,n})=>info('Energi','tg-en',cname(e)+(n>1?' ×'+n:''),e.tx)).join('')}
@@ -396,6 +396,7 @@ function monMenu(mon,sd){const c=mon.card,el=$('am'),me=sd==='p',my=me&&canAct()
  w=el.firstChild;p=w.querySelector('.amp');const cs=getComputedStyle(document.documentElement),mid=parseFloat(cs.getPropertyValue('--mid'))||innerHeight/2,bot=innerHeight-8-(parseFloat(cs.paddingBottom)||0),eb=mon.en.length?12:0,
   mr=innerWidth-16-58,ch=Math.max(150,Math.min(bot-mid-4-eb,(mr-8)*1.4,LAYMODE?620:1e4)),cw=ch*5/7,pw=LAYMODE?Math.max(cw+14,Math.min(480,cw*1.6)):Math.min(Math.max(cw+14,cw*1.12),mr+6);   // separuh bawah (sisi kita): papan lawan tetap terlihat; mr = batas kanan sebelum tombol tutup
  w.style.setProperty('--amch',ch+'px');p.style.width=pw+'px';w.style.gap=Math.max(10,pw-6-cw+10)+'px';w.classList.toggle('tilt',!!w.querySelector('button.amr:not(:disabled)'));   // miring 3D hanya bila ada Ability/serangan yang menyala
+ {const cv=w.querySelector('.amhpc'),k=cw*HPK/1024,chp=w.querySelector('.amchips');cv.style.width=HPW*k+'px';cv.style.left=cw-416*k+'px';cv.style.top=-(102+HPT)*k+'px';if(chp)chp.style.top=125*k+4+'px';drawHp({cx:cv.getContext('2d'),hp:Math.max(0,hp(mon)),mx:maxHp(mon),img:c.img,ty:c.type,a:null,tex:{}})}   // panel HP sama dengan di papan, posisi & skala seperti ovBuild (x 416 = tepi kanan kartu, y 102+HPT = tepi atas)
  {const en=w.querySelector('.amen'),mx=Math.max(2,Math.floor((cw-12)/28));if(en&&mon.en.length>mx)en.innerHTML=mon.en.slice(0,mx-1).map(orb).join('')+`<b class="orbn">+${mon.en.length-mx+1}</b>`}   // bola Energi tidak melewati lebar kartu (tombol tutup tetap bisa diketuk)
  const mh=ch*.46-(eb?20:ch*.025);p.style.maxHeight=mh+'px';
  if(p.scrollHeight>p.clientHeight+1)for(const s of[.92,'cmp']){if(s==='cmp')p.classList.add('cmp');else{p.style.zoom=s;p.style.width=pw/s+'px';p.style.maxHeight=mh/s+'px'}if(p.scrollHeight<=p.clientHeight+1)break}
