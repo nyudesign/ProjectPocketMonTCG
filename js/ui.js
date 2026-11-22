@@ -49,11 +49,10 @@ function hud(){
  if(!G||!G.p)return;const o=G.o,p=G.p,n=G.prizeN;
  const pips=(id,rem)=>$(id).innerHTML=G.hidden?'':Array.from({length:n},(_,i)=>`<i class="${i<rem?'on':''}"></i>`).join('');   // persiapan: Kartu Point belum ditaruh, jangan tampil seperti "sudah habis"
  pips('op',o.prizes.length);pips('pp',p.prizes.length);for(const[id,S,w]of[['hudt',o,'Bot'],['hudb',p,'Kamu']])$(id).setAttribute('aria-label',`${w}: ${S.prizes.length} Kartu Point tersisa`);
- const setup=G.phase==='setup',be=$('b-end');if(be.dataset.s!==String(setup)){be.dataset.s=setup;be.innerHTML=setup?`Siap ${ic('play')}`:`Akhiri<span class="lg"> giliran</span>`}$('b-end').disabled=setup?(!p.active||!!UI.panel||!UI.placing):!canAct();$('b-atk').disabled=setup||!canAct()||!p.active;
+ const setup=G.phase==='setup',be=$('b-end');if(be.dataset.s!==String(setup)){be.dataset.s=setup;be.innerHTML=setup?`Siap ${ic('play')}`:`Akhiri<span class="lg"> giliran</span>`}$('b-end').disabled=setup?(!p.active||!!UI.panel||!UI.placing):!canAct();
  be.classList.toggle('ready',setup&&!be.disabled);   // Siap menyala kuning begitu Pokémon Bertarung sudah ditaruh
- UI.abl=canAct()?ownMons().filter(it=>it.mon.card.ab&&!it.mon.card.ab.passive&&!it.mon.card.ab.setup&&!abWhy('p',it.mon)).map(it=>it.id):[];UI.stl=canAct()&&stUseOf()&&!whyStadium('p')?G.stadium.card.id:null}   // stl: Stadium yang efeknya bisa dipakai ikut menyala
+ UI.abl=canAct()?ownMons().filter(it=>it.mon.card.ab&&!it.mon.card.ab.passive&&!it.mon.card.ab.setup&&!abWhy('p',it.mon)).map(it=>it.id):[];UI.stl=canAct()&&stUseOf()&&!whyStadium('p')?G.stadium.card.id:null;UI.atk=canAct()&&p.active&&atkList(p.active).some((a,k)=>!whyAttack('p',k))?p.active.id:null}   // stl: Stadium yang efeknya bisa dipakai ikut menyala
 $('b-end').onclick=()=>{if(G.phase==='setup'){if(UI.placing&&G.p.active){const r=UI.placing;UI.placing=null;r()}}else if(canAct())confirmEnd()};
-$('b-atk').onclick=()=>{if(canAct()&&G.p.active)monMenu(G.p.active,'p')};
 $('b-log').onclick=()=>$('log').classList.toggle('on');$('log-x').onclick=()=>$('log').classList.remove('on');
 const lsGet=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 async function confirmEnd(){const pend=pendingActions('p');if(!pend.length||lsGet('ptcg.confirmEnd','1')!=='1')return finishTurn();
@@ -372,28 +371,33 @@ async function pocketFlips(sd,rs,why,tx,slow){closeAm();if(slow)await sleep(350)
    serangan (biaya, nama, damage), kelemahan/resistansi, mundur. Tombol aksi hanya untuk Pokémon-mu di giliranmu; selain itu panel info.
    Desktop: di tengah layar; HP: di atas posisi Pokémon (dijepit di layar) --- */
 const costIcons=c=>[...c].map(t=>`<img class="ci" src="${ICONS.type[t]||ICONS.type.C}" alt="${(TYPES[t]||['Normal'])[0]}">`).join('');
-function monMenu(mon,sd,pick){const c=mon.card,el=$('am'),me=sd==='p',my=me&&canAct(),isAct=G[sd].active===mon,setup=me&&G.phase==='setup'&&UI.placing&&(!UI.placeOnly||!isAct&&UI.placeOnly.has(c.id)),
-  dm=a=>a.dmg?a.dmg+(a.plus?'+':a.times?'×':''):'',stg=k=>k.stage===2?'Stage 2':k.stage===1?'Stage 1':'Basic',T=TYB[c.type]||TYB.C,sc=spChip(mon),
-  st=[[c,stg(c)],...[...mon.under].reverse().map(u=>[u,stg(u)]),...mon.en.map(e=>[e,'Energi']),...(mon.tool?[[mon.tool,'Tool']]:[])],si=Math.max(0,st.findIndex(x=>x[0]===pick)),
+const OBP=new Set(['D','F','G','L','M','N','P','R','W','prism']);   // bola Energi pra-render (assets/icons/orb-*.png); C & rocket: bola CSS + decal sym-*.png
+function monMenu(mon,sd){const c=mon.card,el=$('am'),me=sd==='p',my=me&&canAct(),isAct=G[sd].active===mon,setup=me&&G.phase==='setup'&&UI.placing&&(!UI.placeOnly||!isAct&&UI.placeOnly.has(c.id)),
+  dm=a=>a.dmg?a.dmg+(a.plus?'+':a.times?'×':''):'',T=TYB[c.type]||TYB.C,sc=spChip(mon),
   ab=c.ab&&!c.ab.passive&&!c.ab.setup,abw=my&&ab?abWhy('p',mon):null,rw=my&&isAct?whyRetreat('p'):null,rc=rcost(mon),
   row=(a,k)=>{const w=my&&isAct?whyAttack('p',k):null,h=`<span class="amt"><span class="cost">${costIcons(a.cost)}</span><b>${a.n}</b><i>${dm(a)}</i></span>${a.src?`<p>Dari ${esc(a.src)} di Cadangan</p>`:''}${a.tx?`<p>${cardTx(a.tx)}</p>`:''}`;   // a.src: serangan Pokémon Cadangan (Mew ex)
-   return w===null?`<div class="amr info">${h}</div>`:`<button class="amr${w?' off':''}" data-a="${k}"${w?' disabled':''}>${h}${w?`<small>${w}</small>`:''}</button>`};
- el.innerHTML=`<div class="amw"><div class="am3"><div class="amc"><img class="sk" src="${imgOf(st[si][0])}" alt="${cname(c)}"></div>
- <div class="amp" style="--b1:${T[0]};--b2:${T[1]};--tt:${T[2]};--hk:${T[2]==='#fff'?18:0}%"><div class="amh"><b>${cname(c)}</b><span>HP ${Math.max(0,hp(mon))}/${maxHp(mon)}</span></div>${sc.length?`<div class="amchips">${sc.map(q=>`<span class="chip">${q}</span>`).join('')}</div>`:''}
+   return w===null?`<div class="amr info">${h}</div>`:`<button class="amr${w?' off':''}" data-a="${k}"${w?' disabled':''}>${h}${w?`<small>${w}</small>`:''}</button>`},
+  info=(tag,cls,n,tx)=>`<div class="amr info amtl"><span class="amt"><em class="${cls}">${tag}</em><b>${n}</b>${tx?`<span class="amtg">${ic('plus')}${ic('minus')}</span>`:''}</span>${tx?`<p>${cardTx(tx)}</p>`:''}</div>`,   // amtl: pelat Tool/Energi Spesial, teks efek bisa diringkas (.cmp) bila ruang kurang
+  sp=[...mon.en.filter(e=>e.k==='senergy').reduce((g,e)=>{const k=cname(e),o=g.get(k);o?o.n++:g.set(k,{e,n:1});return g},new Map()).values()],
+  orb=e=>{const k=orbKey(e);return OBP.has(k)?`<img class="orb" src="assets/icons/orb-${k}.png" alt="${cname(e)}">`:`<i class="orb orbx" role="img" aria-label="${cname(e)}"><img src="assets/icons/sym-${k==='rocket'?'rocket':'C'}.png" alt=""></i>`};
+ el.innerHTML=`<div class="amw${mon.en.length?' hasen':''}"><div class="am3"><div class="amc"><img class="sk" src="${imgOf(c)}" alt="${cname(c)}"></div>
+ <div class="amhp" aria-label="HP ${Math.max(0,hp(mon))} dari ${maxHp(mon)}"><b>${Math.max(0,hp(mon))}</b>${costIcons(c.type||'C')}</div>${sc.length?`<div class="amchips">${sc.map(q=>`<span class="chip">${q}</span>`).join('')}</div>`:''}
+ <div class="amp" style="--b1:${T[0]};--b2:${T[1]};--tt:${T[2]};--hk:${T[2]==='#fff'?18:0}%">
  ${c.ab?(abw===null?`<div class="amr ab info"><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p>${cardTx(c.ab.tx)}</p></div>`:`<button class="amr ab${abw?' off':''}" data-a="ab"${abw?' disabled':''}><span class="amt"><em>Ability</em><b>${c.ab.n}</b></span><p>${cardTx(c.ab.tx)}</p>${abw?`<small>${abw}</small>`:''}</button>`):''}
+ ${mon.tool?info('Tool','tg-tool',cname(mon.tool),mon.tool.tx):''}${sp.map(({e,n})=>info('Energi','tg-en',cname(e)+(n>1?' ×'+n:''),e.tx)).join('')}
  ${(isAct?atkList(mon):c.atk).map(row).join('')}
- <div class="amf"><span>Kelemahan ${c.weak?costIcons(c.weak)+' ×2':'–'}</span><span>Resistansi ${c.res?costIcons(c.res)+' −30':'–'}</span>${rw===null?`<span class="amri">Mundur ${rc?costIcons('C'.repeat(rc)):'0'}</span>`:`<button class="amret" data-a="ret"${rw?` disabled title="${rw}"`:''}>Mundur ${rc?costIcons('C'.repeat(rc)):'0'}</button>`}</div>${rw?`<small class="amri" style="padding:0 2px;font-size:12.5px">Mundur: ${rw}</small>`:''}
- ${setup?`<button class="b ghost" data-a="back">${ic('undo')} Kembalikan ke tangan</button>`:''}${my&&c.fossil?`<button class="b ghost" data-a="fout"${whyFossilOut('p',mon)?' disabled':''}>${ic('x')} Buang fosil ke Trash</button>`:''}</div></div>
- <div class="ams">${st.filter(x=>x[1]!=='Energi'&&x[1]!=='Tool').length>1?st.map(([cd,l],i)=>l==='Energi'||l==='Tool'?'':`<button class="zt${i===si?' on':''}" data-i="${i}"><img class="sk" src="${imgOf(cd)}" alt="${cname(cd)}"><span>${l}</span></button>`).join(''):''}${[...mon.en.reduce((g,e)=>{const k=cname(e),o=g.get(k);o?o.n++:g.set(k,{e,n:1});return g},new Map()).values()].map(({e,n})=>`<span class="zt zs0"><img class="sk" src="${imgOf(e)}" alt="${cname(e)}"><span>${n>1?'×'+n:'Energi'}</span></span>`).join('')}${mon.tool?`<span class="zt zs0"><img class="sk" src="${imgOf(mon.tool)}" alt="${cname(mon.tool)}"><span>Tool</span></span>`:''}<button class="amx" aria-label="Tutup">${ic('x')}</button></div></div>`;   // Energi/Tool hanya ditampilkan, tidak bisa diklik
+ <div class="amf"><span>Kelemahan ${c.weak?costIcons(c.weak)+' ×2':'–'}</span><span>Resistansi ${c.res?costIcons(c.res)+' −30':'–'}</span>${rw===null?`<span class="amri">Mundur ${rc?costIcons('C'.repeat(rc)):'0'}</span>`:`<button class="amret" data-a="ret"${rw?` disabled title="${rw}"`:''}>Mundur ${rc?costIcons('C'.repeat(rc)):'0'}</button>`}</div>${rw?`<small class="amri">Mundur: ${rw}</small>`:''}
+ ${setup?`<button class="b ghost" data-a="back">${ic('undo')} Kembalikan ke tangan</button>`:''}${my&&c.fossil?`<button class="b ghost" data-a="fout"${whyFossilOut('p',mon)?' disabled':''}>${ic('x')} Buang fosil ke Trash</button>`:''}</div>
+ ${mon.en.length?`<div class="amen">${mon.en.map(orb).join('')}</div>`:''}</div><button class="amx" aria-label="Tutup">${ic('x')}</button></div>`;   // kartu selalu Pokémon itu sendiri; Energi = bola 3D, Tool & Energi Spesial = pelat info (tidak bisa diklik)
  el.classList.add('on');UI.am=1;hideHv();
- const w=el.firstChild,q=w.querySelector('.amc');
- const cs=getComputedStyle(document.documentElement),mid=parseFloat(cs.getPropertyValue('--mid'))||innerHeight/2,bot=innerHeight-8-(parseFloat(cs.paddingBottom)||0),sw=w.querySelector('.ams').offsetWidth+22,p=w.querySelector('.amp'),
-  ch=Math.max(150,Math.min(bot-mid-4,(innerWidth-16-sw-14)*1.4,LAYMODE?620:1e4)),pw=LAYMODE?Math.max(ch*5/7+14,Math.min(480,ch*5/7*1.6)):Math.min(ch*5/7+14,innerWidth-16-sw);   // desktop: panel melebar ke kanan agar gambar kartu tetap terlihat   // menu di separuh bawah (sisi kita): sisi lawan tetap terlihat
- w.style.setProperty('--amch',ch+'px');p.style.width=pw+'px';w.style.gap=Math.max(22,pw-ch*5/7+4)+'px';
- if(p.scrollHeight>p.clientHeight+1){let z=1;for(z of[.92,.85,.8]){p.style.zoom=z;p.style.width=pw/z+'px';p.style.maxHeight=ch*.97/z+'px';if(p.scrollHeight<=p.clientHeight+1)break}if(p.scrollHeight>p.clientHeight+1)p.style.overflow='auto'}   // panel di dalam kartu: teks panjang = huruf mengecil, cadangan terakhir digulir
- w.style.left=(LAYMODE?Math.max(8,(innerWidth-w.offsetWidth)/2):8)+'px';w.style.top=Math.max(8,bot-w.offsetHeight)+'px';
- el.onclick=e=>{if(e.target.closest('.amx'))return closeAm();const t=e.target.closest('.zt[data-i]');if(t){const i=+t.dataset.i;q.firstChild.src=imgOf(st[i][0]);w.querySelectorAll('.zt').forEach(z=>z.classList.toggle('on',z===t));return}
-  const b=e.target.closest('[data-a]');if(!b){if(!e.target.closest('.amp,.amc,.ams'))closeAm();return}if(b.disabled)return;const a=b.dataset.a;closeAm();
+ const w=el.firstChild,p=w.querySelector('.amp'),cs=getComputedStyle(document.documentElement),mid=parseFloat(cs.getPropertyValue('--mid'))||innerHeight/2,bot=innerHeight-8-(parseFloat(cs.paddingBottom)||0),eb=mon.en.length?12:0,
+  mr=innerWidth-16-58,ch=Math.max(150,Math.min(bot-mid-4-eb,(mr-8)*1.4,LAYMODE?620:1e4)),cw=ch*5/7,pw=LAYMODE?Math.max(cw+14,Math.min(480,cw*1.6)):Math.min(Math.max(cw+14,cw*1.12),mr+6);   // separuh bawah (sisi kita): papan lawan tetap terlihat; mr = batas kanan sebelum tombol tutup
+ w.style.setProperty('--amch',ch+'px');p.style.width=pw+'px';w.style.gap=Math.max(10,pw-6-cw+10)+'px';w.classList.toggle('tilt',!!w.querySelector('button.amr:not(:disabled)'));   // miring 3D hanya bila ada Ability/serangan yang menyala
+ {const en=w.querySelector('.amen'),mx=Math.max(2,Math.floor((cw-12)/28));if(en&&mon.en.length>mx)en.innerHTML=mon.en.slice(0,mx-1).map(orb).join('')+`<b class="orbn">+${mon.en.length-mx+1}</b>`}   // bola Energi tidak melewati lebar kartu (tombol tutup tetap bisa diketuk)
+ if(p.scrollHeight>p.clientHeight+1){for(const s of[.92,'cmp',.85,.8]){if(s==='cmp')p.classList.add('cmp');else{p.style.zoom=s;p.style.width=pw/s+'px';p.style.maxHeight=(ch*.97-eb)/s+'px'}if(p.scrollHeight<=p.clientHeight+1)break}if(p.scrollHeight>p.clientHeight+1)p.style.overflow='auto'}   // pelat tumbuh ke atas menutupi gambar; ruang kurang: huruf 92%, efek Tool/Energi diringkas (ketuk untuk buka), huruf 85/80%, cadangan terakhir digulir
+ w.style.left=(LAYMODE?Math.max(8,(innerWidth-w.offsetWidth)/2):8)+'px';w.style.top=Math.max(8,bot-eb-w.offsetHeight)+'px';
+ el.onclick=e=>{if(e.target.closest('.amx'))return closeAm();const tl=e.target.closest('.amtl');if(tl&&p.classList.contains('cmp')){tl.classList.toggle('x');if(p.scrollHeight>p.clientHeight+1)p.style.overflow='auto';return}
+  const b=e.target.closest('[data-a]');if(!b){if(!e.target.closest('.amp,.amc,.amhp,.amchips,.amen'))closeAm();return}if(b.disabled)return;const a=b.dataset.a;closeAm();
   if(a==='back')setupRemove('p',mon);else if(a==='fout')run(()=>actFossilOut('p',mon));else if(a==='ab')run(()=>actAbility('p',mon));else if(a==='ret')run(()=>actRetreat('p'));else run(()=>actAttack('p',+a))}}
 const closeAm=()=>{$('am').classList.remove('on');UI.am=0};
 /* --- Drag & drop + tap + pratinjau --- */
@@ -572,6 +576,7 @@ function glows(){const L=[];if(!G||!G.p)return L;
  if(UI.attach&&!UI.drag)for(const m of UI.attach.tgts){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}   // pasang Energi dari efek: sasaran menyala
  if(UI.candy&&!UI.drag)for(const m of UI.candy.mons){const it=LI.get(m.id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}   // Permen Langka: Basic sasaran
  if(!UI.drag)for(const id of[...(UI.abl||[]),...(UI.stl?[UI.stl]:[])]){const it=LI.get(id);if(it)L.push({x:it.x,z:it.z,s:it.s,ok:1})}   // Ability siap: cahaya tepi kuning ala Pocket (tak saat drag, agar tak tertukar dgn sasaran)
+ if(UI.atk&&!UI.drag){const it=LI.get(UI.atk);if(it)L.push({x:it.x,z:it.z,s:it.s*1.08,ok:4})}   // bisa menyerang: cincin cyan ala Pocket (ketuk = menu serangan), sedikit lebih besar dari cincin Ability
  if(UI.hp)L.push(UI.hp);
  return L}
 /* lift & skala tambahan kartu yang berevolusi menurut waktu t (dtk): diam saat kartu baru menumpuk, naik (ease-out-back), melayang, turun (ease-in-out) */
@@ -606,7 +611,7 @@ function loop(t){
  ZH.visible=false;slbUpd();
  const dzv=!!(UI.drag&&UI.drag.dz);DZ.visible=dzv;if(dzv){DZ.material.color.setHex(UI.drag.dzc||0x4dff88);DZ.material.opacity=.75+Math.sin(s*7)*.25}
  coinsUpd(s,now);stageUI(now);
- const gl=glows();RG.forEach((m,i)=>{const g=gl[i];if(!g){m.visible=false;return}m.visible=true;m.position.set(g.x,.2,g.z);m.scale.setScalar(g.s*1.14);m.material.color.setHex(g.ok===3?0x9bdcff:g.ok?0xfcd34d:0xfb7185);m.material.opacity=.7+Math.sin(s*9)*.3});
+ const gl=glows();RG.forEach((m,i)=>{const g=gl[i];if(!g){m.visible=false;return}m.visible=true;m.position.set(g.x,.2,g.z);m.scale.setScalar(g.s*1.14);m.material.color.setHex(g.ok===4?0x38d9ff:g.ok===3?0x9bdcff:g.ok?0xfcd34d:0xfb7185);m.material.opacity=.7+Math.sin(s*9)*.3});
  if(CS){const i=Math.min(CS.F.length-1,((now-CS.t0)*.12)|0);coinPose(CS.F[i]);if(i>=CS.F.length-1&&!CS.done){CS.done=1;CS.res()}}   // simulasi 120 langkah/dtk
  if(DS){const i=Math.min(DS.F.length-1,((now-DS.t0)*.12)|0);diePose(DS.F[i]);if(i>=DS.F.length-1&&!DS.done){DS.done=1;DS.res()}}
  for(let i=FXL.length-1;i>=0;i--){const f=FXL[i],p=(now-f.t0)/f.dur;if(p>=1){scene.remove(f.o);FXL.splice(i,1)}else f.upd(p)}
