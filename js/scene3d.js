@@ -141,8 +141,8 @@ function fit(){const w=innerWidth,h=innerHeight,a=w/h,land=a>=1.15;
   const ry=-sE*cdT,rz=-cE*cdT-ctT;document.documentElement.style.setProperty('--mid',Math.round((1-(ry*cE-rz*sE)/((-ry*sE-rz*cE)*f))*h/2)+'px')}   // desktop juga: pita giliran & pil HUD menempel di garis tengah
  else{/* HP ala Pocket: tangan menyembul hvis di atas strip HUD bawah, baris muat selebar layar; bila sempit, papan naik sampai Bench Bot mepet pil Bot */
   const cy=sE*cdT,ndc=(y,z)=>{const ry=y-cy,rz=z-cE*cdT-ctT;return(ry*cE-rz*sE)/((-ry*sE-rz*cE)*f)},zAt=(n,y)=>cE*cdT+ctT+(y-cy)/(cE*f*n-sE)*(-cE-sE*f*n);   // NDC-y titik (0,y,z) & kebalikannya
-  const zs=zAt(2*sb/h-1,1),zc=zAt(ndc(0,bb)-12/h,1),sh=Math.max(0,Math.min(zc-zs+LAY.hmin*hh,((1-ndc(0,-bb))*h/2-10)*2*f*cdT/(sE*h)));   // zs: tepi bawah layar, zc: 6px di bawah Bench (tinggi kartu tangan y≈1)
-  ctT+=sh;LAY.handZ=Math.max(zs+sh-LAY.hvis*hh,zc)+hh/2;LAY.handW=2*((cy-1)*sE+(cE*cdT+ctT-LAY.handZ)*cE)*f*(a-12/h)-LAY.hs;   // lebar layar pada kedalaman tangan, margin 6px
+  const zs=zAt(2*sb/h-1,1),zg=zAt(2*(sb+20)/h-1,1),zc=zAt(ndc(0,bb)-12/h,1),sh=Math.max(0,Math.min(zc-zs+LAY.hmin*hh,((1-ndc(0,-bb))*h/2-10)*2*f*cdT/(sE*h)));   // zs: tepi bawah layar, zc: 6px di bawah Bench (tinggi kartu tangan y≈1)
+  ctT+=sh;LAY.handZ=Math.max(zg+sh-LAY.hvis*hh,zc)+hh/2;LAY.handW=2*((cy-1)*sE+(cE*cdT+ctT-LAY.handZ)*cE)*f*(a-12/h)-LAY.hs;   // lebar layar pada kedalaman tangan, margin 6px   // zg: tangan naik 20px dari tepi bawah (zona usap Home sistem) bila ada ruang; papan tetap
   document.documentElement.style.setProperty('--mid',Math.round((1-ndc(0,0))*h/2)+'px')}   // posisi layar garis tengah: pil Bot/Kamu & tombol menempel di sini (CSS)
  const hd=f*cdT/sE,upx=h/(2*hd);LAY.ohandZ=Math.min(ctT-hd+(land?0:8/upx)+LAY.ovis*oh-oh/2,-(bb+.18+oh/2));
  if(!cd){cd=cdT;ct=ctT}
