@@ -559,6 +559,7 @@ cvs.addEventListener('pointerup',e=>{
  const dn=UI.dn;endDn();UI.dn=null;if(!dn||dn.pan||dn.lpOn)return;if(Math.hypot(e.clientX-dn.x,e.clientY-dn.y)<=9){if(dn.i!==null)tap(dn.i);else if(G&&G.p&&!UI.want&&!UI.panel&&!UI.stage){aim(e);const gp=ray.ray.intersectPlane(PL0,PT),sl=gp&&slotAt(gp.x,gp.z);if(sl)say(sl.t.replace(/\n/g,'. '),2600)}}});
 cvs.addEventListener('pointercancel',()=>{endDn();UI.dn=null;if(UI.drag){UI.drag=null;cvs.style.cursor='';sync()}});
 cvs.addEventListener('pointerleave',()=>{UI.handUp=false;$('tip').style.display='none';UI.hp=null;if(!UI.dn)hideHv()});
+cvs.addEventListener('touchend',e=>e.preventDefault(),{passive:false});   // tanpa click sintetis dari ketukan papan: menu/zoom yang terbuka saat jari dilepas tidak ikut terklik (Ability jalan sendiri)
 /* --- cincin sorot --- */
 function glows(){const L=[];if(!G||!G.p)return L;
  if(UI.drag&&UI.drag.hi)L.push(UI.drag.hi);
