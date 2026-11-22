@@ -130,7 +130,7 @@ let ELEV=1.5,cd=0,ct=0,cdT=0,ctT=0,camMode='all';
 const portrait=()=>innerWidth/innerHeight<1.15;
 function fit(){const w=innerWidth,h=innerHeight,a=w/h,land=a>=1.15;
  if(land!==LAYMODE){LAYMODE=land;LAY=land?L_LAND:L_PORT;ELEV=LAY.elev;drawSlots();if(G&&G.p)sync()}
- const f=Math.tan(cam.fov*Math.PI/360),sE=Math.sin(ELEV),cE=Math.cos(ELEV);ren.setPixelRatio(Math.min(devicePixelRatio||1,3));ren.setSize(w,h,false);cam.aspect=a;cam.updateProjectionMatrix();
+ const f=Math.tan(cam.fov*Math.PI/360),sE=Math.sin(ELEV),cE=Math.cos(ELEV);ren.setPixelRatio(Math.min(devicePixelRatio||1,Math.max(3,Math.sqrt(3.6e6/(w*h)))));ren.setSize(w,h,false);cam.aspect=a;cam.updateProjectionMatrix();   // batas = anggaran piksel (±1290×2796), bukan rasio 3: zoom halaman Chrome HP menaikkan devicePixelRatio, cap 3 membuat kanvas blur
  const hh=1.4*LAY.hs,oh=1.4*LAY.ohs,bb=Math.abs(LAY.ben(0,1)[1])+.7*LAY.ben(0,1)[2],cs=getComputedStyle(document.documentElement),sb=land?0:parseFloat(cs.paddingBottom)||0;   // HP: tanpa strip HUD bawah (info & tombol pindah ke kanan garis tengah), hanya safe-area
  cdT=Math.max(LAY.W/(2*f*a),LAY.Hg*sE/(2*f),land?0:(2*bb+LAY.hvis*hh)/(1-(sb+10)/h)*sE/(2*f));ctT=LAY.zc;   // HP: papan + tangan menyembul di tepi bawah harus muat (10px cadangan atas)
  if(land){LAY.handZ=Math.max(ctT+f*cdT/sE-LAY.hvis*hh+hh/2,bb+.18+hh/2);LAY.handW=LAY.W-1.3;
