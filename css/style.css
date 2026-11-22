@@ -413,6 +413,19 @@ body.bt .hud{display:flex}
 #am .amret{min-height:44px}   /* sasaran sentuh min. 44px */
 #am .amx{align-self:flex-end;flex:none;display:grid;place-items:center;width:48px;height:48px;padding:0;border:0;border-radius:3px;background:rgb(13 14 18/.9);color:var(--paper);box-shadow:inset 0 0 0 1px var(--line);cursor:pointer}#am .amx .ic{width:24px;height:24px}#am .amx:hover{background:var(--ink3)}
 @media (prefers-reduced-motion:reduce){#am .am3{animation:none;transition:none}}
+/* lihat kartu (tidak ada Ability/serangan menyala, ala PTCG Live): kartu tegak utuh + lembar info, latar gelap */
+#am.ins{background:rgb(6 7 10/.8)}
+#am .amw.ins{flex-direction:column;align-items:center;gap:10px;animation:am3in .26s cubic-bezier(.2,.8,.2,1)}
+#am .amw.ins .amc>img{height:var(--amch);box-shadow:0 18px 44px rgb(0 0 0/.6)}
+#am .ains{width:360px;display:flex;flex-direction:column;gap:2px;padding:10px 12px;background:var(--paper);color:var(--tx);clip-path:var(--notch);box-shadow:0 18px 50px rgb(0 0 0/.55)}
+#am .insh{display:flex;justify-content:space-between;align-items:center;gap:8px;font:700 18px var(--fd)}#am .insh span{display:flex;align-items:center;gap:4px;font:700 16px var(--fd)}#am .insh .ci{width:20px;height:20px}
+#am .hpb{height:8px;margin:4px 0 6px;background:var(--paper3)}#am .hpb i{display:block;height:100%}
+#am .ains .amchips{position:static;flex-direction:row;flex-wrap:wrap;margin-bottom:4px}
+#am .insr{display:flex;align-items:center;gap:8px;min-height:36px;padding:4px 0;border-top:1px solid var(--paper3);font:600 14px var(--fb)}#am .insr span{min-width:76px;color:var(--tx2)}#am .insr span+b+span{min-width:0;margin-left:auto}#am .insr b{display:flex;align-items:center;gap:4px}#am .insr .amret{margin-left:auto}
+#am .insen .orb{width:26px;height:26px;margin-right:-4px}
+#am .insx{margin:0 0 4px;color:var(--tx2);font-size:13px;line-height:1.4}
+#am .ains .amri{color:var(--redd);font:700 12.5px var(--fb)}#am .ains>.b{margin-top:6px}
+@media (min-aspect-ratio:23/20){#am .amw.ins{flex-direction:row;align-items:flex-end;gap:16px}}
 /* ---- mulligan & pilih angka ala PTCGL ---- */
 .mlh{align-self:stretch;margin:-22px -18px 2px;padding:10px 18px;text-align:center;color:#fff;display:flex;flex-direction:column;background:var(--side,var(--red))}.mlh.o{--side:var(--redd)}.mlh.p{--side:var(--blued)}
 .mlh small{font:600 12px var(--fb);opacity:.9}.mlh b{font:italic 700 24px var(--fd);letter-spacing:.04em;text-transform:uppercase}

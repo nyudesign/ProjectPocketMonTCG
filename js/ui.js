@@ -375,11 +375,14 @@ const OBP=new Set(['D','F','G','L','M','N','P','R','W','prism']);   // bola Ener
 function monMenu(mon,sd){const c=mon.card,el=$('am'),me=sd==='p',my=me&&canAct(),isAct=G[sd].active===mon,setup=me&&G.phase==='setup'&&UI.placing&&(!UI.placeOnly||!isAct&&UI.placeOnly.has(c.id)),
   dm=a=>a.dmg?a.dmg+(a.plus?'+':a.times?'×':''):'',T=TYB[c.type]||TYB.C,sc=spChip(mon),
   ab=c.ab&&!c.ab.passive&&!c.ab.setup,abw=my&&ab?abWhy('p',mon):null,rw=my&&isAct?whyRetreat('p'):null,rc=rcost(mon),
+  act=(my&&isAct&&atkList(mon).some((a,k)=>!whyAttack('p',k)))||(abw!==null&&!abw),   // ada Ability/serangan yang menyala: menu miring; selain itu tampilan lihat kartu (ala PTCG Live)
   row=(a,k)=>{const w=my&&isAct?whyAttack('p',k):null,h=`<span class="amt"><span class="cost">${costIcons(a.cost)}</span><b>${a.n}</b><i>${dm(a)}</i></span>${a.src?`<p>Dari ${esc(a.src)} di Cadangan</p>`:''}${a.tx?`<p>${cardTx(a.tx)}</p>`:''}`;   // a.src: serangan Pokémon Cadangan (Mew ex)
    return w===null?`<div class="amr info">${h}</div>`:`<button class="amr${w?' off':''}" data-a="${k}"${w?' disabled':''}>${h}${w?`<small>${w}</small>`:''}</button>`},
   info=(tag,cls,n,tx)=>`<div class="amr info amtl"><span class="amt"><em class="${cls}">${tag}</em><b>${n}</b>${tx?`<span class="amtg">${ic('plus')}${ic('minus')}</span>`:''}</span>${tx?`<p>${cardTx(tx)}</p>`:''}</div>`,   // amtl: pelat Tool/Energi Spesial, teks efek bisa diringkas (.cmp) bila ruang kurang
   sp=[...mon.en.filter(e=>e.k==='senergy').reduce((g,e)=>{const k=cname(e),o=g.get(k);o?o.n++:g.set(k,{e,n:1});return g},new Map()).values()],
   orb=e=>{const k=orbKey(e);return OBP.has(k)?`<img class="orb" src="assets/icons/orb-${k}.png" alt="${cname(e)}">`:`<i class="orb orbx" role="img" aria-label="${cname(e)}"><img src="assets/icons/sym-${k==='rocket'?'rocket':'C'}.png" alt=""></i>`};
+ let w,p=null;
+ if(act){
  el.innerHTML=`<div class="amw${mon.en.length?' hasen':''}"><div class="am3"><div class="amc"><img class="sk" src="${imgOf(c)}" alt="${cname(c)}"></div>
  <div class="amhp" aria-label="HP ${Math.max(0,hp(mon))} dari ${maxHp(mon)}"><b>${Math.max(0,hp(mon))}</b>${costIcons(c.type||'C')}</div>${sc.length?`<div class="amchips">${sc.map(q=>`<span class="chip">${q}</span>`).join('')}</div>`:''}
  <div class="amp" style="--b1:${T[0]};--b2:${T[1]};--tt:${T[2]};--hk:${T[2]==='#fff'?18:0}%">
@@ -389,8 +392,8 @@ function monMenu(mon,sd){const c=mon.card,el=$('am'),me=sd==='p',my=me&&canAct()
  ${setup?`<button class="b ghost" data-a="back">${ic('undo')} Kembalikan ke tangan</button>`:''}${my&&c.fossil?`<button class="b ghost" data-a="fout"${whyFossilOut('p',mon)?' disabled':''}>${ic('x')} Buang fosil ke Trash</button>`:''}
  <div class="amcue" aria-hidden="true">${ic('chevR')}</div><div class="amf"><span>Kelemahan ${c.weak?costIcons(c.weak)+' ×2':'–'}</span><span>Resistansi ${c.res?costIcons(c.res)+' −30':'–'}</span>${rw===null?`<span class="amri">Mundur ${rc?costIcons('C'.repeat(rc)):'0'}</span>`:`<button class="amret" data-a="ret"${rw?` disabled title="${rw}"`:''}>Mundur ${rc?costIcons('C'.repeat(rc)):'0'}</button>`}${rw?`<small class="amri">Mundur: ${rw}</small>`:''}</div></div>
  ${mon.en.length?`<div class="amen">${mon.en.map(orb).join('')}</div>`:''}</div><button class="amx" aria-label="Tutup">${ic('x')}</button></div>`;   // kartu selalu Pokémon itu sendiri; Energi = bola 3D, Tool & Energi Spesial = pelat info (tidak bisa diklik)
- el.classList.add('on');UI.am=1;hideHv();
- const w=el.firstChild,p=w.querySelector('.amp'),cs=getComputedStyle(document.documentElement),mid=parseFloat(cs.getPropertyValue('--mid'))||innerHeight/2,bot=innerHeight-8-(parseFloat(cs.paddingBottom)||0),eb=mon.en.length?12:0,
+ el.classList.remove('ins');el.classList.add('on');UI.am=1;hideHv();
+ w=el.firstChild;p=w.querySelector('.amp');const cs=getComputedStyle(document.documentElement),mid=parseFloat(cs.getPropertyValue('--mid'))||innerHeight/2,bot=innerHeight-8-(parseFloat(cs.paddingBottom)||0),eb=mon.en.length?12:0,
   mr=innerWidth-16-58,ch=Math.max(150,Math.min(bot-mid-4-eb,(mr-8)*1.4,LAYMODE?620:1e4)),cw=ch*5/7,pw=LAYMODE?Math.max(cw+14,Math.min(480,cw*1.6)):Math.min(Math.max(cw+14,cw*1.12),mr+6);   // separuh bawah (sisi kita): papan lawan tetap terlihat; mr = batas kanan sebelum tombol tutup
  w.style.setProperty('--amch',ch+'px');p.style.width=pw+'px';w.style.gap=Math.max(10,pw-6-cw+10)+'px';w.classList.toggle('tilt',!!w.querySelector('button.amr:not(:disabled)'));   // miring 3D hanya bila ada Ability/serangan yang menyala
  {const en=w.querySelector('.amen'),mx=Math.max(2,Math.floor((cw-12)/28));if(en&&mon.en.length>mx)en.innerHTML=mon.en.slice(0,mx-1).map(orb).join('')+`<b class="orbn">+${mon.en.length-mx+1}</b>`}   // bola Energi tidak melewati lebar kartu (tombol tutup tetap bisa diketuk)
@@ -398,11 +401,26 @@ function monMenu(mon,sd){const c=mon.card,el=$('am'),me=sd==='p',my=me&&canAct()
  if(p.scrollHeight>p.clientHeight+1)for(const s of[.92,'cmp']){if(s==='cmp')p.classList.add('cmp');else{p.style.zoom=s;p.style.width=pw/s+'px';p.style.maxHeight=mh/s+'px'}if(p.scrollHeight<=p.clientHeight+1)break}
  {p.style.setProperty('--fh',(p.querySelector('.amf')?.offsetHeight||0)+'px');const up=()=>p.classList.toggle('more',p.scrollTop+p.clientHeight<p.scrollHeight-2);up();p.onscroll=up}   // penanda masih ada isi di bawah (pudar + panah) di atas pelat dasar
  // pelat hanya di area serangan kartu (gambar Pokémon tidak tertutup, user); ruang kurang: huruf 92%, efek Tool/Energi diringkas, sisanya digulir
- w.style.left=(LAYMODE?Math.max(8,(innerWidth-w.offsetWidth)/2):8)+'px';w.style.top=Math.max(8,bot-eb-w.offsetHeight)+'px';
- el.onclick=e=>{if(e.target.closest('.amx'))return closeAm();const tl=e.target.closest('.amtl');if(tl&&p.classList.contains('cmp')){tl.classList.toggle('x');return}
-  const b=e.target.closest('[data-a]');if(!b){if(!e.target.closest('.amp,.amc,.amhp,.amchips,.amen'))closeAm();return}if(b.disabled)return;const a=b.dataset.a;closeAm();
+ w.style.left=Math.max(8,Math.min(innerWidth-8-w.offsetWidth,innerWidth/2-cw/2))+'px';w.style.top=Math.max(8,bot-eb-w.offsetHeight)+'px';   // tengah kartu sejajar tengah papan (layar lebar tidak menempel kiri)
+ }else{const H=Math.max(0,hp(mon)),M=maxHp(mon),pc=Math.max(0,Math.min(100,H/M*100)),
+  ar=my&&isAct&&atkList(mon).length?whyAttack('p',0):'',cost=rc?costIcons('C'.repeat(rc)):'Gratis';   // ar: alasan Pokémon Arena sendiri belum bisa menyerang
+ el.innerHTML=`<div class="amw ins"><div class="amc"><img class="sk" src="${imgOf(c)}" alt="${cname(c)}"></div>
+ <div class="ains"><div class="insh"><b>${cname(c)}</b><span>${H}/${M}${costIcons(c.type||'C')}</span></div><div class="hpb"><i style="width:${pc}%;background:${pc>50?'#22c55e':pc>25?'#facc15':'#ef4444'}"></i></div>${sc.length?`<div class="amchips">${sc.map(q=>`<span class="chip">${q}</span>`).join('')}</div>`:''}
+ <div class="insr"><span>Tool</span><b>${mon.tool?cname(mon.tool):'–'}</b></div>${mon.tool&&mon.tool.tx?`<p class="insx">${cardTx(mon.tool.tx)}</p>`:''}
+ <div class="insr"><span>Energi</span><b class="insen">${mon.en.length?mon.en.map(orb).join(''):'–'}</b></div>${sp.map(({e,n})=>`<p class="insx"><b>${cname(e)}${n>1?' ×'+n:''}:</b> ${cardTx(e.tx||'')}</p>`).join('')}
+ <div class="insr"><span>Mundur</span><b>${cost}</b>${rw!==null?`<button class="amret" data-a="ret"${rw?` disabled title="${rw}"`:''}>Mundur</button>`:''}</div>${rw?`<small class="amri">Mundur: ${rw}</small>`:''}
+ <div class="insr"><span>Kelemahan</span><b>${c.weak?costIcons(c.weak)+' ×2':'–'}</b><span>Resistansi</span><b>${c.res?costIcons(c.res)+' −30':'–'}</b></div>
+ ${ar?`<small class="amri">Belum bisa menyerang: ${ar}</small>`:''}${setup?`<button class="b ghost" data-a="back">${ic('undo')} Kembalikan ke tangan</button>`:''}${my&&c.fossil?`<button class="b ghost" data-a="fout"${whyFossilOut('p',mon)?' disabled':''}>${ic('x')} Buang fosil ke Trash</button>`:''}</div>
+ <button class="amx" aria-label="Tutup">${ic('x')}</button></div>`;   // lihat kartu: kartu tegak utuh + lembar info (HP, Tool, Energi, Mundur, Kelemahan/Resistansi)
+ el.classList.add('on','ins');UI.am=1;hideHv();
+ w=el.firstChild;const sh=w.querySelector('.ains'),pt=parseFloat(getComputedStyle(document.documentElement).paddingTop)||0;
+ if(LAYMODE)w.style.setProperty('--amch',Math.min(innerHeight-60,620)+'px');
+ else{sh.style.width=Math.min(innerWidth-16,440)+'px';w.style.setProperty('--amch',Math.max(180,Math.min((innerWidth-24)*1.4,innerHeight-16-pt-sh.offsetHeight-48-20))+'px')}   // HP: kartu, lembar info, tombol tutup bertumpuk; kartu mengecil bila lembar panjang
+ w.style.left=Math.max(8,(innerWidth-w.offsetWidth)/2)+'px';w.style.top=Math.max(8+pt,(innerHeight-w.offsetHeight)/2)+'px'}
+ el.onclick=e=>{if(e.target.closest('.amx'))return closeAm();const tl=e.target.closest('.amtl');if(tl&&p&&p.classList.contains('cmp')){tl.classList.toggle('x');return}
+  const b=e.target.closest('[data-a]');if(!b){if(!e.target.closest('.amp,.amc,.amhp,.amchips,.amen,.ains'))closeAm();return}if(b.disabled)return;const a=b.dataset.a;closeAm();
   if(a==='back')setupRemove('p',mon);else if(a==='fout')run(()=>actFossilOut('p',mon));else if(a==='ab')run(()=>actAbility('p',mon));else if(a==='ret')run(()=>actRetreat('p'));else run(()=>actAttack('p',+a))}}
-const closeAm=()=>{$('am').classList.remove('on');UI.am=0};
+const closeAm=()=>{$('am').classList.remove('on','ins');UI.am=0};
 /* --- Drag & drop + tap + pratinjau --- */
 const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),PL=new THREE.Plane(new THREE.Vector3(0,1,0),-.9),PT=new THREE.Vector3();
 const aim=e=>{ndc.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(ndc,cam)};
