@@ -384,20 +384,22 @@ function monMenu(mon,sd,pick){const c=mon.card,el=$('am'),me=sd==='p',my=me&&can
  ${(isAct?atkList(mon):c.atk).map(row).join('')}
  <div class="amf"><span>Kelemahan ${c.weak?costIcons(c.weak)+' ×2':'–'}</span><span>Resistansi ${c.res?costIcons(c.res)+' −30':'–'}</span>${rw===null?`<span class="amri">Mundur ${rc?costIcons('C'.repeat(rc)):'0'}</span>`:`<button class="amret" data-a="ret"${rw?` disabled title="${rw}"`:''}>Mundur ${rc?costIcons('C'.repeat(rc)):'0'}</button>`}</div>${rw?`<small class="amri" style="padding:0 2px;font-size:12.5px">Mundur: ${rw}</small>`:''}
  ${setup?`<button class="b ghost" data-a="back">${ic('undo')} Kembalikan ke tangan</button>`:''}${my&&c.fossil?`<button class="b ghost" data-a="fout"${whyFossilOut('p',mon)?' disabled':''}>${ic('x')} Buang fosil ke Trash</button>`:''}</div></div>
- ${st.length>1?`<div class="ams">${st.map(([cd,l],i)=>`<button class="zt${i===si?' on':''}" data-i="${i}"><img class="sk" src="${imgOf(cd)}" alt="${cname(cd)}"><span>${l}</span></button>`).join('')}</div>`:''}<button class="amx" aria-label="Tutup">${ic('x')}</button></div>`;
+ <div class="ams">${st.filter(x=>x[1]!=='Energi'&&x[1]!=='Tool').length>1?st.map(([cd,l],i)=>l==='Energi'||l==='Tool'?'':`<button class="zt${i===si?' on':''}" data-i="${i}"><img class="sk" src="${imgOf(cd)}" alt="${cname(cd)}"><span>${l}</span></button>`).join(''):''}${[...mon.en.reduce((g,e)=>{const k=cname(e),o=g.get(k);o?o.n++:g.set(k,{e,n:1});return g},new Map()).values()].map(({e,n})=>`<span class="zt zs0"><img class="sk" src="${imgOf(e)}" alt="${cname(e)}"><span>${n>1?'×'+n:'Energi'}</span></span>`).join('')}${mon.tool?`<span class="zt zs0"><img class="sk" src="${imgOf(mon.tool)}" alt="${cname(mon.tool)}"><span>Tool</span></span>`:''}<button class="amx" aria-label="Tutup">${ic('x')}</button></div></div>`;   // Energi/Tool hanya ditampilkan, tidak bisa diklik
  el.classList.add('on');UI.am=1;hideHv();
- const w=el.firstChild,q=w.querySelector('.amc'),it=LI.get(mon.id);
- for(let k=0;k<8;k++){const over=w.offsetHeight-(innerHeight-12),ch=q.offsetHeight;if(over<=0||ch<=120)break;w.style.setProperty('--amch',Math.max(120,ch-over/.58)+'px')}if(w.offsetHeight>innerHeight-12){const p=w.querySelector('.amp');let z=1;for(z of[.92,.85,.8]){p.style.zoom=z;if(w.getBoundingClientRect().height<=innerHeight-11)break}const o=w.getBoundingClientRect().height-(innerHeight-12);if(o>1){p.style.maxHeight=Math.max(160,(p.getBoundingClientRect().height-o)/z)+'px';p.style.overflow='auto'}}   // tanpa scroll: kartu mengecil dulu, lalu huruf panel; daftar serangan sangat panjang (Mew ex) baru boleh digulir
- if(LAYMODE){w.style.left=Math.max(6,(innerWidth-w.offsetWidth)/2)+'px';w.style.top=Math.max(6,(innerHeight-w.offsetHeight)/2)+'px'}   // desktop: tengah layar
- else{const[ax,ay]=it?px2(it.x,.12,it.z):[innerWidth/2,innerHeight/2];w.style.left=Math.max(6,Math.min(innerWidth-w.offsetWidth-6,ax-q.offsetLeft-q.offsetWidth/2))+'px';w.style.top=Math.max(6,Math.min(innerHeight-w.offsetHeight-6,ay-q.offsetTop-q.offsetHeight/2))+'px'}
- el.onclick=e=>{const t=e.target.closest('.zt');if(t){const i=+t.dataset.i;q.firstChild.src=imgOf(st[i][0]);q.querySelectorAll('.zt').forEach(z=>z.classList.toggle('on',z===t));return}
-  const b=e.target.closest('[data-a]');if(!b){if(!e.target.closest('.amp,.amc'))closeAm();return}if(b.disabled)return;const a=b.dataset.a;closeAm();
+ const w=el.firstChild,q=w.querySelector('.amc');
+ const cs=getComputedStyle(document.documentElement),mid=parseFloat(cs.getPropertyValue('--mid'))||innerHeight/2,bot=innerHeight-8-(parseFloat(cs.paddingBottom)||0),sw=w.querySelector('.ams').offsetWidth+22,p=w.querySelector('.amp'),
+  ch=Math.max(150,Math.min(bot-mid-4,(innerWidth-16-sw-14)*1.4,LAYMODE?620:1e4)),pw=LAYMODE?Math.max(ch*5/7+14,Math.min(480,ch*5/7*1.6)):Math.min(ch*5/7+14,innerWidth-16-sw);   // desktop: panel melebar ke kanan agar gambar kartu tetap terlihat   // menu di separuh bawah (sisi kita): sisi lawan tetap terlihat
+ w.style.setProperty('--amch',ch+'px');p.style.width=pw+'px';w.style.gap=Math.max(22,pw-ch*5/7+4)+'px';
+ if(p.scrollHeight>p.clientHeight+1){let z=1;for(z of[.92,.85,.8]){p.style.zoom=z;p.style.width=pw/z+'px';p.style.maxHeight=ch*.97/z+'px';if(p.scrollHeight<=p.clientHeight+1)break}if(p.scrollHeight>p.clientHeight+1)p.style.overflow='auto'}   // panel di dalam kartu: teks panjang = huruf mengecil, cadangan terakhir digulir
+ w.style.left=(LAYMODE?Math.max(8,(innerWidth-w.offsetWidth)/2):8)+'px';w.style.top=Math.max(8,bot-w.offsetHeight)+'px';
+ el.onclick=e=>{if(e.target.closest('.amx'))return closeAm();const t=e.target.closest('.zt[data-i]');if(t){const i=+t.dataset.i;q.firstChild.src=imgOf(st[i][0]);w.querySelectorAll('.zt').forEach(z=>z.classList.toggle('on',z===t));return}
+  const b=e.target.closest('[data-a]');if(!b){if(!e.target.closest('.amp,.amc,.ams'))closeAm();return}if(b.disabled)return;const a=b.dataset.a;closeAm();
   if(a==='back')setupRemove('p',mon);else if(a==='fout')run(()=>actFossilOut('p',mon));else if(a==='ab')run(()=>actAbility('p',mon));else if(a==='ret')run(()=>actRetreat('p'));else run(()=>actAttack('p',+a))}}
 const closeAm=()=>{$('am').classList.remove('on');UI.am=0};
 /* --- Drag & drop + tap + pratinjau --- */
 const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),PL=new THREE.Plane(new THREE.Vector3(0,1,0),-.9),PT=new THREE.Vector3();
 const aim=e=>{ndc.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(ndc,cam)};
-function hitId(e){aim(e);const h=ray.intersectObjects([...PX.values()],false)[0];return h?h.object.userData.id:null}
+function hitId(e){aim(e);const h=ray.intersectObjects([...PX.values()].filter(o=>{const it=LI.get(o.userData.id);return!it||it.zone!=='att'}),false)[0];return h?h.object.userData.id:null}   // Energi/Tool yang menempel tidak bisa diklik/di-hover: hanya Pokémon
 const hitCoin=e=>{if(!UI.stage||UI.stage.end)return -1;aim(e);const h=ray.intersectObjects(DCS.filter(m=>m.visible&&!m.userData.fl&&!m.userData.st),false)[0];return h?DCS.indexOf(h.object):-1};   // koin yang sedang terbang/menempel tak bisa diambil
 const ownMons=()=>[...LI.values()].filter(it=>it.sd==='p'&&(it.zone==='act'||it.zone==='ben'));
 const overMon=(x,z,list)=>list.find(it=>Math.abs(x-it.x)<.5*it.s+.12&&Math.abs(z-it.z)<.7*it.s+.12);
@@ -513,7 +515,6 @@ function tap(id){
  if(G.hidden&&it.sd==='o')return say('Pokémon Bot masih tertutup',1500);
  if(it.zone==='hand')return zoomCard(it.c);
  if(it.mon)return monMenu(it.mon,it.sd);
- if(it.zone==='att'&&it.par)return monMenu(it.par,it.sd,it.c);   // Energi/Tool yang menempel: menu Pokémon-nya, kartu itu terpilih
  if(it.zone==='stad'){zoomCard(it.c);if(canAct()&&stUseOf()){const w=whyStadium('p');$('zbtn').innerHTML=`<button class="b go"${w?' disabled':''}>${ic('play')} Pakai efek Stadium</button>${w?`<small>${w}</small>`:''}`;zFit();if(!w)$('zbtn').querySelector('button').onclick=()=>{closeZoom();run(()=>actStadium('p'))}}return}   // Stadium yang bisa dipakai
  if(it.zone==='dis')return openDisc(it.sd);
  if(it.zone==='ohand')return say(`Kartu Pegangan Bot: ${G.o.hand.length}`,1500);
@@ -588,7 +589,7 @@ function loop(t){
    continue}
   if(d.fly){if(now>=d.fly.t0&&flyStep(g,d.fly,now,T.x,T.y,T.z,T.s,1))d.fly=null;continue}   // sedang terbang melengkung ke discard
   const dr=UI.drag&&UI.drag.id===id,hv=hov===id&&T.zone==='hand',ev=d.evo&&evoCurve((now-d.evo.t0)/1000),k=dr?.4:d.dash?.32:T.dl?.22:.17,ky=ev?1:k,lf=ev?ev[0]:d.lift||0;   // ev: timeline evolusi (tanpa lerp = tanpa jeda)
-  let tx=T.x+d.off.x,tz=T.z+d.off.z-(hv?(T.s*.55):0)-((UI.handUp&&!UI.drag&&T.zone==='hand')?((1-LAY.hvis)*1.4*LAY.hs+.3):0)+(UI.stage&&T.zone==='hand'?1.7*LAY.hs:0)/* langkah koin: tangan turun keluar layar */,ty=T.y+(hv?.9:0)+lf*1.1,ts=T.s*(1+d.pop*.25+lf*.12+(ev?ev[1]:d.big||0)),rx=T.up?-Math.PI/2+(T.tilt||0)+(hv?.1:0):Math.PI/2;
+  let tx=T.x+d.off.x,tz=T.z+d.off.z-(hv?(T.s*.55):0)-((UI.handUp&&!UI.drag&&T.zone==='hand')?((1-LAY.hvis)*1.4*LAY.hs+.3):0)+((UI.stage||UI.am)&&T.zone==='hand'?1.7*LAY.hs:0)/* langkah koin & menu Pokémon: tangan turun keluar layar */,ty=T.y+(hv?.9:0)+lf*1.1,ts=T.s*(1+d.pop*.25+lf*.12+(ev?ev[1]:d.big||0)),rx=T.up?-Math.PI/2+(T.tilt||0)+(hv?.1:0):Math.PI/2;
   if(T.zone==='dk'&&shufT[T.sd]>t){const i=+id.slice(3);tx+=Math.sin(t/60+i*2)*.5;tz+=Math.cos(t/55+i)*.18;ty+=.12*Math.abs(Math.sin(t/90+i))}
   if(UI.candy&&T.zone==='hand'&&!dr&&UI.candy.cards.includes(T.c)){ty+=.35;tz-=.3;ts*=1.04+Math.sin(s*6)*.025}   // Permen Langka: kartu Stage 2 yang bisa dipakai terangkat & berdenyut
   if(T.dl&&!dr&&now<T.dl.t1){const P=Z.dk(T.sd==='p'?1:-1);tx=P[0];tz=P[1];ty=.14;ts=P[2];rx=Math.PI/2}   // bagi kartu awal: tunggu di deck
@@ -599,7 +600,7 @@ function loop(t){
   g.scale.x+=(ts-g.scale.x)*ky;g.scale.y=g.scale.z=g.scale.x;g.rotation.x+=(rx-g.rotation.x)*(dr?.3:.14);d.rzb=(d.rzb??g.rotation.z)+((T.rz||0)-(d.rzb??g.rotation.z))*.12;d.st=(d.st||0)+((d.stz||0)-(d.st||0))*.12;g.rotation.z=d.rzb+d.st;
   d.sh*=.9;d.fl*=.92;d.pop*=.9;const c=d.fl>.02?1-d.fl*.7:1;if(d.fl>.02||d.glow){d.f.material.color.setRGB(1,d.glow?1:c,d.glow?Math.min(1,c+.2):c);if(d.fl<=.02)d.glow=0}else if(d.ko)d.f.material.color.setRGB(.6,.52,.56);else d.f.material.color.setRGB(1,1,1);   // KO: meredup
   const o=OV.get(id);if(o){o.g.position.set(g.position.x,g.position.y+.045*g.scale.x,g.position.z);o.g.scale.setScalar(g.scale.x);o.g.rotation.x=g.rotation.x;o.g.rotation.z=d.st||0}   // ikut miring & skala kartu (stage ×1.5), kalau tidak panel HP tertutup kartu
-  if(T.zone==='hand'){const q=PX.get(id);if(q){q.position.z=T.z-((UI.handUp&&!UI.drag)?((1-LAY.hvis)*1.4*LAY.hs+.3):0)+(UI.stage?1.7*LAY.hs:0);q.updateMatrixWorld()}}}
+  if(T.zone==='hand'){const q=PX.get(id);if(q){q.position.z=T.z-((UI.handUp&&!UI.drag)?((1-LAY.hvis)*1.4*LAY.hs+.3):0)+(UI.stage||UI.am?1.7*LAY.hs:0);q.updateMatrixWorld()}}}
  updHp();cfUpdate(s);
  for(const k in AURA_M)AURA_M[k].opacity=.55+Math.sin(s*3)*.2;glowUpd(s);
  ZH.visible=false;slbUpd();
