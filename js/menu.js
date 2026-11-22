@@ -62,7 +62,7 @@ const vars=k=>[CARDS[k].img,...(CARDS[k].alt||[])];
 const vCnt=(k,v)=>{const a=DB.art[k]||{};return v===CARDS[k].img?(DB.list[k]||0)-Object.values(a).reduce((s,n)=>s+n,0):a[v]||0};
 const shownV=k=>DB.list[k]&&vars(k).find(v=>vCnt(k,v)>0)||CARDS[k].img;   // tile: varian pertama yang ada di deck
 const canAdd=k=>{const c=CARDS[k];return total()<60&&(DB.list[k]||0)<maxFor(k)&&(c.k==='energy'||copiesByName(c.n)<4)};
-const noAdd=k=>canAdd(k)?'':total()>=60?'Deck sudah penuh: 60 kartu.':CARDS[k].ace?'Aturan resmi: ACE SPEC hanya boleh 1 kartu dalam 1 deck.':'Aturan resmi: maksimal 4 kartu bernama sama dalam 1 deck, semua varian ikut dihitung.';   // alasan + tidak bisa (zoom dan tile grid)
+const noAdd=k=>canAdd(k)?'':total()>=60?'Deck sudah penuh (60 kartu).':CARDS[k].ace?'ACE SPEC maks. 1 per deck.':'Maks. 4 kartu bernama sama per deck, termasuk varian.';   // alasan + tidak bisa (zoom dan tile grid)
 /* tooltip bersama untuk + di tile grid (±1.700 tile: satu elemen, bukan satu per tile). Mouse: hover. HP: ketuk, hilang sendiri */
 const gTip=(b,k,tap)=>{const t=$('gtip'),m=noAdd(k);clearTimeout(t.tm);if(!m)return gHide();t.textContent=m;t.classList.add('on');b.setAttribute('aria-describedby','gtip');
  const r=b.getBoundingClientRect(),w=t.offsetWidth,h=t.offsetHeight,top=r.top-h-8;t.style.left=Math.min(innerWidth-w-8,Math.max(8,r.left+r.width/2-w/2))+'px';t.style.top=(top<8?r.bottom+8:top)+'px';if(tap)t.tm=setTimeout(gHide,2500)};
