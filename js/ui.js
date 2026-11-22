@@ -539,7 +539,7 @@ cvs.addEventListener('pointermove',e=>{
  if(dn){const mv=Math.hypot(e.clientX-dn.x,e.clientY-dn.y);
   if(dn.br){   // jari di kartu tangan (HP): menyamping = lihat kartu lain ala Pocket, naik = seret kartu yang sedang dilihat
    const up=dn.y-e.clientY;if(mv<=9)return;if(dn.br===1&&up<Math.abs(e.clientX-dn.x))dn.br=2;
-   if(dn.br===1||up>28){dn.br=0;dn.lpOn=0;dn.pan=1;hideHv();const it=LI.get(hov);if(it){startDrag(it);if(UI.drag)return moveDrag(e)}hov=null;return}
+   if(dn.br===1||up>28||e.clientY<px2(0,1,LAY.handZ-.7*LAY.hs)[1]-6){dn.br=0;dn.lpOn=0;dn.pan=1;hideHv();const it=LI.get(hov);if(it){startDrag(it);if(UI.drag)return moveDrag(e)}hov=null;return}
    const i=hitId(e),it=i!==null&&LI.get(i);if(it&&it.zone==='hand'&&i!==hov){hov=i;showHv(it.c)}dn.pan=1;return}
   if(mv>9){clearTimeout(dn.lp);if(dn.lpOn){hideHv();dn.lpOn=0}}
   if(mv>9&&dn.i!==null&&!dn.pan){const it=LI.get(dn.i);if(it&&G){startDrag(it);if(UI.drag)return moveDrag(e)}dn.pan=1}
@@ -599,7 +599,7 @@ function loop(t){
   if(T.zone==='hand'){const q=PX.get(id);if(q){q.position.z=T.z-((UI.handUp&&!UI.drag)?((1-LAY.hvis)*1.4*LAY.hs+.3):0)+(UI.stage?1.7*LAY.hs:0);q.updateMatrixWorld()}}}
  updHp();cfUpdate(s);
  for(const k in AURA_M)AURA_M[k].opacity=.55+Math.sin(s*3)*.2;glowUpd(s);
- ZH.visible=false;
+ ZH.visible=false;slbUpd();
  const dzv=!!(UI.drag&&UI.drag.dz);DZ.visible=dzv;if(dzv){DZ.material.color.setHex(UI.drag.dzc||0x4dff88);DZ.material.opacity=.75+Math.sin(s*7)*.25}
  coinsUpd(s,now);stageUI(now);
  const gl=glows();RG.forEach((m,i)=>{const g=gl[i];if(!g){m.visible=false;return}m.visible=true;m.position.set(g.x,.2,g.z);m.scale.setScalar(g.s*1.14);m.material.color.setHex(g.ok===3?0x9bdcff:g.ok?0xfcd34d:0xfb7185);m.material.opacity=.7+Math.sin(s*9)*.3});

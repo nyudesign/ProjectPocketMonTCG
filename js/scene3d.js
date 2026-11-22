@@ -15,7 +15,7 @@ const GEO=new THREE.PlaneGeometry(1,1.4);
 /* ---------- tata letak: HP (portrait, ala Pocket) & desktop (landscape) dipisah ---------- */
 let BENCHN={1:5,'-1':5};   // slot Cadangan per sisi (m=1 kamu, m=-1 Bot)
 const L_PORT={act:m=>[0,1.55*m,1.15],ben:(i,m)=>{const n=BENCHN[m],big=n>5;return[(i-(n-1)/2)*(big?.74:1.2),3.62*m,big?.7:.98]},pri:(i,m)=>[-m*(2.55-(i%3)*.58),(1.18+((i/3)|0)*.76)*m,.46],dk:m=>[m*1.5,1.55*m,.7],dis:m=>[m*2.4,1.55*m,.7],stad:[-1.32,0,.55],
- W:6.3,Hg:10.9,elev:1.5,zc:.15,hs:1.3,ohs:.7,hvis:.62,ovis:.45,hsp:1.05,
+ W:6.3,Hg:10.9,elev:1.5,zc:.15,hs:1.3,ohs:.7,hvis:.9,hmin:.62,ovis:.45,hsp:1.05,   // HP: tangan terlihat s/d hvis bila ada ruang kosong; papan tetap diposisikan dengan hmin (HP pendek: papan tidak terdorong ke bawah log atas)
  labels:T=>{for(const m of[1,-1]){T('ACTIVE',0,.36*m,'center',11);T('BENCH',-2.25,2.68*m,'center',11);T('PRIZE',-2.05,.7*m,'center',10);T('DECK',1.5,2.15*m,'center',10);T('DISCARD',2.4,2.1*m,'center',9);T('TRASH',2.4,2.28*m,'center',9)}T('STADIUM',2.35,0,'center',10)}};
 const L_LAND={act:m=>[0,1.6*m,1.3],ben:(i,m)=>{const n=BENCHN[m],big=n>5;return[(i-(n-1)/2)*(big?.9:1.32),3.72*m,big?.82:1.06]},pri:(i,m)=>{const b=BENCHN[m]>5;return[-m*((b?4.45:4.35)-(i%2)*.7),((b?.83:.95)+(i>>1)*.92)*m,.56]},dk:m=>[m*4.25,1.95*m,.8],dis:m=>[m*4.25,3.4*m,.8],stad:[-1.45,0,.7],   // Bench 8: lebih rapat & Prize bergeser agar tak bertabrakan
  W:10.6,Hg:10.5,elev:1.25,zc:.15,hs:1.7,ohs:.8,hvis:.64,ovis:.5,hsp:1.3,
@@ -26,17 +26,18 @@ const Z={act:m=>LAY.act(m),ben:(i,m)=>LAY.ben(i,m),pri:(i,m)=>LAY.pri(i,m),dk:m=
 const LMC={};const LM=c=>LMC[c]||(LMC[c]=new THREE.MeshLambertMaterial({color:c}));
 scene.add(new THREE.AmbientLight(0xffffff,.85));{const dl=new THREE.DirectionalLight(0xffffff,.55);dl.position.set(4,10,6);scene.add(dl)}
 /* garis slot = geometri, bukan tekstur papan: tajam di semua layar (tekstur 50px/unit buram di HP) */
-const SLM=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.82,depthWrite:false,side:THREE.DoubleSide}));SLM.position.y=.004;scene.add(SLM);
+const SLM=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.38,depthWrite:false,side:THREE.DoubleSide}));SLM.position.y=.004;scene.add(SLM);
+const SLC=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.82,depthWrite:false,side:THREE.DoubleSide}));SLC.position.y=.004;scene.add(SLC);   // garis tengah & cincin Poké Ball: tetap tegas, slot diredupkan (papan tidak sesak)
 function drawSlots(){
  const P=[],q=(a,b,c,d,e,f,g,h)=>P.push(a,0,b,c,0,d,e,0,f,a,0,b,e,0,f,g,0,h);
  const seg=(x0,z0,x1,z1,w)=>{const L=Math.hypot(x1-x0,z1-z0),nx=(z0-z1)/L*w/2,nz=(x1-x0)/L*w/2;q(x0+nx,z0+nz,x0-nx,z0-nz,x1-nx,z1-nz,x1+nx,z1+nz)};
- const dashEdge=(x0,z0,x1,z1)=>{const L=Math.hypot(x1-x0,z1-z0),n=Math.max(1,Math.round((L+.18)/.46)),d=(L-(n-1)*.18)/n,ux=(x1-x0)/L,uz=(z1-z0)/L;for(let i=0;i<n;i++){const a=i*(d+.18),b=a+d;seg(x0+ux*a,z0+uz*a,x0+ux*b,z0+uz*b,.07)}};
+ const dashEdge=(x0,z0,x1,z1)=>{const L=Math.hypot(x1-x0,z1-z0),n=Math.max(1,Math.round((L+.18)/.46)),d=(L-(n-1)*.18)/n,ux=(x1-x0)/L,uz=(z1-z0)/L;for(let i=0;i<n;i++){const a=i*(d+.18),b=a+d;seg(x0+ux*a,z0+uz*a,x0+ux*b,z0+uz*b,.045)}};
  const R=([cx,cz,s])=>{const l=cx-s/2,r=cx+s/2,t=cz-.7*s,b=cz+.7*s;dashEdge(l,t,r,t);dashEdge(r,t,r,b);dashEdge(r,b,l,b);dashEdge(l,b,l,t)};
  const ring=(rad,w)=>{const i=rad-w/2,o=rad+w/2;for(let k=0;k<48;k++){const a=k*Math.PI/24,b=a+Math.PI/24,ca=Math.cos(a),sa=Math.sin(a),cb=Math.cos(b),sb=Math.sin(b);q(ca*i,sa*i,ca*o,sa*o,cb*o,sb*o,cb*i,sb*i)}};
  const F=m=>{const g=prizeBox(m);dashEdge(g.l,g.t,g.r,g.t);dashEdge(g.r,g.t,g.r,g.b);dashEdge(g.r,g.b,g.l,g.b);dashEdge(g.l,g.b,g.l,g.t)};   // 6 slot Kartu Point rapat: satu bingkai untuk kelompoknya (garis per slot terlihat patah)
  for(const m of[1,-1]){R(Z.act(m));for(let i=0;i<BENCHN[m];i++)R(Z.ben(i,m));R(Z.dk(m));R(Z.dis(m));F(m)}R(LAY.stad);
- const hw=LAY.W/2+3;seg(-hw,0,-.8,0,.08);seg(.8,0,hw,0,.08);ring(.68,.08);ring(.2,.08);
- SLM.geometry.dispose();SLM.geometry=new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(P,3));drawLabels()}
+ const n0=P.length,hw=LAY.W/2+3;seg(-hw,0,-.8,0,.08);seg(.8,0,hw,0,.08);ring(.68,.08);ring(.2,.08);
+ for(const[M,A]of[[SLM,P.slice(0,n0)],[SLC,P.slice(n0)]]){M.geometry.dispose();M.geometry=new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(A,3))}drawLabels()}
 /* nama slot kosong (istilah kartu Indonesia), rata di meja tepat di bawah posisi kartu: tertutup kartu begitu slot terisi.
    Teks putih dengan garis gelap tipis agar terbaca di arena terang maupun gelap */
 const SLB=new THREE.Group();SLB.position.y=.005;scene.add(SLB);const SLT={};
@@ -44,10 +45,13 @@ const slTex=t=>SLT[t]||(SLT[t]=ctex(512,128,(x,w,h)=>{x.font='700 76px "Chakra P
 /* kotak pembatas 6 slot Kartu Point sisi m (+ jarak kecil) */
 const prizeBox=m=>{let l=1e9,r=-1e9,t=1e9,b=-1e9;for(let i=0;i<6;i++){const[x,z,s]=Z.pri(i,m);l=Math.min(l,x-s/2);r=Math.max(r,x+s/2);t=Math.min(t,z-.7*s);b=Math.max(b,z+.7*s)}return{l:l-.1,r:r+.1,t:t-.1,b:b+.1}};
 function drawLabels(){for(const c of[...SLB.children]){c.geometry.dispose();c.material.dispose();SLB.remove(c)}
- const L=(t,[cx,cz,s],k=.84)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(s*k,s*k/4),new THREE.MeshBasicMaterial({map:slTex(t),transparent:true,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.set(cx,0,cz);SLB.add(m)};
+ const L=(t,[cx,cz,s],k=.84)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(s*k,s*k/4),new THREE.MeshBasicMaterial({map:slTex(t),transparent:true,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.set(cx,0,cz);m.userData={x:cx,z:cz,o:1};SLB.add(m)};
  for(const m of[1,-1]){L('BERTARUNG',Z.act(m));for(let i=0;i<BENCHN[m];i++)L('CADANGAN',Z.ben(i,m));L('DECK',Z.dk(m));L('TRASH',Z.dis(m));
   const g=prizeBox(m),w=g.r-g.l;L('KARTU POINT',[(g.l+g.r)/2,m>0?g.b+w*.13:g.t-w*.13,w],.8)}   // di luar bingkai: sisi luar meja, tak tertutup kartu
  L('STADIUM',LAY.stad,.96)}
+/* label slot kosong: tampil saat setup; saat main hanya slot sasaran drag (papan tidak sesak). Dipanggil tiap frame */
+function slbUpd(){const all=!G||!G.p||G.phase==='setup',hi=UI.drag&&UI.drag.hi;
+ for(const c of SLB.children){const u=c.userData,t=all||hi&&Math.abs(u.x-hi.x)<.01&&Math.abs(u.z-hi.z)<.01?1:0;u.o+=(t-u.o)*.15;c.material.opacity=u.o;c.visible=u.o>.01}}
 if(document.fonts)document.fonts.load('700 50px "Chakra Petch"').then(()=>{for(const k in SLT){SLT[k].dispose();delete SLT[k]}if(LAYMODE!==null)drawLabels()});   // gambar ulang setelah font termuat
 /* ---- arena: tiap tema punya alas main yang tenang & cukup gelap (garis slot putih & kartu tetap kontras); ciri tema hanya di tepi.
    Kanvas 1500×1200 = meja 30×24 satuan (50 px/satuan), pusat (750,600); papan ±5,3×±5,5 satuan, jadi alas ±345×±450 px ---- */
@@ -137,7 +141,7 @@ function fit(){const w=innerWidth,h=innerHeight,a=w/h,land=a>=1.15;
   const ry=-sE*cdT,rz=-cE*cdT-ctT;document.documentElement.style.setProperty('--mid',Math.round((1-(ry*cE-rz*sE)/((-ry*sE-rz*cE)*f))*h/2)+'px')}   // desktop juga: pita giliran & pil HUD menempel di garis tengah
  else{/* HP ala Pocket: tangan menyembul hvis di atas strip HUD bawah, baris muat selebar layar; bila sempit, papan naik sampai Bench Bot mepet pil Bot */
   const cy=sE*cdT,ndc=(y,z)=>{const ry=y-cy,rz=z-cE*cdT-ctT;return(ry*cE-rz*sE)/((-ry*sE-rz*cE)*f)},zAt=(n,y)=>cE*cdT+ctT+(y-cy)/(cE*f*n-sE)*(-cE-sE*f*n);   // NDC-y titik (0,y,z) & kebalikannya
-  const zs=zAt(2*sb/h-1,1),zc=zAt(ndc(0,bb)-12/h,1),sh=Math.max(0,Math.min(zc-zs+LAY.hvis*hh,((1-ndc(0,-bb))*h/2-10)*2*f*cdT/(sE*h)));   // zs: tepi bawah layar, zc: 6px di bawah Bench (tinggi kartu tangan y≈1)
+  const zs=zAt(2*sb/h-1,1),zc=zAt(ndc(0,bb)-12/h,1),sh=Math.max(0,Math.min(zc-zs+LAY.hmin*hh,((1-ndc(0,-bb))*h/2-10)*2*f*cdT/(sE*h)));   // zs: tepi bawah layar, zc: 6px di bawah Bench (tinggi kartu tangan y≈1)
   ctT+=sh;LAY.handZ=Math.max(zs+sh-LAY.hvis*hh,zc)+hh/2;LAY.handW=2*((cy-1)*sE+(cE*cdT+ctT-LAY.handZ)*cE)*f*(a-12/h)-LAY.hs;   // lebar layar pada kedalaman tangan, margin 6px
   document.documentElement.style.setProperty('--mid',Math.round((1-ndc(0,0))*h/2)+'px')}   // posisi layar garis tengah: pil Bot/Kamu & tombol menempel di sini (CSS)
  const hd=f*cdT/sE,upx=h/(2*hd);LAY.ohandZ=Math.min(ctT-hd+(land?0:8/upx)+LAY.ovis*oh-oh/2,-(bb+.18+oh/2));
