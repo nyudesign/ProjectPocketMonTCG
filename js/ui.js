@@ -255,7 +255,7 @@ Object.assign(FX,{
   const T=g.userData.t,p=T?new THREE.Vector3(T.x,T.y,T.z):g.position,[cx,cy]=px2(p.x,p.y,p.z),w=Math.abs(px2(p.x+.5*g.scale.x,p.y,p.z)[0]-px2(p.x-.5*g.scale.x,p.y,p.z)[0]),e=document.createElement('div');
   e.className='dmg heal';e.textContent=n;e.style.cssText=`left:${cx}px;top:${cy}px;--fs:${Math.round(Math.max(30,Math.min(110,w*.42)))}px`;document.body.append(e);setTimeout(()=>e.remove(),1150)},
  energy:async(m,e)=>{sync();const g=M.get(m.id),o=OV.get(m.id);if(!g||!o||!o.g.visible)return;o.g.updateMatrixWorld(true);
-  const k=e.key==='prism'?'prism':e.t,i=m.en.length<=4?m.en.indexOf(e):orbList(m).findIndex(x=>x[0]===k),sl=o.sub.children.find(c=>c.userData.slot===i);
+  const k=orbKey(e),i=m.en.length<=4?m.en.indexOf(e):orbList(m).findIndex(x=>x[0]===k),sl=o.sub.children.find(c=>c.userData.slot===i);
   const to=sl?sl.getWorldPosition(new THREE.Vector3()):g.position.clone(),fr=g.position.clone().setY(g.position.y+1),s1=g.scale.x,b=orbMesh(k,1);if(sl)sl.visible=false;b.rotation.x=-Math.PI/2;scene.add(b);
   FXL.push({o:b,t0:performance.now(),dur:900,upd(p){const q=Math.min(1,p/.28),gr=1+2.6*(1-(1-q)**3)*(1+.22*Math.sin(q*Math.PI)),f=p<.45?0:(p-.45)/.55,ef=f*f*(3-2*f);b.position.lerpVectors(fr,to,ef);b.scale.setScalar(s1*(gr+(1-gr)*ef))}});
   await sleep(900);if(sl)sl.visible=true;g.userData.pop=.35;ring(g.position.x,g.position.z,0x67e8f9);burst(to.x,to.z,AURAC[k]||0x67e8f9,24,1.2)},

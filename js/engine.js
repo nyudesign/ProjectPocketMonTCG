@@ -160,6 +160,9 @@ const whyAttack=(sd,k)=>{const S=G[sd],a=S.active;if(!a)return'Tidak ada Pokémo
  if(at.g&&at.g.some(s=>s.op==='notAfter'&&S.lastAtk&&S.lastAtk.tn===S.tn-1&&S.lastAtk.n===s.name))return`${at.n} tidak bisa dipakai dua giliran berturut-turut`;   // Sylveon ex
  if(!afford(a,at.cost))return'Energi belum cukup';return''};
 const hasDark=m=>m.en.some(c=>c.t==='D')||(m.card.stage===0&&m.en.some(c=>c.key==='prism'));
+/* bola Energi 3D mengikuti simbol kartu: Energi Spesial tanpa tipe diambil dari op prov ("semua tipe" = pelangi, tipe ganda = tipe pertama); Energi Tim Roket punya bola R sendiri */
+const ORBN={'Energi Kabut':'kabut','Energi Bumerang':'bumerang','Energi Kaya':'kaya','Energi Duri':'duri','Energi Penyulut':'penyulut'};   // bintang Bening dengan cincin efek pembeda (ORBFX di js/scene3d.js)
+const orbKey=e=>e.key==='prism'?'prism':e.t||ORBN[e.n]||(/Tim Roket/.test(e.n)?'rocket':0)||(p=>p.some(s=>s.t==='*')?'prism':((p.find(s=>s.op==='prov')||{}).t||'C').split('|')[0])((e.g||[]).filter(s=>/^prov/.test(s.op)&&s.t));
 const AB={
  adr:{why:(sd,m)=>m.used.adr?'Sudah dipakai giliran ini':!hasDark(m)?'Butuh Energi Kegelapan di Pokémon ini':!sideMons(sd).some(x=>x.dmg>0)?'Tidak ada Token Kerusakan untuk dipindah':
   [...inPlay(G.p),...inPlay(G.o)].some(x=>pab(x,'pNoCtrMove'))?'Token Kerusakan tidak bisa dipindah (Ability Patrat)':'',

@@ -92,7 +92,7 @@ const VR={
  ram:async c=>{await dashAtk(c);const q=TPOS(c);boom(q,c.col,c.big);spray(q,VX.puff,0xe5e7eb,5,{nb:1,sp:.9,up:.3,g:0,s:.55})},
  kick:async c=>{await dashAtk(c,.86);const q=TPOS(c);boom(q,c.col,c.big*1.15);slash(q,0xffffff,.6,{len:1.5,th:.34});spray(q,VX.puff,0xffffff,6,{nb:1,sp:.9,up:.4,g:0,s:.55})},
  slap:async c=>{await dashAtk(c,.8);const q=TPOS(c);slash(q,0xffffff,-.45,{len:2.2,th:.42,dur:300});slash(q,c.col,-.45,{len:2.5,th:.7,dur:360});boom(q,c.col,c.big)},
- enslap:async c=>{const a=APOS(c),q=TPOS(c);for(const e of c.a.en){const k=e.key==='prism'?'prism':e.t,b=orbMesh(k,1),s=c.g.scale.x*1.7;b.rotation.x=-Math.PI/2;scene.add(b);   // Energi yang terpasang dilempar satu per satu
+ enslap:async c=>{const a=APOS(c),q=TPOS(c);for(const e of c.a.en){const k=orbKey(e),b=orbMesh(k,1),s=c.g.scale.x*1.7;b.rotation.x=-Math.PI/2;scene.add(b);   // Energi yang terpasang dilempar satu per satu
    FXL.push({o:b,t0:performance.now(),dur:320,upd(p){b.position.lerpVectors(a,q,p);b.position.y+=Math.sin(Math.PI*p)*.9;b.scale.setScalar(s)}});setTimeout(()=>spray(q,VX.glow,AURAC[k]||0xffffff,6,{s:.22}),320);await sleep(160)}
   await sleep(160);await VR.slap(c)},
  bite:async c=>{const q=TPOS(c),n=c.at.fx==='jaw'&&c.a.dmg>0?2:1;dashAtk(c,.45,0);for(let i=0;i<n;i++){jaws(q,c.big);await sleep(i<n-1?260:200)}boom(q,0xff4d6d,c.big*.85)},

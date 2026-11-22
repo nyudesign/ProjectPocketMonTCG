@@ -211,8 +211,10 @@ function drawHp(o,now=performance.now()){
 function updHp(){const now=performance.now();for(const o of OV.values())if(o.a)drawHp(o,now)}
 /* bola Energi 3D: sphere ber-shader (gradasi tubuh, kilap, rim, cincin tepi putih ala Pocket) + decal simbol 512px (tools/orb-sym.py)
    yang dipetakan ke permukaan bola dan selalu menghadap kamera; warna [terang, gelap] per tipe */
-const ORB={D:['#4cc4cf','#0d4b58'],P:['#e19be0','#71358a'],R:['#ff8a6a','#a3141a'],C:['#ffffff','#aab4c2'],G:['#7fe070','#16712a'],F:['#fbab4c','#934304'],W:['#6cd8ff','#0961b0'],L:['#ffeb6e','#d39306'],M:['#f1f3f5','#747d87'],prism:['#ffffff','#c9c1ec']},
- orbC=k=>ORB[k]||ORB.C,AURAC=Object.fromEntries(Object.entries(ORB).map(([k,v])=>[k,new THREE.Color(v[0]).getHex()])),SG=new THREE.SphereGeometry(.115,32,20),NT={};
+/* warna pembeda Energi Spesial bersimbol bintang (pendar, percikan, cincin efek ORBFX); tubuh bolanya tetap putih Bening seperti kartunya */
+const ORBX={kabut:'#ff5fae',bumerang:'#10b6c9',kaya:'#e8a800',duri:'#5b4dff',penyulut:'#ff5a1f'};
+const ORB={D:['#4cc4cf','#0d4b58'],P:['#e19be0','#71358a'],R:['#ff8a6a','#a3141a'],C:['#ffffff','#aab4c2'],G:['#7fe070','#16712a'],F:['#fbab4c','#934304'],W:['#6cd8ff','#0961b0'],L:['#ffeb6e','#d39306'],M:['#f1f3f5','#747d87'],prism:['#ffffff','#c9c1ec'],rocket:['#b04fa8','#160d2c']},
+ orbC=k=>ORB[k]||ORB.C,AURAC=Object.fromEntries([...Object.entries(ORB).map(([k,v])=>[k,v[0]]),...Object.entries(ORBX)].map(([k,c])=>[k,new THREE.Color(c).getHex()])),SG=new THREE.SphereGeometry(.115,32,20),NT={};
 /* normal diputar ke bingkai "menghadap kamera" dari pusat bola, agar simbol tetap di tengah walau bola di pinggir layar */
 const ORB_VS=`varying vec3 vN;void main(){vec3 f=normalize(-(modelViewMatrix*vec4(0.,0.,0.,1.)).xyz),rt=normalize(cross(vec3(0.,1.,0.),f)),up=cross(f,rt),n=normalize(normalMatrix*normal);
  vN=vec3(dot(n,rt),dot(n,up),dot(n,f));gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
@@ -231,10 +233,31 @@ void main(){vec3 n=normalize(vN);float r=min(length(n.xy),1.);vec3 L=normalize(v
    Lapis 0 normal (rona, terlihat di kartu terang), lapis 1 aditif (pendar, terlihat di kartu gelap, kontras teks hitam tetap). Denyut & rona Prism: glowUpd */
 const orbGlowT=(fall,top)=>ctex(128,128,(x,w)=>{const d=x.createImageData(w,w),cl=v=>Math.min(1,Math.max(0,v));for(let j=0;j<w;j++)for(let i=0;i<w;i++){const u=(i+.5)/w*2-1,v=(j+.5)/w*2-1,r=Math.hypot(u,v);
   d.data.set([255,255,255,255*cl((r-.58)/.05)*Math.pow(cl(1-(r-.62)/.38),fall)*(top+(1-top)*cl((v+.85)/.65))|0],(j*w+i)*4)}x.putImageData(d,0,0)}),   // v<0 = atas layar
- GLC={D:'#2fd3dc',P:'#d46bff',R:'#ff5a3c',G:'#4ee05f',W:'#3ab4ff',L:'#ffd21f',F:'#ff9a3c',M:'#d5dde6',C:'#ffffff',prism:'#ffffff'},GT=[orbGlowT(1.7,.22),orbGlowT(3.4,.3)],GLA=[.4,.85],GLK={C:.4,M:.55},   // putih/perak diredam: pendar putih di meja/kartu berwarna terlihat seperti kabut
+ GLC={D:'#2fd3dc',P:'#d46bff',R:'#ff5a3c',G:'#4ee05f',W:'#3ab4ff',L:'#ffd21f',F:'#ff9a3c',M:'#d5dde6',C:'#ffffff',prism:'#ffffff',rocket:'#ff3c64'},GT=[orbGlowT(1.7,.22),orbGlowT(3.4,.3)],GLA=[.4,.85],GLK={C:.4,M:.55},   // putih/perak diredam: pendar putih di meja/kartu berwarna terlihat seperti kabut
  
- GLOW_M={},glowM=k=>GLOW_M[k]||(GLOW_M[k]=GT.map((t,i)=>new THREE.SpriteMaterial({map:t,color:GLC[k]||'#ffffff',transparent:true,depthWrite:false,opacity:GLA[i]*(GLK[k]||1),blending:i?THREE.AdditiveBlending:THREE.NormalBlending})));
-function glowUpd(s){for(const k in GLOW_M){const m=GLOW_M[k],f=.8+.2*Math.sin(s*2.4+k.charCodeAt(0));m.forEach((x,i)=>x.opacity=GLA[i]*f*(GLK[k]||1));if(k==='prism'){m[0].color.setHSL(s*.1%1,.95,.62);m[1].color.copy(m[0].color)}}}
+ GLOW_M={},glowM=k=>GLOW_M[k]||(GLOW_M[k]=GT.map((t,i)=>new THREE.SpriteMaterial({map:t,color:GLC[k]||ORBX[k]||'#ffffff',transparent:true,depthWrite:false,opacity:GLA[i]*(GLK[k]||1),blending:i?THREE.AdditiveBlending:THREE.NormalBlending})));
+/* cincin efek Energi Spesial bersimbol bintang: digambar DI DEPAN bola, menutupi pita tepinya (r .6 tekstur = tepi bola; isi .42-.78, simbol bintang di tengah tetap terlihat).
+   Di belakang bola tidak terbaca: bola tetangga hanya berjarak 0,02. Bentuknya sudah membedakan walau diam (gerak dilewati bila RMO). Lapis: [gambar, putar rad/dtk, kedip rad/dtk (0 = tetap), fase] */
+const ORBFX=(()=>{const P2=Math.PI*2;
+ const mist=x=>{for(let i=0;i<10;i++){const a=i/10*P2,cx=Math.cos(a)*74,cy=Math.sin(a)*74,c=['255,80,165','175,110,255'][i%2],g=x.createRadialGradient(cx,cy,0,cx,cy,22);
+   g.addColorStop(0,`rgba(${c},.9)`);g.addColorStop(.55,`rgba(${c},.55)`);g.addColorStop(1,`rgba(${c},0)`);x.fillStyle=g;x.beginPath();x.arc(cx,cy,22,0,P2);x.fill()}};
+ const boom=x=>{x.lineCap='round';for(const o of [0,Math.PI]){const a1=o+2,r=72,ex=Math.cos(a1)*r,ey=Math.sin(a1)*r,tx=-Math.sin(a1),ty=Math.cos(a1),nx=Math.cos(a1),ny=Math.sin(a1);   // dua panah melengkung searah jarum jam
+   [['#064f5a',17],['#2fe3f0',10]].forEach(([c,w])=>{x.strokeStyle=c;x.lineWidth=w;x.beginPath();x.arc(0,0,r,o,a1);x.stroke()});
+   x.beginPath();x.moveTo(ex+tx*24,ey+ty*24);x.lineTo(ex+nx*16,ey+ny*16);x.lineTo(ex-nx*16,ey-ny*16);x.closePath();x.fillStyle='#2fe3f0';x.fill();x.strokeStyle='#064f5a';x.lineWidth=3.5;x.stroke()}};
+ const ring=x=>{x.strokeStyle='#7a4f00';x.lineWidth=13;x.beginPath();x.arc(0,0,70,0,P2);x.stroke();x.strokeStyle='#ffc21a';x.lineWidth=8;x.stroke()};   // cincin emas tetap, dua lapis kilau bergantian di atasnya
+ const glints=b=>x=>{
+  for(let i=0;i<3;i++){const a=(i/3+b/6)*P2,s=b?17:21,cx=Math.cos(a)*72,cy=Math.sin(a)*72;x.beginPath();
+   for(let j=0;j<8;j++){const t=j/8*P2-Math.PI/2,q=j%2?s*.3:s;x.lineTo(cx+Math.cos(t)*q,cy+Math.sin(t)*q)}x.closePath();x.fillStyle='#ffe36a';x.fill();x.strokeStyle='#7a4f00';x.lineWidth=3;x.stroke();
+   x.fillStyle='#fff';x.beginPath();x.arc(cx,cy,s*.22,0,P2);x.fill()}};
+ const spikes=x=>{x.strokeStyle='#1d1466';x.lineJoin='round';x.lineWidth=12;x.beginPath();x.arc(0,0,64,0,P2);x.stroke();x.strokeStyle='#5b4dff';x.lineWidth=7;x.stroke();
+   const g=x.createRadialGradient(0,0,62,0,0,98);g.addColorStop(0,'#4433e0');g.addColorStop(1,'#c8ccff');x.fillStyle=g;x.strokeStyle='#1d1466';x.lineWidth=3;
+   for(let i=0;i<10;i++){const a=i/10*P2;x.beginPath();x.moveTo(Math.cos(a-.2)*64,Math.sin(a-.2)*64);x.lineTo(Math.cos(a)*98,Math.sin(a)*98);x.lineTo(Math.cos(a+.2)*64,Math.sin(a+.2)*64);x.closePath();x.fill();x.stroke()}};
+ const flames=(L,off)=>x=>{for(let i=0;i<8;i++){x.save();x.rotate((i+off)/8*P2);const g=x.createRadialGradient(0,0,54,0,0,L);g.addColorStop(0,'#fff3a0');g.addColorStop(.4,'#ff9a1f');g.addColorStop(1,'#e0281a');
+   x.beginPath();x.moveTo(54,-15);x.quadraticCurveTo(72,-17,L,0);x.quadraticCurveTo(72,17,54,15);x.closePath();x.fillStyle=g;x.fill();x.strokeStyle='#7a1206';x.lineWidth=2.5;x.stroke();x.restore()}};
+ return{kabut:[[mist,.35,0,0]],bumerang:[[boom,-2.4,0,0]],kaya:[[ring,0,0,0],[glints(0),.25,5,0],[glints(1),.25,5,Math.PI]],duri:[[spikes,.6,0,0]],penyulut:[[flames(100,0),.15,9,0],[flames(90,.5),.15,9,Math.PI]]}})(),
+ ORBFX_M={},orbFxM=k=>ORBFX_M[k]||(ORBFX_M[k]=ORBFX[k].map(([d,spin,tw,ph])=>Object.assign(new THREE.SpriteMaterial({map:ctex(256,256,x=>{x.translate(128,128);d(x)}),transparent:true,depthWrite:false}),{userData:{spin,tw,ph}})));
+function glowUpd(s){if(!RMO)for(const k in ORBFX_M)for(const m of ORBFX_M[k]){const u=m.userData;m.rotation=s*u.spin;if(u.tw)m.opacity=.35+.65*(.5+.5*Math.sin(s*u.tw+u.ph))}
+ for(const k in GLOW_M){const m=GLOW_M[k],f=.8+.2*Math.sin(s*2.4+k.charCodeAt(0));m.forEach((x,i)=>x.opacity=GLA[i]*f*(GLK[k]||1));if(k==='prism'){m[0].color.setHSL(s*.1%1,.95,.62);m[1].color.copy(m[0].color)}}}
 const cntTex=n=>NT[n]||(NT[n]=ctex(128,128,(x)=>{x.beginPath();x.arc(64,64,58,0,7);x.fillStyle='#0f2a43';x.fill();x.lineWidth=8;x.strokeStyle='#fff';x.stroke();x.font=`900 ${n>9?68:90}px `+FONT;x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.fillText(String(n),64,70)}));   // jumlah Energi sejenis (badge)
 /* kondisi khusus: [ikon, warna, nama]. Badge = pil berwarna berikon + nama di sisi kiri kartu; saat baru didapat muncul label besar (statusPop) */
 const BADGE={asleep:['zzz','#2563eb','TIDUR'],confused:['dizzy','#db2777','PUSING'],paralyzed:['zap','#ca8a04','LUMPUH'],poison:['skull','#7e22ce','RACUN'],burn:['flame','#dc2626','LUKA BAKAR']},BDT={};   // nama resmi kartu Indonesia
@@ -246,7 +269,7 @@ function statusCure(k,P,g){if(RMO)return;const[n,c]=BADGE[k],v=P.clone().project
 const ROTC=['asleep','confused','paralyzed'];
 function statusPop(k,P){if(RMO)return;const[n,c,t]=BADGE[k],v=P.clone().project(cam),e=document.createElement('div');e.className='stp';e.style.cssText=`left:${(v.x+1)/2*innerWidth}px;top:${(1-v.y)/2*innerHeight}px;--c:${c}`;
  e.innerHTML=`<i>${ic(n)}</i><b>${t}</b>`;document.body.append(e);setTimeout(()=>e.remove(),1700)}
-function orbList(mon){if(mon.en.length<=4)return mon.en.map(e=>[e.key==='prism'?'prism':e.t,0]);const c=new Map();for(const e of mon.en){const k=e.key==='prism'?'prism':e.t;c.set(k,(c.get(k)||0)+1)}return[...c]}
+function orbList(mon){if(mon.en.length<=4)return mon.en.map(e=>[orbKey(e),0]);const c=new Map();for(const e of mon.en){const k=orbKey(e);c.set(k,(c.get(k)||0)+1)}return[...c]}
 function ovBuild(o,mon){
  if(!o.pill){const c=document.createElement('canvas');c.width=HPW;c.height=HPH;o.cx=c.getContext('2d');o.tex=new THREE.CanvasTexture(c);o.tex.anisotropy=4;o.pill=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:o.tex,transparent:true,depthWrite:false}));o.pill.scale.set(HPW*HPK/1024,HPH*HPK/1024,1);o.pill.position.set(.5+(HPW/2-416)*HPK/1024,.7+(102+HPT-HPH/2)*HPK/1024,-.03);o.g.add(o.pill);o.sub=new THREE.Group();o.g.add(o.sub)}   // panel .015 di atas kartu: di kamera miring (desktop) tak bergeser dari HP cetak kartu
  const v=Math.max(0,hp(mon)),mx=maxHp(mon);o.ty=mon.card.type;o.img=mon.card.img;
@@ -263,12 +286,14 @@ function ovBuild(o,mon){
  bd.forEach((k,i)=>{const b=new THREE.Mesh(PG,new THREE.MeshBasicMaterial({map:badgeT(k),transparent:true,depthWrite:false})),W=.6,H=.1875;b.scale.set(W,H,1);b.position.set(-.18,.42-i*.22,.035);o.sub.add(b);
   if(bp[k]&&now-bp[k]<900){b.scale.set(.001,.001,1);FXL.push({o:new THREE.Object3D(),t0:bp[k]+500,dur:700,upd(p){if(p<0)return;const f=p<.55?1.35*Math.sin(p/.55*Math.PI/2):1.35-.35*(p-.55)/.45;b.scale.set(W*f,H*f,1)}})}});   // badge timbul sesudah label besar
  coinsFor(cd).forEach((v,i)=>{const c=new THREE.Mesh(CG,new THREE.MeshBasicMaterial({map:coinT(v),transparent:true,depthWrite:false})),[tx,ty]=tokXY(i,bd.length);c.scale.setScalar(COINR[v]);c.position.set(tx,ty,.03+i*.001);o.sub.add(c)});   // baris berisi 5, di bawah badge kondisi
- orbList(mon).forEach(([k,n],i)=>{const px=-.375+i*.25,sg=orbMesh(k);sg.userData.slot=i;sg.position.set(px,-.55,0);o.sub.add(sg);
-  if(n>1){const q=new THREE.Sprite(new THREE.SpriteMaterial({map:cntTex(n),depthWrite:false}));q.scale.setScalar(.18);q.position.set(.105,.1,.3);sg.add(q)}})}
+ const OL=orbList(mon),st=Math.min(.25,.75/Math.max(1,OL.length-1));OL.forEach(([k,n],i)=>{const px=-.375+i*st,sg=orbMesh(k);   // >4 kelompok: rapatkan supaya tetap di lebar kartu
+sg.userData.slot=i;sg.position.set(px,-.55,0);o.sub.add(sg);
+  if(n>1){const q=new THREE.Sprite(new THREE.SpriteMaterial({map:cntTex(n),depthWrite:false}));q.scale.setScalar(.18);q.position.set(.105,.1,.3);q.renderOrder=1;sg.add(q)}})}
 /* satu bola Energi di titik 0,0; dipakai overlay & animasi pasang Energi. Di kartu: bayangan kontak + aura halus (di bawah permukaan bola,
    jadi tak menimpa bola tetangga); air=1 (bola terbang): halo cahaya */
 function orbMesh(k,air){const sg=new THREE.Group(),b=new THREE.Mesh(SG,orbM(k)),x=air?new THREE.Sprite(auraM(k)):new THREE.Mesh(SHG,SHAD_M);b.position.z=.14;
  if(air){x.position.z=.14;x.scale.setScalar(.36)}else{x.position.set(.016,-.02,.02);for(const m of glowM(k)){const h=new THREE.Sprite(m);h.position.z=.06;h.scale.setScalar(2*.115/.62);sg.add(h)}}
+ if(ORBFX[k])for(const m of orbFxM(k)){const h=new THREE.Sprite(m);h.position.z=.27;h.scale.setScalar(2*.115/.6);sg.add(h)}
  sg.add(b,x);return sg}
 /* Energi/Tool baru menempel: hantu kartu terbang di ATAS Pokémon lalu mengecil masuk, kartu aslinya tumbuh di bawah Pokémon.
    Jadi kartu tak pernah turun menembus kartu Pokémon (dulu lerp lurus dari tangan ke bawah kartu) */
