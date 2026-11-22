@@ -205,7 +205,7 @@ $('zoom').addEventListener('wheel',e=>{const z=$('zoom');if(!z.classList.contain
   if(!hor&&inP&&(e.deltaY>0||$('zside').scrollTop>0))return;   // panel yang (jarang) masih perlu gulir: gulir isinya dulu
   e.preventDefault();if(!hor&&e.deltaY<0&&(inP||crMid(e))){zInfo(false);zWL(1)}return}   // sisa aliran ini tidak boleh lanjut menutup zoom
  if(!hor&&(e.target.closest('#zside')||crMid(e))){e.preventDefault();if(e.deltaY<0){if(zW.m===2&&crMid(e))zWPull(e)}else if(e.deltaY>0){zInfo(true);zWL(1)}return}   // kartu tengah: deltaY>0 = info, deltaY<0 (dua jari turun di trackpad, seperti tarik ke bawah) = tutup zoom
- if(!hor){e.preventDefault();return zWL(1)}   // gulir atas-bawah di luar kartu tengah tidak menjelajah (user 2026-11-22: inersia trackpad melompati puluhan kartu). Tetap mengunci aliran: kalau kursor bergeser ke kartu tengah, sisa usapan ini tidak menutup zoom
+ if(!hor){e.preventDefault();if(e.deltaY<0&&zW.m===2)return zWPull(e);return zWL(1)}   // gulir atas-bawah di luar kartu tengah tidak menjelajah (inersia trackpad melompati puluhan kartu). Dua jari turun / 2 takik mouse di mana saja = tutup (pilihan A user 2026-11-22; mouse ganti kartu lewat klik samping, ‹ ›, panah, Shift+roda)
  const d=(ax>ay?e.deltaX:e.deltaY)*(e.deltaMode===1?100/3:e.deltaMode===2?100:1),nk=ay>=ax||e.shiftKey,u=CR.step/100;if(Math.abs(d)<.5)return;
  e.preventDefault();nk?crWheel(d*u,3.5*u,0):crWheel(d,30,1)},{passive:false});   // Shift+roda (gaya mouse): 100 px = 1 kartu dan takik kecil pun pindah 1 kartu. Geser horizontal trackpad: ikut jari 1:1 lalu snap
 let zT=null;$('zoom').addEventListener('touchstart',e=>{zT=$('zoom').classList.contains('db')&&e.target.closest('.zs.act,#zside')?[e.touches[0].clientY,$('zside').scrollTop]:null},{passive:true});
