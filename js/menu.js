@@ -99,13 +99,13 @@ const zInfo=on=>{if(on&&!$('zoom').classList.contains('info')){zFit();CR.wh=null
 const zNav=()=>{const inf=$('zoom').classList.contains('info');$('zprev').disabled=inf||CR.i<=0;$('znext').disabled=inf||CR.i>=CR.keys.length-1};   // ‹ › (juga panah kiri/kanan keyboard, yang menekan tombol ini) mati selama info terbuka   // panel diukur hanya saat akan tampil: mengukur saat buka zoom / geser kartu dengan info tertutup = tata letak paksa yang membuat animasi tersendat
 /* carousel: versi sendiri dari prototipe inertia-scroll jhey.dev dengan setelan user (snap, damping 50, flick 1; coverflow perspective 800, depth 80, rotate 0; skala .4 dan pudar 1.1 = kartu samping kecil dan gelap).
    Track digerakkan transform dan hanya indeks ±3 yang punya elemen, karena daftar bisa 1.500+ kartu. pos/tgt dalam px, satu kartu = CR.step.
-   Zona: kartu tengah = periksa (tahan = holo, roda vertikal = info); di luar itu = jelajah (seret/lempar, roda, klik kartu samping) */
+   Zona: kartu tengah = periksa (tahan = holo, roda vertikal = info / tarik untuk menutup); di luar itu = jelajah (seret/lempar, roda horizontal atau Shift+roda, klik kartu samping). Roda vertikal tidak pernah menjelajah */
 const CR={el:$('ztrack'),keys:[],sl:new Map(),i:0,pos:0,tgt:0,v:0,raf:0,t:0,W:0,step:1,pd:null,drag:null,wh:null,cap:null};
 const crMv=on=>$('zoom').classList.toggle('mv',on);   // #zoom.mv = sedang digeser lewat seret/roda: tombol memudar sampai carousel diam (‹ ›, panah keyboard, klik kartu samping tidak memudarkan)
 const crClamp=i=>Math.min(CR.keys.length-1,Math.max(0,i)),crDamp=(a,b,k,dt)=>a+(b-a)*(1-Math.exp(-k*dt)),crIdle=()=>!CR.raf&&!CR.drag;
 function crSize(){CR.W=CR.el.clientWidth;CR.step=CR.W+Math.max(12,CR.W*.04);CR.pos=CR.tgt=CR.i*CR.step;CR.v=0;crDraw()}
 function crOpen(k){const ks=[...$('db-grid').querySelectorAll('.tile')].filter(t=>!t.hidden&&t.offsetParent).map(t=>t.id.slice(2));   // daftar = tile yang tampil sekarang (filter ikut, kategori yang dilipat tidak)
- CR.keys=ks.includes(k)?ks:[k];CR.i=CR.keys.indexOf(k);CR.sl.forEach(e=>e.remove());CR.sl.clear();CR.pd=CR.drag=CR.wh=null;crMv(false);crSize();zWBack();zW.t=performance.now();zWL(0)}   // aliran roda yang sudah berjalan saat zoom dibuka (sisa gulir grid) diabaikan: tidak menutup, tidak menjelajah
+ CR.keys=ks.includes(k)?ks:[k];CR.i=CR.keys.indexOf(k);CR.sl.forEach(e=>e.remove());CR.sl.clear();CR.pd=CR.drag=CR.wh=null;crMv(false);crSize();zWBack();removeEventListener('wheel',zWEat,true);zW.t=performance.now();zWL(0)}   // aliran roda yang sudah berjalan saat zoom dibuka (sisa gulir grid) diabaikan: tidak menutup, tidak menjelajah
 function crSync(open){const k=DB.z.k;if(!open)crOpen(k);else if(CR.keys[CR.i]!==k){const i=CR.keys.indexOf(k);if(i<0)crOpen(k);else crGo(CR.i=i)}
  const im=CR.sl.get(CR.i)?.querySelector('img');if(im&&im.getAttribute('src')!==IMG[DB.z.v]){im.classList.add('sk');im.src=IMG[DB.z.v]}}   // slide aktif menampilkan varian yang dipilih
 function crDraw(){const{el,sl,keys,step,W}=CR,c=Math.round(CR.pos/step),half=(innerWidth+W)/2;
@@ -165,11 +165,14 @@ const zW={t:0,m:1,lk:0,pk:0,fl:0,ar:0,pv:0,d:'',p:0,y:0,n:0,x:0,v:0,tm:0};   // 
 const zWL=m=>{zW.m=m;zW.lk=performance.now();zW.pk=zW.fl=zW.ar=0};
 const jenisRoda=e=>e.deltaMode===1||e.deltaX===0&&e.wheelDeltaY&&Math.abs(e.wheelDeltaY)%120===0&&e.wheelDeltaY!==-3*e.deltaY?'mouse':'trackpad';   // shortcut: trik umum yang belum diukur di perangkat user, setel dari tools/anim/roda-cek.html. Ragu = trackpad (trackpad terbaca mouse = tertutup terlalu cepat)
 const zWBack=()=>{clearTimeout(zW.tm);zW.p=0;if($('zoom').matches('.on.db.pull:not(.out)'))zPullFin(false,0,0)};
+const zWRise=g=>{if(!zW.fl){zW.pk=Math.max(zW.pk,g);zW.fl=g<zW.pk*.5}else if(g>zW.pv*1.25+1)zW.ar=1;zW.pv=g};   // usapan baru di tengah sisa inersia (tanpa jeda): inersia hanya meluruh, usapan baru mulai kecil lalu membesar. Sudah turun ke separuh puncak lalu naik lagi = jari mengusap lagi
+const zWEat=e=>{const t=e.timeStamp,s=Math.sign(e.deltaY);zWRise(Math.abs(e.deltaX)+Math.abs(e.deltaY));
+ if(t-zW.t>200||zW.ar||s&&s!==zW.s||t-zW.lk>1000)return removeEventListener('wheel',zWEat,true);zW.t=t;e.preventDefault()};   // sisa usapan yang menutup zoom jangan menggulir grid (rekaman user). Lepas saat jeda, usapan baru, arah berbalik, atau 1 dtk: penelan versi pertama hanya lepas saat jeda, jadi menelan semua gulir grid
 function zWPull(e){const z=$('zoom'),H=innerHeight,ms=zW.d==='mouse';clearTimeout(zW.tm);clearTimeout(zPT);if(!zW.p){zW.p=1;zW.y=zW.n=zW.x=zW.v=0}zW.n++;
  if(ms){if(e.deltaY>0)return zWBack();zW.y=H*.06}else zW.y=Math.max(0,zW.y-e.deltaY*(e.deltaMode===1?100/3:e.deltaMode===2?100:1));   // mouse: hitung takik, bukan piksel (takik Mac 4 px dan Windows 100 px sama-sama 1). Trackpad: ikut 1:1
  const y=ms?zW.y:Math.max(0,zW.y-10),shut=zW.n>1&&(ms||y>=H*.12);   // zona mati 10 px. Takik ke-2 dalam satu putaran, atau tarikan 12% tinggi layar = tutup. Satu event tidak pernah menutup
  if(y&&(!z.classList.contains('pull')||z.classList.contains('rel')!==ms)){z.classList.add('pull');z.classList.toggle('rel',ms)}   // .pull baru sesudah zona mati (sentuhan kecil tidak membuka-tutup grid). Mouse: takik meluncur halus; trackpad ikut tanpa transisi
- if(shut){zW.p=0;zWL(1);return zPullFin(true,y,0)}   // sesudah tertutup grid langsung bisa digulir (penelan sisa inersia dihapus: usapan baru di tengah inersia ikut tertelan)
+ if(shut){zW.p=0;zWL(1);zW.s=Math.sign(e.deltaY)||-1;addEventListener('wheel',zWEat,{capture:true,passive:false});return zPullFin(true,y,0)}
  if(z.classList.contains('pull'))zPullSet(y,Math.min(1,y/(H*.35)));zW.tm=setTimeout(zWBack,ms?250:200)}   // aliran berhenti sebelum ambang: kembali ke tengah
 /* buka/tutup dari/ke tile-nya di grid (shared element): #ztrack di-transform supaya tepat menimpa gambar tile (--fx/--fy/--fs), latar dan tombol pudar (#zoom.fly).
    Buka: mulai di tile lalu transisi ke tengah. Tutup (closeZoom): transisi ke tile. Tile tidak terlihat: skala + pudar di tempat */
@@ -184,7 +187,7 @@ CR.el.addEventListener('contextmenu',e=>e.preventDefault());   // tekan lama di 
 addEventListener('resize',()=>{if($('zoom').matches('.on.db'))crSize()});
 $('zoom').addEventListener('wheel',e=>{const z=$('zoom');if(!z.classList.contains('db'))return;const t=e.timeStamp,inf=z.classList.contains('info');
  const nw=t-zW.t>200,g=Math.abs(e.deltaX)+Math.abs(e.deltaY);if(nw)zW.d=jenisRoda(e);else if(zW.d==='mouse'&&jenisRoda(e)!=='mouse')zW.d='trackpad';   // aliran baru = jeda >200 md. Mouse hanya dari event pertama aliran; boleh turun ke trackpad, tidak pernah naik
- if(zW.m<2){if(!zW.fl){zW.pk=Math.max(zW.pk,g);zW.fl=g<zW.pk*.5}else if(g>zW.pv*1.25+1)zW.ar=1}zW.pv=g;   // usapan baru di tengah sisa inersia (tanpa jeda): inersia hanya meluruh, usapan baru mulai kecil lalu membesar. Sudah turun ke separuh puncak lalu naik lagi = jari mengusap lagi
+ if(zW.m<2)zWRise(g);else zW.pv=g;
  if(!zW.p&&(nw||zW.m<2&&t-zW.lk>(zW.ar?700:1500)))zWL(inf||HL.to||!crIdle()||z.matches('.out,.fly')?1:2);zW.t=t;   // lepas kunci (rekaman user 2026-11-22: tanpa ini kunci tidak pernah lepas): jeda, usapan baru + 0,7 dtk, atau 1,5 dtk. Pengaman 1,5 dtk: inersia 0,967/frame dari 30-60 px/frame sudah tak sanggup menempuh 97-118 px (zona mati + 12% layar) sesudah 1,0-1,45 dtk
  if(HL.to||!zW.m||z.classList.contains('out'))return e.preventDefault();   // holo ditahan: carousel dibekukan (momentum trackpad masih datang). Aliran dari sebelum zoom dibuka, atau sedang meluncur keluar: abaikan
  const ax=Math.abs(e.deltaX),ay=Math.abs(e.deltaY),hor=ax>ay||e.shiftKey,zv=e.target.closest('#zvar');
@@ -194,8 +197,9 @@ $('zoom').addEventListener('wheel',e=>{const z=$('zoom');if(!z.classList.contain
   if(!hor&&inP&&(e.deltaY>0||$('zside').scrollTop>0))return;   // panel yang (jarang) masih perlu gulir: gulir isinya dulu
   e.preventDefault();if(!hor&&e.deltaY<0&&(inP||crMid(e))){zInfo(false);zWL(1)}return}   // sisa aliran ini tidak boleh lanjut menutup zoom
  if(!hor&&(e.target.closest('#zside')||crMid(e))){e.preventDefault();if(e.deltaY<0){if(zW.m===2&&crMid(e))zWPull(e)}else if(e.deltaY>0){zInfo(true);zWL(1)}return}   // kartu tengah: deltaY>0 = info, deltaY<0 (dua jari turun di trackpad, seperti tarik ke bawah) = tutup zoom
+ if(!hor){e.preventDefault();return zWL(1)}   // gulir atas-bawah di luar kartu tengah tidak menjelajah (user 2026-11-22: inersia trackpad melompati puluhan kartu). Tetap mengunci aliran: kalau kursor bergeser ke kartu tengah, sisa usapan ini tidak menutup zoom
  const d=(ax>ay?e.deltaX:e.deltaY)*(e.deltaMode===1?100/3:e.deltaMode===2?100:1),nk=ay>=ax||e.shiftKey,u=CR.step/100;if(Math.abs(d)<.5)return;
- e.preventDefault();if(!hor)zWL(1);nk?crWheel(d*u,3.5*u,0):crWheel(d,30,1)},{passive:false});   // aliran vertikal yang sudah menjelajah (kartu samping) tidak boleh lanjut menutup zoom bila kursor bergeser ke kartu tengah. Event horizontal tidak mengunci: satu event miring di usapan vertikal tidak boleh mematikan tarikan. Roda gaya mouse (vertikal di luar kartu tengah, atau Shift): 100 px = 1 kartu dan takik kecil pun pindah 1 kartu. Geser horizontal trackpad: ikut jari 1:1 lalu snap
+ e.preventDefault();nk?crWheel(d*u,3.5*u,0):crWheel(d,30,1)},{passive:false});   // Shift+roda (gaya mouse): 100 px = 1 kartu dan takik kecil pun pindah 1 kartu. Geser horizontal trackpad: ikut jari 1:1 lalu snap
 let zT=null;$('zoom').addEventListener('touchstart',e=>{zT=$('zoom').classList.contains('db')&&e.target.closest('.zs.act,#zside')?[e.touches[0].clientY,$('zside').scrollTop]:null},{passive:true});
 $('zoom').addEventListener('touchend',e=>{if(!zT)return;const dy=e.changedTouches[0].clientY-zT[0];if(dy<-40)zInfo(true);else if(dy>40&&zT[1]<=0)zInfo(false);zT=null});   // info tertutup: geser ke bawah = tarik untuk menutup (zPullGo)
 addEventListener('keydown',e=>{if(!$('zoom').matches('.on.db')||e.ctrlKey||e.metaKey||e.altKey||HL.to&&e.key!=='Escape')return;   // G kosong di layar ini, jadi Escape dari ui.js tidak berlaku
